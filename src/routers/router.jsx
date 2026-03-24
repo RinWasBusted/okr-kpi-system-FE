@@ -8,8 +8,15 @@ const router = createBrowserRouter([
         element: <App />
     },
     {
+        path: "/admin",
+        element: <App />
+    },
+    {
         path: "/:company_slug/login",
         element: <Login />
+    },
+    {
+        path: "/:company_slug/",
     }
 ]);
 
