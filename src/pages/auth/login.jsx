@@ -14,7 +14,7 @@ const Login = () => {
         const response = await axiosClient.post('/auth/login', { email, password });
         if (response.data.success) {
             toast.success('Login successful');
-            navigate('/dashboard');
+            navigate('/admin/dashboard');
         } else {
             toast.error('Login failed');
         }
