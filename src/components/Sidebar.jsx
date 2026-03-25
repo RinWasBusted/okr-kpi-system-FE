@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -10,12 +10,47 @@ import {
   LogOut,
 } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
+import { logout, getCurrentUser } from '../services/auth';
+import { useAuthStore } from '../hooks/useAuth';
 
 const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { theme, setTheme } = useTheme();
+  const { user, setUser } = useAuthStore();
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  // Fetch current user info on component mount
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const response = await getCurrentUser();
+        if (response.data?.user) {
+          setUser(response.data.user);
+        }
+      } catch (error) {
+        console.error('Failed to fetch current user:', error);
+      }
+    };
+
+    if (!user) {
+      fetchCurrentUser();
+    }
+  }, [user, setUser]);
+
+  const handleLogout = async () => {
+    try {
+      setIsLoggingOut(true);
+      await logout();
+      useAuthStore.setState({ user: null, isAuthenticated: false });
+      navigate('/admin/login');
+    } catch (error) {
+      console.error('Logout failed:', error);
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
 
   // Navigation items configuration
   const navItems = [
@@ -114,11 +149,11 @@ const Sidebar = () => {
           >
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">
-                AP
+                {user?.full_name ? user.full_name.charAt(0).toUpperCase() : 'U'}
               </div>
               <div className="text-left">
-                <p className="text-sm font-medium">Admin Platform</p>
-                <p className="text-xs text-gray-500">Quản lý nền tảng</p>
+                <p className="text-sm font-medium">{user?.full_name || 'Admin User'}</p>
+                <p className="text-xs text-gray-500">{user?.role || 'admin'}</p>
               </div>
             </div>
             <ChevronDown 
@@ -130,9 +165,13 @@ const Sidebar = () => {
           {/* Dropdown Menu */}
           {isProfileMenuOpen && (
             <div className="absolute bottom-full left-0 right-0 mb-2 bg-background border border-secondary/10 rounded-lg overflow-hidden p-2">
-              <button className="w-full flex items-center gap-3 px-4 py-3 text-text hover:bg-secondary/10 transition-all duration-200 rounded-lg">
+              <button 
+                onClick={handleLogout}
+                disabled={isLoggingOut}
+                className="w-full flex items-center gap-3 px-4 py-3 text-text hover:bg-secondary/10 transition-all duration-200 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              >
                 <LogOut size={18} className="text-text" />
-                <span className="text-sm font-medium text-text">Đăng xuất</span>
+                <span className="text-sm font-medium text-text">{isLoggingOut ? 'Đang đăng xuất...' : 'Đăng xuất'}</span>
               </button>
             </div>
           )}
