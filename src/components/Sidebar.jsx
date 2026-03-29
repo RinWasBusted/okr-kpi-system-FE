@@ -8,6 +8,12 @@ import {
   Settings,
   ChevronDown,
   LogOut,
+  Users,
+  Calendar,
+  Target,
+  BarChart3,
+  FileText,
+  BookOpen,
 } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
 import { logout, getCurrentUser } from '../services/auth';
@@ -42,9 +48,20 @@ const Sidebar = () => {
   const handleLogout = async () => {
     try {
       setIsLoggingOut(true);
+
+      // Lưu thông tin trước khi xóa
+      const companySlug = user?.company_slug;
+      const role = user?.role;
+
       await logout();
       useAuthStore.setState({ user: null, isAuthenticated: false });
-      navigate('/admin/login');
+
+      // Redirect dựa trên role
+      if (role === 'ADMIN_COMPANY' && companySlug) {
+        navigate(`/${companySlug}/login`);
+      } else {
+        navigate('/admin/login');
+      }
     } catch (error) {
       console.error('Logout failed:', error);
     } finally {
@@ -52,39 +69,98 @@ const Sidebar = () => {
     }
   };
 
-  // Navigation items configuration
-  const navItems = [
-    {
-      id: 1,
-      title: 'Dashboard',
-      icon: LayoutDashboard,
-      path: '/admin/dashboard',
-    },
-    {
-      id: 2,
-      title: 'Công ty',
-      icon: Building2,
-      path: '/admin/company',
-    },
-    {
-      id: 3,
-      title: 'Tài khoản Admin',
-      icon: Shield,
-      path: '/admin/admin-accounts',
-    },
-  ];
+  // Navigation items configuration based on role
+  const getNavItems = () => {
+    // ADMIN_COMPANY: sử dụng path /:company_slug/app/
+    if (user?.role === 'ADMIN_COMPANY') {
+      const companySlug = user?.company_slug || 'company';
+      return [
+        {
+          id: 1,
+          title: 'Dashboard',
+          icon: LayoutDashboard,
+          path: `/${companySlug}/app/dashboard`,
+        },
+        {
+          id: 2,
+          title: 'Đơn vị',
+          icon: Building2,
+          path: `/${companySlug}/app/units`,
+        },
+        {
+          id: 3,
+          title: 'Nhân sự',
+          icon: Users,
+          path: `/${companySlug}/app/hr`,
+        },
+        {
+          id: 4,
+          title: 'Chu kỳ',
+          icon: Calendar,
+          path: `/${companySlug}/app/cycles`,
+        },
+        {
+          id: 5,
+          title: 'OKR',
+          icon: Target,
+          path: `/${companySlug}/app/okr`,
+        },
+        {
+          id: 6,
+          title: 'KPI',
+          icon: BarChart3,
+          path: `/${companySlug}/app/kpi`,
+        },
+        {
+          id: 7,
+          title: 'KPI Dictionary',
+          icon: BookOpen,
+          path: `/${companySlug}/app/kpi-dictionary`,
+        },
+        {
+          id: 8,
+          title: 'Báo cáo',
+          icon: FileText,
+          path: `/${companySlug}/app/reports`,
+        },
+      ];
+    }
+
+    // ADMIN: sử dụng path /admin/
+    return [
+      {
+        id: 1,
+        title: 'Dashboard',
+        icon: LayoutDashboard,
+        path: '/admin/dashboard',
+      },
+      {
+        id: 2,
+        title: 'Công ty',
+        icon: Building2,
+        path: '/admin/company',
+      },
+      {
+        id: 3,
+        title: 'Tài khoản Admin',
+        icon: Shield,
+        path: '/admin/admin-accounts',
+      },
+    ];
+  };
+
+  const navItems = getNavItems();
 
   const handleNavClick = (path) => {
     navigate(path);
   };
 
   const isActive = (path) => {
-    return location.pathname === path;
+    return location.pathname === path || location.pathname.startsWith(path + '/');
   };
 
   const handleThemeToggle = () => {
     setTheme(theme === 'light' ? 'dark' : 'light');
-    localStorage.setItem('theme', theme === 'light' ? 'dark' : 'light');
   }
 
   return (

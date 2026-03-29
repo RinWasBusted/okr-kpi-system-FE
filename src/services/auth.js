@@ -4,13 +4,18 @@ import axiosClient from '../utils/axios';
  * Login with email and password
  * @param {string} email - User email
  * @param {string} password - User password (min 6 characters)
+ * @param {string} [company_slug] - Optional company slug for non-admin login
  * @returns {Promise<Object>} Login response with user data
  *   - success: boolean
  *   - message: string
  *   - data: { user: { id, full_name, email, role, company_id, unit_id, created_at } }
  */
-export const login = async (email, password) => {
-  const response = await axiosClient.post('/auth/login', { email, password });
+export const login = async (email, password, company_slug = null) => {
+  const payload = { email, password };
+  if (company_slug) {
+    payload.company_slug = company_slug;
+  }
+  const response = await axiosClient.post('/auth/login', payload);
   return response.data;
 };
 

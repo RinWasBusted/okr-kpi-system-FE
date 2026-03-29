@@ -2,10 +2,15 @@ import { createBrowserRouter, Navigate } from "react-router-dom";
 import App from '../App.jsx';
 import Login from "../pages/auth/login.jsx";
 import AdminPage from "../pages/admin/adminPage.jsx";
-import Dashboard from "../pages/admin/dashboard/Dashboard.jsx";
-import CompanyPage from "../pages/admin/company/CompanyPage.jsx";
+import AdminDashboard from "../pages/admin/dashboard/Dashboard.jsx";
+import AdminCompanyPage from "../pages/admin/company/CompanyPage.jsx";
 import ProtectedRoute from "../components/ProtectedRoute.jsx";
-import SettingPage from "../pages/admin/setting/SettingPage.jsx";
+import AdminSettingPage from "../pages/admin/setting/SettingPage.jsx";
+
+import AppPage from "../pages/app/AppPage.jsx";
+import Dashboard from "../pages/app/Dashboard/Dashboard.jsx";
+import UnitPage from "../pages/app/Units/UnitPage.jsx";
+import UnitDetailPage from "../pages/app/Units/UnitDetailPage.jsx";
 
 const router = createBrowserRouter([
     {
@@ -26,11 +31,11 @@ const router = createBrowserRouter([
             },
             {
                 path: "dashboard",
-                element: <Dashboard />
+                element: <AdminDashboard />
             },
             {
                 path: "company",
-                element: <AdminPage />
+                element: <AdminCompanyPage />
             },
             {
                 path: "admin-accounts",
@@ -38,11 +43,33 @@ const router = createBrowserRouter([
             },
             {
                 path: "company/:companyInfo",
-                element: <CompanyPage />
+                element: <AdminCompanyPage />
             },
             {
                 path: "setting",
-                element: <SettingPage />
+                element: <AdminSettingPage />
+            }
+        ]
+    },
+    {
+        path: "/:company_slug/app",
+        element: <AppPage />,
+        children: [
+            {
+                index: true,
+                element: <Navigate to="/:company_slug/app/dashboard" replace />
+            },
+            {
+                path: "dashboard",
+                element: <Dashboard />
+            },
+            {
+                path: "units",
+                element: <UnitPage />
+            },
+            {
+                path: "units/:unitId",
+                element: <UnitDetailPage />
             }
         ]
     },
