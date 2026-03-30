@@ -1,19 +1,25 @@
-import { ChevronRight, Building2, Users, Shield, CheckCircle, Loader } from 'lucide-react';
+import { Building2, Users, Shield, CheckCircle, Loader, Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { getCompanies } from '../../../services/company';
+import CompanyCard from './components/CompanyCard';
+import CompanyCardSkeleton from './components/CompanyCardSkeleton';
 
 const Dashboard = () => {
-  const [filters, setFilters] = useState({
+  // Fetch params - chỉ dùng để gọi API, không thay đổi khi filter
+  const [fetchParams] = useState({
     page: 1,
     per_page: 100,
   });
 
-  // Fetch companies using react-query
+  // Filter states - chỉ lọc ở FE, không trigger API call
+  const [searchQuery, setSearchQuery] = useState('');
+  const [planFilter, setPlanFilter] = useState('');
+
+  // Fetch companies using react-query - chỉ gọi 1 lần khi mount
   const { data: apiResponse, isLoading, error } = useQuery({
-    queryKey: ['companies', filters],
-    queryFn: () => getCompanies(filters),
+    queryKey: ['companies', fetchParams],
+    queryFn: () => getCompanies(fetchParams),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
@@ -24,24 +30,35 @@ const Dashboard = () => {
       id: company.id,
       name: company.name,
       slug: company.slug,
-      employeeCount: company.employee_count,
-      adminCount: company.admin_count,
+      logo_url: company.logo_url,
+      ai_plan: company.ai_plan,
+      token_usage: company.token_usage || 0,
+      limit_usage: company.usage_limit || 0,
+      credit_cost: company.credit_cost || 0,
+      employee_count: company.employee_count || 0,
+      reset_date: company.reset_date,
       isActive: company.is_active,
     }));
   }, [apiResponse]);
 
-  // Sắp xếp companies - active trước, inactive sau
-  const sortedCompanies = useMemo(() => {
-    return [...companiesData].sort((a, b) => {
-      if (a.isActive === b.isActive) return 0;
-      return a.isActive ? -1 : 1;
-    });
-  }, [companiesData]);
+  // Filter companies ở phía FE
+  const filteredCompanies = useMemo(() => {
+    return companiesData.filter((company) => {
+      // Filter by search query (tên công ty)
+      const matchesSearch = searchQuery === '' ||
+        company.name.toLowerCase().includes(searchQuery.toLowerCase());
 
-  // Tính toán stats
+      // Filter by plan
+      const matchesPlan = planFilter === '' || company.ai_plan === planFilter;
+
+      return matchesSearch && matchesPlan;
+    });
+  }, [companiesData, searchQuery, planFilter]);
+
+  // Tính toán stats từ dữ liệu gốc (không filter)
   const stats = {
     totalCompanies: companiesData.length,
-    totalEmployees: companiesData.reduce((sum, c) => sum + c.employeeCount, 0),
+    totalEmployees: companiesData.reduce((sum, c) => sum + (c.employee_count || 0), 0),
     totalAdminCompanies: companiesData.length,
     activePercentage: companiesData.length > 0
       ? Math.round(
@@ -116,26 +133,77 @@ const Dashboard = () => {
         />
       </div>
 
-      {/* Company List */}
-      <div className="space-y-4">
-        <h2 className="text-xl font-bold text-text">Danh sách công ty</h2>
+      {/* Filters Section */}
+      <div className="bg-background rounded-lg border border-secondary/20 p-4">
+        <div className="flex flex-col md:flex-row gap-4">
+          {/* Search Input */}
+          <div className="flex-1 relative">
+            <Search
+              size={18}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary"
+            />
+            <input
+              type="text"
+              placeholder="Tìm kiếm công ty..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-secondary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+            />
+          </div>
 
-        {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader size={32} className="text-primary animate-spin" />
+          {/* Plan Filter */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-secondary whitespace-nowrap">Gói:</span>
+            <div className="flex gap-2">
+              {[
+                { key: '', label: 'Tất cả' },
+                { key: 'PAY_AS_YOU_GO', label: 'Enterprise' },
+                { key: 'SUBSCRIPTION', label: 'Professional' },
+                { key: 'FREE', label: 'Starter' },
+              ].map((plan) => (
+                <button
+                  key={plan.key}
+                  onClick={() => setPlanFilter(plan.key)}
+                  className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                    planFilter === plan.key
+                      ? 'bg-primary text-white'
+                      : 'bg-secondary/10 text-secondary hover:bg-secondary/20'
+                  }`}
+                >
+                  {plan.label}
+                </button>
+              ))}
+            </div>
           </div>
-        ) : sortedCompanies.length > 0 ? (
-          <div className="space-y-3">
-            {sortedCompanies.map((company) => (
-              <CompanyCard key={company.id} company={company} />
-            ))}
-          </div>
-        ) : (
-          <div className="bg-gray-50 rounded-lg border border-secondary/20 p-6 text-center">
-            <p className="text-secondary">Không có công ty nào</p>
-          </div>
-        )}
+        </div>
       </div>
+
+      {/* Companies Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {isLoading
+          ? // Loading skeletons
+            Array.from({ length: 6 }).map((_, index) => (
+              <CompanyCardSkeleton key={index} />
+            ))
+          : // Company cards (filtered)
+            filteredCompanies.map((company) => (
+              <CompanyCard
+                key={company.id}
+                company={company}
+                onClick={() => {
+                  // Navigate to company detail or handle click
+                  console.log('Clicked company:', company.id);
+                }}
+              />
+            ))}
+      </div>
+
+      {/* Empty state */}
+      {!isLoading && filteredCompanies.length === 0 && (
+        <div className="text-center py-12 bg-background rounded-lg border border-secondary/20">
+          <p className="text-secondary">Không tìm thấy công ty nào</p>
+        </div>
+      )}
     </div>
   );
 };
@@ -158,65 +226,6 @@ const StatCard = ({ title, value, icon: Icon, bgColor, iconColor, isLoading }) =
         </div>
       </div>
     </div>
-  );
-};
-
-// Company Card Component
-const CompanyCard = ({ company }) => {
-  const navigate = useNavigate();
-
-  const handleCardClick = () => {
-    navigate(`/admin/company/${company.slug}-${company.id}`);
-  };
-
-  return (
-    <button
-      onClick={handleCardClick}
-      className="w-full bg-background rounded-lg border border-secondary/20 p-6 shadow-sm hover:shadow-md transition-shadow duration-200 text-left"
-    >
-      <div className="flex items-center justify-between">
-        <div className="flex items-start gap-4 flex-1">
-          {/* Company Icon */}
-          <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center shrink-0">
-            <Building2 size={24} className="text-primary" />
-          </div>
-
-          {/* Company Info */}
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <h3 className="text-base font-semibold text-text">{company.name}</h3>
-              <span
-                className={`px-2 py-1 rounded text-xs font-medium ${
-                  company.isActive
-                    ? 'bg-green-100 text-green-700'
-                    : 'bg-red-100 text-red-700'
-                }`}
-              >
-                {company.isActive ? 'Hoạt động' : 'Không hoạt động'}
-              </span>
-            </div>
-            <p className="text-sm text-secondary mt-1">{company.slug}</p>
-          </div>
-
-          {/* Stats */}
-          <div className="flex gap-8 text-center">
-            <div>
-              <p className="text-lg font-bold text-text">{company.employeeCount}</p>
-              <p className="text-xs text-secondary">nhân viên</p>
-            </div>
-            <div>
-              <p className="text-lg font-bold text-text">{company.adminCount}</p>
-              <p className="text-xs text-secondary">admin</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Arrow */}
-        <div className="p-2 hover:bg-secondary/10 rounded-lg transition-all duration-200 ml-4">
-          <ChevronRight size={20} className="text-secondary" />
-        </div>
-      </div>
-    </button>
   );
 };
 

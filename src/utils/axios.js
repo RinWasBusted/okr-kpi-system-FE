@@ -70,6 +70,11 @@ axiosClient.interceptors.response.use(
                 const pathSegments = currentPath.split('/').filter(Boolean);
                 const companySlug = pathSegments[0];
 
+                if(pathSegments[1] === 'login') {
+                    // Already on login page, just reject
+                    return;
+                }
+
                 // Check if we're in admin area or company area
                 if (currentPath.startsWith('/admin')) {
                     window.location.href = '/admin/login';
