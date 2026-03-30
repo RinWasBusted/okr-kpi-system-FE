@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
   Moon,
   Sun,
@@ -12,6 +11,7 @@ import {
 import { getCurrentUser, refreshToken, logout } from '../services/auth';
 import { useTheme } from '../hooks/useTheme';
 import { useAuthStore } from '../hooks/useAuth';
+import { useQuery } from '@tanstack/react-query';
 
 // Mock data cho notifications
 const MOCK_NOTIFICATIONS = [
@@ -40,7 +40,7 @@ const MOCK_NOTIFICATIONS = [
 
 const Header = () => {
   const navigate = useNavigate();
-  const location = useLocation();
+  const { company_slug } = useParams();
   const { theme, setTheme } = useTheme();
   const { setUser, clearAuth } = useAuthStore();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
@@ -48,50 +48,18 @@ const Header = () => {
   const userMenuRef = useRef(null);
   const notiMenuRef = useRef(null);
 
+
   // Lấy company_slug từ URL nếu có
   const getCompanySlug = () => {
-    const pathParts = location.pathname.split('/');
-    if (pathParts[1] && pathParts[1] !== 'admin') {
-      return pathParts[1];
-    }
-    return null;
+    return company_slug || null;
   };
 
-  // Fetch current user với React Query
+  // Fetch current user với React Query - chỉ gọi 1 lần khi mount
   const { data: userData, isLoading: isUserLoading } = useQuery({
     queryKey: ['currentUser'],
-    queryFn: async () => {
-      try {
-        const response = await getCurrentUser();
-        if (response.data?.user) {
-          setUser(response.data.user);
-          return response.data.user;
-        }
-        return null;
-      } catch (error) {
-        // Thử refresh token
-        try {
-          await refreshToken();
-          // Thử lại sau khi refresh
-          const retryResponse = await getCurrentUser();
-          if (retryResponse.data?.user) {
-            setUser(retryResponse.data.user);
-            return retryResponse.data.user;
-          }
-        } catch (refreshError) {
-          // Refresh cũng thất bại -> chưa đăng nhập
-          clearAuth();
-          const companySlug = getCompanySlug();
-          if (companySlug) {
-            navigate(`/${companySlug}/login`);
-          } else {
-            navigate('/admin/login');
-          }
-        }
-        throw error;
-      }
-    },
+    queryFn: getCurrentUser,
     retry: false,
+    staleTime: 5 * 60 * 1000, // Cache 5 phút
   });
 
   // Đóng dropdown khi click ra ngoài
@@ -138,9 +106,12 @@ const Header = () => {
     return name.charAt(0).toUpperCase();
   };
 
-  // Placeholder loading cho avatar
-  const AvatarPlaceholder = () => (
-    <div className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-secondary/20 animate-pulse" />
+  // Skeleton/Placeholder component cho user info
+  const UserInfoPlaceholder = () => (
+    <div className="px-4 py-3 border-b border-secondary/20">
+      <div className="h-4 bg-secondary/20 rounded w-3/4 mb-2 animate-pulse" />
+      <div className="h-3 bg-secondary/20 rounded w-1/2 animate-pulse" />
+    </div>
   );
 
   return (
@@ -215,27 +186,36 @@ const Header = () => {
 
         {/* User Avatar */}
         <div className="relative" ref={userMenuRef}>
-          {isUserLoading ? (
-            <AvatarPlaceholder />
-          ) : (
-            <button
-              onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-              className="flex items-center gap-2 p-1 rounded-lg hover:bg-secondary/10 transition-colors"
-            >
-              <div className="w-9 h-9 md:w-10 md:h-10 bg-primary rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                {getInitials(userData?.full_name)}
-              </div>
-            </button>
-          )}
+          <button
+            onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+            className="flex items-center gap-2 p-1 rounded-lg hover:bg-secondary/10 transition-colors"
+          >
+            <div className="w-9 h-9 md:w-10 md:h-10 bg-primary rounded-full flex items-center justify-center text-white font-semibold text-sm">
+              {isUserLoading ? (
+                <div className="w-5 h-5 bg-white/30 rounded-full animate-pulse" />
+              ) : (
+                getInitials(userData?.data?.user?.full_name || userData?.full_name)
+              )}
+            </div>
+          </button>
 
           {/* User Dropdown */}
-          {isUserMenuOpen && userData && (
+          {isUserMenuOpen && (
             <div className="absolute right-0 mt-2 w-64 bg-background border border-secondary/20 rounded-lg shadow-lg overflow-hidden">
               {/* User Info Header */}
-              <div className="px-4 py-3 border-b border-secondary/20">
-                <p className="font-semibold text-text">{userData.full_name}</p>
-                <p className="text-sm text-secondary">{userData.email}</p>
-              </div>
+              {isUserLoading ? (
+                <UserInfoPlaceholder />
+              ) : userData ? (
+                <div className="px-4 py-3 border-b border-secondary/20">
+                  <p className="font-semibold text-text">{userData?.data?.user?.full_name || userData?.full_name}</p>
+                  <p className="text-sm text-secondary">{userData?.data?.user?.email || userData?.email}</p>
+                </div>
+              ) : (
+                <div className="px-4 py-3 border-b border-secondary/20">
+                  <p className="font-semibold text-text">User</p>
+                  <p className="text-sm text-secondary">Not available</p>
+                </div>
+              )}
 
               {/* Menu Items */}
               <div className="py-1">

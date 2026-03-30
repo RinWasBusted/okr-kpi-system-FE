@@ -140,12 +140,6 @@ const Sidebar = () => {
         icon: Building2,
         path: '/admin/company',
       },
-      {
-        id: 3,
-        title: 'Tài khoản Admin',
-        icon: Shield,
-        path: '/admin/admin-accounts',
-      },
     ];
   };
 
@@ -166,7 +160,7 @@ const Sidebar = () => {
   return (
     <aside className="w-60 h-screen bg-background flex flex-col border-r border-secondary/20">
       {/* Header */}
-      <div className="p-6 border-b border-secondary/20">
+      <div className="px-6 flex flex-col justify-center border-b border-secondary/20 h-16">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
             <span className="text-white font-bold text-lg">O</span>
@@ -199,60 +193,6 @@ const Sidebar = () => {
           );
         })}
       </nav>
-
-      {/* Bottom Section */}
-      <div className="border-t border-secondary/20 p-3 space-y-2">
-        {/* Dark Mode Toggle */}
-        <button
-          onClick={handleThemeToggle}
-          className="w-full cursor-pointer flex  items-center gap-3 px-4 py-3 rounded-lg text-text hover:bg-secondary/10 transition-all duration-200"
-        >
-          <Moon size={20} />
-          <span className="text-sm font-medium">Chế độ tối</span>
-        </button>
-
-        {/* Settings */}
-        <button className="w-full cursor-pointer flex items-center gap-3 px-4 py-3 rounded-lg text-text hover:bg-secondary/10 transition-all duration-200">
-          <Settings size={20} />
-          <span className="text-sm font-medium">Cài đặt</span>
-        </button>
-
-        {/* Profile Bar */}
-        <div className="relative">
-          <button 
-            onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-            className="w-full cursor-pointer flex items-center justify-between px-4 py-3 rounded-lg text-text hover:bg-secondary/10 transition-all duration-200"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">
-                {user?.full_name ? user.full_name.charAt(0).toUpperCase() : 'U'}
-              </div>
-              <div className="text-left">
-                <p className="text-sm font-medium">{user?.full_name || 'Admin User'}</p>
-                <p className="text-xs text-gray-500">{user?.role || 'admin'}</p>
-              </div>
-            </div>
-            <ChevronDown 
-              size={16} 
-              className={`text-gray-400 transition-transform duration-300 ${isProfileMenuOpen ? 'rotate-180' : ''}`} 
-            />
-          </button>
-
-          {/* Dropdown Menu */}
-          {isProfileMenuOpen && (
-            <div className="absolute bottom-full left-0 right-0 mb-2 bg-background border border-secondary/10 rounded-lg overflow-hidden p-2">
-              <button 
-                onClick={handleLogout}
-                disabled={isLoggingOut}
-                className="w-full flex items-center gap-3 px-4 py-3 text-text hover:bg-secondary/10 transition-all duration-200 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <LogOut size={18} className="text-text" />
-                <span className="text-sm font-medium text-text">{isLoggingOut ? 'Đang đăng xuất...' : 'Đăng xuất'}</span>
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
     </aside>
   );
 };

@@ -1,215 +1,370 @@
-import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
-  Edit,
-  Power,
-  Loader,
-  AlertCircle,
-  Mail,
-  User,
-  ArrowLeft,
+  Building2,
+  Plus,
+  Search,
+  Filter,
+  CheckCircle,
+  Users,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
-import { getCompanyById, updateCompany, getCompanyStats } from '../../../services/company';
+import { getCompanies } from '../../../services/company';
+import { toast } from 'react-toastify';
+import StatCard from './components/StatCard';
+import CompanyRow from './components/CompanyRow';
+import CompanyCard from './components/CompanyCard';
+import PlaceholderRow from './components/PlaceholderRow';
+import PlaceholderCard from './components/PlaceholderCard';
+import CompanyDetailModal from './components/CompanyDetailModal';
 import EditCompanyModal from './components/EditCompanyModal';
-import ConfirmModal from './components/ConfirmModal';
-import AdminList from './components/AdminList';
+import ManageCompanyModal from './components/ManageCompanyModal';
+import SuspendCompanyModal from './components/SuspendCompanyModal';
+import ActivateCompanyModal from './components/ActivateCompanyModal';
+import AddCompanyModal from './components/AddCompanyModal';
 
 const CompanyPage = () => {
-  const { companyInfo } = useParams();
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'active' | 'inactive'
+  const [selectedCompany, setSelectedCompany] = useState(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
-  const [confirmAction, setConfirmAction] = useState(null); // 'activate' or 'deactivate'
+  const [isManageModalOpen, setIsManageModalOpen] = useState(false);
+  const [isSuspendModalOpen, setIsSuspendModalOpen] = useState(false);
+  const [isActivateModalOpen, setIsActivateModalOpen] = useState(false);
+  const [isAddCompanyModalOpen, setIsAddCompanyModalOpen] = useState(false);
 
-  // Extract company_id from companyInfo (format: slug-id)
-  const companyId = companyInfo ? parseInt(companyInfo.split('-').pop(), 10) : null;
-
-  // Fetch company details with stats in single call
-  const { data: companyResponse, isLoading: companyLoading, error: companyError } = useQuery({
-    queryKey: ['companyStats', companyId],
-    queryFn: () => getCompanyStats(companyId),
-    enabled: !!companyId,
-  });
-
-  // Update company mutation
-  const updateMutation = useMutation({
-    mutationFn: (data) => updateCompany(companyId, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['companyStats', companyId] });
-      setIsConfirmModalOpen(false);
-      setConfirmAction(null);
+  // Fetch companies - chỉ gọi 1 lần
+  const { data: companiesResponse, isLoading: isCompaniesLoading } = useQuery({
+    queryKey: ['companies'],
+    queryFn: async () => {
+      try {
+        // Lấy toàn bộ dữ liệu (không phân trang ở API)
+        const response = await getCompanies({ per_page: 1000 });
+        return response;
+      } catch (error) {
+        toast.error(error.response?.data?.message || 'Failed to load companies');
+        throw error;
+      }
     },
   });
 
-  // Extract company and stats from response data
-  const company = companyResponse?.data;
-  const stats = companyResponse?.data;
+  const allCompanies = companiesResponse?.data || [];
 
-  const handleToggleStatus = () => {
-    setConfirmAction(company?.is_active ? 'deactivate' : 'activate');
-    setIsConfirmModalOpen(true);
-  };
+  // Filter và search ở FE
+  const filteredCompanies = useMemo(() => {
+    let result = [...allCompanies];
 
-  const handleConfirmStatusChange = () => {
-    const newStatus = confirmAction === 'activate';
-    updateMutation.mutate({ is_active: newStatus });
-  };
+    // Filter theo status
+    if (statusFilter === 'active') {
+      result = result.filter((c) => c.is_active);
+    } else if (statusFilter === 'inactive') {
+      result = result.filter((c) => !c.is_active);
+    }
 
-  if (companyError) {
-    return (
-      <div className="space-y-6">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-          <div className="flex items-center gap-3">
-            <AlertCircle size={24} className="text-red-600" />
-            <div>
-              <p className="text-red-800 font-semibold">Lỗi khi tải dữ liệu công ty</p>
-              <p className="text-red-600 text-sm mt-1">{companyError.message}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+    // Search theo tên hoặc slug
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      result = result.filter(
+        (c) =>
+          c.name?.toLowerCase().includes(query) ||
+          c.slug?.toLowerCase().includes(query)
+      );
+    }
 
-  if (companyLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader size={32} className="text-primary animate-spin" />
-      </div>
-    );
-  }
+    return result;
+  }, [allCompanies, statusFilter, searchQuery]);
+
+  // Phân trang ở FE
+  const perPage = 10;
+  const totalCompanies = filteredCompanies.length;
+  const totalPages = Math.ceil(totalCompanies / perPage) || 1;
+  const paginatedCompanies = useMemo(() => {
+    const start = (currentPage - 1) * perPage;
+    const end = start + perPage;
+    return filteredCompanies.slice(start, end);
+  }, [filteredCompanies, currentPage]);
+
+  const companies = paginatedCompanies;
+
+  // Calculate stats for display
+  const activeCompanies = allCompanies.filter((c) => c.is_active).length;
 
   return (
     <div className="space-y-6">
-      {/* Back Button */}
-      <button
-        onClick={() => navigate(-1)}
-        className="flex items-center gap-2 px-3 py-2 text-secondary hover:text-text hover:bg-secondary/10 rounded-lg transition-colors duration-200"
-      >
-        <ArrowLeft size={20} />
-        Quay lại
-      </button>
-
-      {/* Header with Edit Button */}
-      <div className="flex items-center justify-between">
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-text mb-2">Chi tiết công ty</h1>
-          <p className="text-secondary">{company?.name}</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-text">
+            Companies & Subscriptions
+          </h1>
+          <p className="text-secondary mt-1">
+            Manage tenant companies and their subscriptions
+          </p>
         </div>
         <button
-          onClick={() => setIsEditModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors duration-200"
+          onClick={() => setIsAddCompanyModalOpen(true)}
+          className="flex items-center justify-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
         >
-          <Edit size={18} />
-          Chỉnh sửa
+          <Plus size={18} />
+          <span className="hidden sm:inline">Add New Company</span>
+          <span className="sm:hidden">Add</span>
         </button>
       </div>
 
-      {/* Company Info Card */}
-      <div className="bg-background rounded-lg border border-secondary/20 shadow-sm p-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          {/* Company Name */}
-          <div>
-            <p className="text-sm text-secondary mb-1">Tên công ty</p>
-            <p className="text-lg font-semibold text-text">{company?.name}</p>
-          </div>
-
-          {/* Slug */}
-          <div>
-            <p className="text-sm text-secondary mb-1">Slug</p>
-            <p className="text-lg font-semibold text-text font-mono">{company?.slug}</p>
-          </div>
-
-          {/* Status */}
-          <div>
-            <p className="text-sm text-secondary mb-1">Trạng thái</p>
-            <div className="flex items-center gap-2">
-              <span
-                className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
-                  company?.is_active
-                    ? 'bg-green-100 text-green-700'
-                    : 'bg-red-100 text-red-700'
-                }`}
-              >
-                {company?.is_active ? 'Hoạt động' : 'Không hoạt động'}
-              </span>
-              <button
-                onClick={handleToggleStatus}
-                disabled={updateMutation.isPending}
-                className={`p-1.5 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
-                  company?.is_active
-                    ? 'text-red-600 hover:bg-red-50'
-                    : 'text-green-600 hover:bg-green-50'
-                }`}
-                title={company?.is_active ? 'Dừng hoạt động' : 'Kích hoạt'}
-              >
-                {updateMutation.isPending ? (
-                  <Loader size={16} className="animate-spin" />
-                ) : (
-                  <Power size={16} />
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Stats Grid */}
-        {stats && (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-6 border-t border-secondary/20">
-            <StatItem label="Admin" value={stats?.admin_count || 0} />
-            <StatItem label="Nhân viên" value={stats?.employee_count || 0} />
-            <StatItem label="Chu kỳ hoạt động" value={stats?.active_cycles || 0} />
-            <StatItem label="Tổng mục tiêu" value={stats?.total_objectives || 0} />
-            <StatItem label="Tiến độ OKR" value={`${Math.round(stats?.avg_okr_progress || 0)}%`} />
-            <StatItem label="KPI gán" value={stats?.total_kpi_assignments || 0} />
-          </div>
-        )}
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard
+          title="Total Companies"
+          value={isCompaniesLoading ? '-' : allCompanies.length}
+          icon={Building2}
+          color="primary"
+        />
+        <StatCard
+          title="Active Companies"
+          value={isCompaniesLoading ? '-' : activeCompanies}
+          icon={CheckCircle}
+          color="green"
+        />
+        <StatCard
+          title="Total Users"
+          value="-"
+          icon={Users}
+          color="blue"
+        />
+        <StatCard
+          title="Enterprise Plans"
+          value="-"
+          icon={Building2}
+          color="orange"
+        />
       </div>
 
-      {/* Admin List */}
-      <AdminList companyId={company?.id} />
+      {/* Search Bar */}
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1 max-w-md">
+          <Search
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary"
+            size={18}
+          />
+          <input
+            type="text"
+            placeholder="Search companies..."
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="w-full pl-10 pr-4 py-2 border border-secondary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 text-text"
+          />
+        </div>
+        <div className="flex items-center gap-2 px-3 py-2 border border-secondary/20 rounded-lg text-text hover:bg-secondary/5 transition-colors">
+          <Filter size={18} />
+          <select
+            value={statusFilter}
+            onChange={(e) => {
+              setStatusFilter(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="bg-transparent border-none outline-none text-sm cursor-pointer text-text"
+          >
+            <option value="all">All Status</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
+      </div>
 
-      {/* Edit Modal */}
-      {isEditModalOpen && (
-        <EditCompanyModal
-          company={company}
-          onClose={() => setIsEditModalOpen(false)}
-          onSuccess={() => setIsEditModalOpen(false)}
-        />
+      {/* Companies List - Header luôn hiển thị */}
+      <div className="bg-background border border-secondary/20 rounded-lg overflow-hidden">
+        {/* Desktop Table - Header luôn hiển thị */}
+        <div className="hidden md:block overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-secondary/5 border-b border-secondary/20">
+              <tr>
+                <th className="text-left px-6 py-4 text-sm font-semibold text-text">
+                  Company
+                </th>
+                <th className="text-left px-6 py-4 text-sm font-semibold text-text">
+                  Status
+                </th>
+                <th className="text-left px-6 py-4 text-sm font-semibold text-text">
+                  Plan
+                </th>
+                <th className="text-center px-6 py-4 text-sm font-semibold text-text">
+                  Admins
+                </th>
+                <th className="text-center px-6 py-4 text-sm font-semibold text-text">
+                  Users
+                </th>
+                <th className="text-right px-6 py-4 text-sm font-semibold text-text">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-secondary/10">
+              {isCompaniesLoading ? (
+                [...Array(5)].map((_, i) => <PlaceholderRow key={i} />)
+              ) : filteredCompanies.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-12 text-center">
+                    <Building2 size={48} className="mx-auto text-secondary/40 mb-4" />
+                    <p className="text-secondary">No companies found</p>
+                  </td>
+                </tr>
+              ) : (
+                companies.map((company) => (
+                  <CompanyRow
+                    key={company.id}
+                    company={company}
+                    onViewDetail={() => {
+                      setSelectedCompany(company);
+                      setIsDetailModalOpen(true);
+                    }}
+                    onManage={() => {
+                      setSelectedCompany(company);
+                      setIsManageModalOpen(true);
+                    }}
+                    onEdit={() => {
+                      setSelectedCompany(company);
+                      setIsEditModalOpen(true);
+                    }}
+                    onSuspend={() => {
+                      setSelectedCompany(company);
+                      setIsSuspendModalOpen(true);
+                    }}
+                  />
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Mobile Cards */}
+        <div className="md:hidden divide-y divide-secondary/10">
+          {isCompaniesLoading ? (
+            [...Array(3)].map((_, i) => <PlaceholderCard key={i} />)
+          ) : filteredCompanies.length === 0 ? (
+            <div className="text-center py-12">
+              <Building2 size={48} className="mx-auto text-secondary/40 mb-4" />
+              <p className="text-secondary">No companies found</p>
+            </div>
+          ) : (
+            companies.map((company) => (
+              <CompanyCard
+                key={company.id}
+                company={company}
+                onViewDetail={() => {
+                  setSelectedCompany(company);
+                  setIsDetailModalOpen(true);
+                }}
+                onManage={() => {
+                  setSelectedCompany(company);
+                  setIsManageModalOpen(true);
+                }}
+              />
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* Pagination */}
+      {!isCompaniesLoading && totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-secondary">
+            Showing {(currentPage - 1) * perPage + 1} to{' '}
+            {Math.min(currentPage * perPage, totalCompanies)} of{' '}
+            {totalCompanies} entries
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="p-2 border border-secondary/20 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-secondary/5"
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <span className="px-3 py-1 text-sm text-text">
+              {currentPage} / {totalPages}
+            </span>
+            <button
+              onClick={() =>
+                setCurrentPage((p) => Math.min(totalPages, p + 1))
+              }
+              disabled={currentPage === totalPages}
+              className="p-2 border border-secondary/20 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-secondary/5"
+            >
+              <ChevronRight size={18} />
+            </button>
+          </div>
+        </div>
       )}
 
-      {/* Confirm Modal */}
-      {isConfirmModalOpen && (
-        <ConfirmModal
-          title={
-            confirmAction === 'activate'
-              ? 'Khởi động công ty?'
-              : 'Dừng hoạt động công ty?'
-          }
-          message={
-            confirmAction === 'activate'
-              ? 'Công ty sẽ được khởi động, các nhân viên có thể đăng nhập lại.'
-              : 'Tất cả nhân viên sẽ mất quyền truy cập. Hành động này không thể hoàn tác ngay lập tức.'
-          }
-          isLoading={updateMutation.isPending}
-          onConfirm={handleConfirmStatusChange}
-          onCancel={() => {
-            setIsConfirmModalOpen(false);
-            setConfirmAction(null);
+      {/* Modals */}
+      {isDetailModalOpen && selectedCompany && (
+        <CompanyDetailModal
+          company={selectedCompany}
+          onClose={() => setIsDetailModalOpen(false)}
+        />
+      )}
+      {isEditModalOpen && selectedCompany && (
+        <EditCompanyModal
+          company={selectedCompany}
+          onClose={() => setIsEditModalOpen(false)}
+          onSuccess={() => {
+            setIsEditModalOpen(false);
+            setSelectedCompany(null);
           }}
+        />
+      )}
+      {isManageModalOpen && selectedCompany && (
+        <ManageCompanyModal
+          company={selectedCompany}
+          onClose={() => setIsManageModalOpen(false)}
+          onEdit={() => {
+            setIsManageModalOpen(false);
+            setIsEditModalOpen(true);
+          }}
+          onSuspend={() => {
+            setIsManageModalOpen(false);
+            setIsSuspendModalOpen(true);
+          }}
+          onActivate={() => {
+            setIsManageModalOpen(false);
+            setIsActivateModalOpen(true);
+          }}
+        />
+      )}
+      {isSuspendModalOpen && selectedCompany && (
+        <SuspendCompanyModal
+          company={selectedCompany}
+          onClose={() => setIsSuspendModalOpen(false)}
+          onSuccess={() => {
+            setIsSuspendModalOpen(false);
+            setSelectedCompany(null);
+          }}
+        />
+      )}
+      {isActivateModalOpen && selectedCompany && (
+        <ActivateCompanyModal
+          company={selectedCompany}
+          onClose={() => setIsActivateModalOpen(false)}
+          onSuccess={() => {
+            setIsActivateModalOpen(false);
+            setSelectedCompany(null);
+          }}
+        />
+      )}
+      {isAddCompanyModalOpen && (
+        <AddCompanyModal
+          onClose={() => setIsAddCompanyModalOpen(false)}
+          onSuccess={() => setIsAddCompanyModalOpen(false)}
         />
       )}
     </div>
   );
 };
-
-const StatItem = ({ label, value }) => (
-  <div className="text-center">
-    <p className="text-2xl font-bold text-primary">{value}</p>
-    <p className="text-xs text-secondary mt-1">{label}</p>
-  </div>
-);
 
 export default CompanyPage;

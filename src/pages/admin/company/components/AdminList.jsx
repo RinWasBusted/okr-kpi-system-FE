@@ -1,59 +1,69 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Mail, Loader, Edit, Power } from 'lucide-react';
 import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Mail, Loader, Edit, Power, Trash2 } from 'lucide-react';
+import { toast } from 'react-toastify';
 import { getCompanyAdmins, updateCompanyAdmin } from '../../../../services/adminCompany';
-import ConfirmModal from './ConfirmModal';
 import EditAdminModal from './EditAdminModal';
+import DeleteAdminModal from './DeleteAdminModal';
 
 const AdminList = ({ companyId }) => {
   const queryClient = useQueryClient();
-  const [confirmAdminId, setConfirmAdminId] = useState(null);
-  const [confirmAction, setConfirmAction] = useState(null);
-  const [editingAdminId, setEditingAdminId] = useState(null);
+  const [editingAdmin, setEditingAdmin] = useState(null);
+  const [deletingAdmin, setDeletingAdmin] = useState(null);
 
   // Fetch company admins
   const { data: adminsResponse, isLoading } = useQuery({
     queryKey: ['companyAdmins', companyId],
-    queryFn: () => getCompanyAdmins(companyId),
+    queryFn: async () => {
+      try {
+        const response = await getCompanyAdmins(companyId);
+        return response;
+      } catch (error) {
+        toast.error(error.response?.data?.message || 'Failed to load admins');
+        throw error;
+      }
+    },
     enabled: !!companyId,
   });
 
   // Mutation for updating admin status
   const updateAdminStatusMutation = useMutation({
-    mutationFn: async (adminId) => {
-      const admin = admins.find((a) => a.id === adminId);
-      return updateCompanyAdmin(companyId, adminId, { is_active: !admin?.is_active });
+    mutationFn: async ({ adminId, isActive }) => {
+      return updateCompanyAdmin(companyId, adminId, { is_active: isActive });
     },
-    onSuccess: () => {
+    onSuccess: (response) => {
+      toast.success(response.message || 'Admin status updated successfully');
       queryClient.invalidateQueries({ queryKey: ['companyAdmins', companyId] });
-      setConfirmAdminId(null);
-      setConfirmAction(null);
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || 'Failed to update admin status');
     },
   });
 
   const admins = adminsResponse?.data || [];
 
-  const handleToggleAdminStatus = (adminId) => {
-    const admin = admins.find((a) => a.id === adminId);
-    setConfirmAdminId(adminId);
-    setConfirmAction(admin?.is_active ? 'deactivate' : 'activate');
-  };
-
-  const handleConfirmAdminStatusChange = () => {
-    updateAdminStatusMutation.mutate(confirmAdminId);
+  const handleToggleAdminStatus = (admin) => {
+    const newStatus = !admin.is_active;
+    updateAdminStatusMutation.mutate({
+      adminId: admin.id,
+      isActive: newStatus,
+    });
   };
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <Loader size={32} className="text-primary animate-spin" />
+      <div className="space-y-4">
+        <h2 className="text-xl font-bold text-text">Company Administrators</h2>
+        <div className="flex items-center justify-center py-12">
+          <Loader size={32} className="text-primary animate-spin" />
+        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-bold text-text">Danh sách Admin</h2>
+      <h2 className="text-xl font-bold text-text">Company Administrators</h2>
 
       {admins.length > 0 ? (
         <div className="grid grid-cols-1 gap-4">
@@ -61,57 +71,49 @@ const AdminList = ({ companyId }) => {
             <AdminCard
               key={admin.id}
               admin={admin}
-              onEdit={() => setEditingAdminId(admin.id)}
-              onToggleStatus={() => handleToggleAdminStatus(admin.id)}
-              isLoading={updateAdminStatusMutation.isPending && confirmAdminId === admin.id}
+              onEdit={() => setEditingAdmin(admin)}
+              onToggleStatus={() => handleToggleAdminStatus(admin)}
+              onDelete={() => setDeletingAdmin(admin)}
+              isLoading={
+                updateAdminStatusMutation.isPending &&
+                updateAdminStatusMutation.variables?.adminId === admin.id
+              }
             />
           ))}
         </div>
       ) : (
-        <div className="bg-gray-50 rounded-lg border border-secondary/20 p-6 text-center">
-          <p className="text-secondary">Không có admin nào</p>
+        <div className="bg-secondary/5 rounded-lg border border-secondary/20 p-6 text-center">
+          <p className="text-secondary">No administrators found</p>
         </div>
       )}
 
-      {/* Confirm Modal */}
-      {confirmAdminId && (
-        <ConfirmModal
-          title={
-            confirmAction === 'activate'
-              ? 'Kích hoạt admin?'
-              : 'Vô hiệu hóa admin?'
-          }
-          message={
-            confirmAction === 'activate'
-              ? 'Admin sẽ có thể đăng nhập lại và quản lý công ty.'
-              : 'Admin sẽ mất quyền truy cập vào công ty này.'
-          }
-          isLoading={updateAdminStatusMutation.isPending}
-          onConfirm={handleConfirmAdminStatusChange}
-          onCancel={() => {
-            setConfirmAdminId(null);
-            setConfirmAction(null);
-          }}
+      {/* Edit Admin Modal */}
+      {editingAdmin && (
+        <EditAdminModal
+          admin={editingAdmin}
+          companyId={companyId}
+          onClose={() => setEditingAdmin(null)}
+          onSuccess={() => setEditingAdmin(null)}
         />
       )}
 
-      {/* Edit Admin Modal */}
-      {editingAdminId && (
-        <EditAdminModal
-          admin={admins.find((a) => a.id === editingAdminId)}
+      {/* Delete Admin Confirmation Modal */}
+      {deletingAdmin && (
+        <DeleteAdminModal
+          admin={deletingAdmin}
           companyId={companyId}
-          onClose={() => setEditingAdminId(null)}
-          onSuccess={() => setEditingAdminId(null)}
+          onClose={() => setDeletingAdmin(null)}
+          onSuccess={() => setDeletingAdmin(null)}
         />
       )}
     </div>
   );
 };
 
-const AdminCard = ({ admin, onEdit, onToggleStatus, isLoading }) => {
+const   AdminCard = ({ admin, onEdit, onToggleStatus, onDelete, isLoading }) => {
   return (
     <div className="bg-background rounded-lg border border-secondary/20 p-6 shadow-sm hover:shadow-md transition-shadow duration-200">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4 flex-1">
           {/* Avatar */}
           <div className="w-16 h-16 bg-primary/20 rounded-lg flex items-center justify-center shrink-0">
@@ -135,7 +137,7 @@ const AdminCard = ({ admin, onEdit, onToggleStatus, isLoading }) => {
                     : 'bg-gray-100 text-gray-700'
                 }`}
               >
-                {admin.is_active ? 'Hoạt động' : 'Vô hiệu hóa'}
+                {admin.is_active ? 'Active' : 'Inactive'}
               </span>
             </div>
             <div className="flex items-center gap-2 text-secondary text-sm">
@@ -146,29 +148,36 @@ const AdminCard = ({ admin, onEdit, onToggleStatus, isLoading }) => {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-2 ml-4">
+        <div className="flex items-center gap-2">
           <button
-            onClick={() => onEdit()}
+            onClick={onEdit}
             className="p-2 text-secondary hover:bg-secondary/10 rounded-lg transition-colors duration-200"
-            title="Chỉnh sửa"
+            title="Edit"
           >
             <Edit size={18} />
           </button>
           <button
-            onClick={() => onToggleStatus()}
+            onClick={onToggleStatus}
             disabled={isLoading}
             className={`p-2 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
               admin.is_active
                 ? 'text-red-600 hover:bg-red-50'
                 : 'text-green-600 hover:bg-green-50'
             }`}
-            title={admin.is_active ? 'Vô hiệu hóa' : 'Kích hoạt'}
+            title={admin.is_active ? 'Deactivate' : 'Activate'}
           >
             {isLoading ? (
               <Loader size={18} className="animate-spin" />
             ) : (
               <Power size={18} />
             )}
+          </button>
+          <button
+            onClick={onDelete}
+            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
+            title="Delete"
+          >
+            <Trash2 size={18} />
           </button>
         </div>
       </div>

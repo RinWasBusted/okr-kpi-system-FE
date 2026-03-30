@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import { useAuthStore } from '../../hooks/useAuth';
-import { login as loginAPI } from '../../services/auth';
+import { login as loginAPI, refreshToken, getCurrentUser } from '../../services/auth';
 import LoginLeftPanel from './components/LoginLeftPanel';
 import LoginForm from './components/LoginForm';
 
@@ -45,16 +45,6 @@ const Login = () => {
         },
     });
 
-    // Redirect nếu user đã đăng nhập
-    useEffect(() => {
-        if (isAuthenticated && user) {
-            if (user.role === 'ADMIN') {
-                navigate('/admin', { replace: true });
-            } else if (user.company_slug) {
-                navigate(`/${user.company_slug}/app`, { replace: true });
-            }
-        }
-    }, [isAuthenticated, user, navigate]);
 
     const handleLoginSubmit = async (e) => {
         e.preventDefault();
@@ -71,6 +61,30 @@ const Login = () => {
 
         handleLogin(payload);
     };
+
+// Check if already has refresh token and can refresh session
+    useEffect(() => {
+        const checkExistingSession = async () => {
+            const refreshResponse = await refreshToken();
+            if (refreshResponse?.success) {
+                const userData = await getCurrentUser();
+                if (userData) {
+                    setUser(userData);
+                    // Redirect based on role
+                    if (userData?.data?.user?.role === 'ADMIN') {
+                        navigate('/admin');
+                    } else if (company_slug && company_slug !== 'admin') {
+                        navigate(`/${company_slug}/app`);
+                    } else if (userData?.company_slug) {
+                        navigate(`/${userData.company_slug}/app`);
+                    }
+                }
+            }
+        };
+        
+        
+        checkExistingSession();
+    }, [setUser, navigate, company_slug]);
 
     return (
         <div className="min-h-screen flex bg-background">

@@ -65,8 +65,19 @@ axiosClient.interceptors.response.use(
                 }
             } catch (refreshError) {
                 processQueue(refreshError, null);
-                // Redirect to login on refresh failure
-                window.location.href = '/login';
+                // Redirect to appropriate login page based on current URL
+                const currentPath = window.location.pathname;
+                const pathSegments = currentPath.split('/').filter(Boolean);
+                const companySlug = pathSegments[0];
+
+                // Check if we're in admin area or company area
+                if (currentPath.startsWith('/admin')) {
+                    window.location.href = '/admin/login';
+                } else if (companySlug && companySlug !== 'admin') {
+                    window.location.href = `/${companySlug}/login`;
+                } else {
+                    window.location.href = '/admin/login';
+                }
                 return Promise.reject(refreshError);
             }
         }

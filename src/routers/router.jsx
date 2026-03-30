@@ -6,6 +6,7 @@ import AdminDashboard from "../pages/admin/dashboard/Dashboard.jsx";
 import AdminCompanyPage from "../pages/admin/company/CompanyPage.jsx";
 import ProtectedRoute from "../components/ProtectedRoute.jsx";
 import AdminSettingPage from "../pages/admin/setting/SettingPage.jsx";
+import CompanyPage from "../pages/admin/company/CompanyPage.jsx";
 
 import AppPage from "../pages/app/AppPage.jsx";
 import Dashboard from "../pages/app/Dashboard/Dashboard.jsx";
@@ -35,7 +36,7 @@ const router = createBrowserRouter([
             },
             {
                 path: "company",
-                element: <AdminCompanyPage />
+                element: <CompanyPage />
             },
             {
                 path: "admin-accounts",
@@ -53,11 +54,11 @@ const router = createBrowserRouter([
     },
     {
         path: "/:company_slug/app",
-        element: <AppPage />,
+        element: <ProtectedRoute><AppPage /></ProtectedRoute>,
         children: [
             {
                 index: true,
-                element: <Navigate to="/:company_slug/app/dashboard" replace />
+                element: <Dashboard />
             },
             {
                 path: "dashboard",
