@@ -1,7 +1,7 @@
 import Sidebar from "../components/Sidebar"
 import Header from "../components/Header"
 
-const AdminLayout = ({ children }) => {
+const AppLayout = ({ children }) => {
     return (
         <div className="flex h-screen">
             <Sidebar />
@@ -15,4 +15,4 @@ const AdminLayout = ({ children }) => {
     );
 };
 
-export default AdminLayout;
+export default AppLayout;

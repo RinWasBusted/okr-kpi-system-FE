@@ -1,18 +1,22 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 
-const useThemeStore = create(
-  persist(
-    (set) => ({
-      theme: 'light',
-      toggleTheme: () => set((state) => ({ theme: state.theme === 'light' ? 'dark' : 'light' })),
-      setTheme: (newTheme) => set({ theme: newTheme }),
+const useThemeStore = create((set) => {
+  // Khởi tạo theme từ localStorage, fallback 'light'
+  const initialTheme = localStorage.getItem('theme') || 'light';
+
+  return {
+    theme: initialTheme,
+    toggleTheme: () => set((state) => {
+      const newTheme = state.theme === 'light' ? 'dark' : 'light';
+      localStorage.setItem('theme', newTheme);
+      return { theme: newTheme };
     }),
-    {
-      name: 'theme-storage',
-    }
-  )
-);
+    setTheme: (newTheme) => {
+      localStorage.setItem('theme', newTheme);
+      set({ theme: newTheme });
+    },
+  };
+});
 
 export const useTheme = () => {
   const theme = useThemeStore((state) => state.theme);

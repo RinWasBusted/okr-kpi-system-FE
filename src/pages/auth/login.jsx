@@ -1,48 +1,104 @@
-import { useState } from 'react';
-import axiosClient from '../../utils/axios.js';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useMutation } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import { useAuthStore } from '../../hooks/useAuth';
+import { login as loginAPI, refreshToken, getCurrentUser } from '../../services/auth';
+import LoginLeftPanel from './components/LoginLeftPanel';
+import LoginForm from './components/LoginForm';
 
 const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const navigate = useNavigate();
-    const { setUser } = useAuthStore();
+    const { company_slug } = useParams();
+    const { user, isAuthenticated, setUser } = useAuthStore();
+
+    // Setup login mutation with react-query
+    const { mutate: handleLogin, isPending } = useMutation({
+        mutationFn: async (credentials) => {
+            return await loginAPI(credentials.email, credentials.password, credentials.company_slug);
+        },
+        onSuccess: (response) => {
+            if (response.success) {
+                const userData = response.data?.user;
+                if (userData) {
+                    setUser(userData);
+                }
+                toast.success('Login successful');
+
+                // Redirect dựa trên role
+                if (userData?.role === 'ADMIN') {
+                    navigate('/admin');
+                } else if (company_slug && company_slug !== 'admin') {
+                    navigate(`/${company_slug}/app`);
+                } else if (userData?.company_slug) {
+                    navigate(`/${userData.company_slug}/app`);
+                }
+            } else {
+                toast.error(response.message || 'Login failed');
+            }
+        },
+        onError: (error) => {
+            const errorMessage = error.response?.data?.message || error.message || 'Login failed';
+            toast.error(errorMessage);
+        },
+    });
+
 
     const handleLoginSubmit = async (e) => {
         e.preventDefault();
 
-        const response = await axiosClient.post('/auth/login', { email, password });
-        if (response.data.success) {
-            // Store user info in auth store
-            if (response.data.data?.user) {
-              setUser(response.data.data.user);
-            }
-            toast.success('Login successful');
-            navigate('/admin/dashboard');
-        } else {
-            toast.error('Login failed');
+        const payload = {
+            email,
+            password,
+        };
+
+        // Nếu company_slug không phải admin thì thêm vào payload
+        if (company_slug && company_slug !== 'admin') {
+            payload.company_slug = company_slug;
         }
-    }
+
+        handleLogin(payload);
+    };
+
+// Check if already has refresh token and can refresh session
+    useEffect(() => {
+        const checkExistingSession = async () => {
+            const refreshResponse = await refreshToken();
+            if (refreshResponse?.success) {
+                const userData = await getCurrentUser();
+                if (userData) {
+                    setUser(userData);
+                    // Redirect based on role
+                    if (userData?.data?.user?.role === 'ADMIN') {
+                        navigate('/admin');
+                    } else if (company_slug && company_slug !== 'admin') {
+                        navigate(`/${company_slug}/app`);
+                    } else if (userData?.company_slug) {
+                        navigate(`/${userData.company_slug}/app`);
+                    }
+                }
+            }
+        };
         
+        
+        checkExistingSession();
+    }, [setUser, navigate, company_slug]);
 
     return (
-    <div className="bg-primary">
-        <h1>Login</h1>
-            <form onSubmit={handleLoginSubmit}>
-                <div>
-                    <label htmlFor="username">Email:</label>
-                    <input type="text" id="username" name="username" value={email} onChange={(e) => setEmail(e.target.value)} />
-                </div>
-                <div>
-                    <label htmlFor="password">Password:</label>
-                    <input type="password" id="password" name="password" value={password} onChange={(e) => setPassword(e.target.value)} />
-                </div>
-                <button type="submit">Login</button>
-            </form>
-    </div>  
-  );
+        <div className="min-h-screen flex bg-background">
+            <LoginLeftPanel />
+            <LoginForm
+                onSubmit={handleLoginSubmit}
+                isPending={isPending}
+                email={email}
+                setEmail={setEmail}
+                password={password}
+                setPassword={setPassword}
+            />
+        </div>
+    );
 };
 
 export default Login;

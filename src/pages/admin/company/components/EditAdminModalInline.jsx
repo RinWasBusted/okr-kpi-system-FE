@@ -1,25 +1,25 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { X, Edit, Loader } from 'lucide-react';
+import { X, Loader } from 'lucide-react';
 import { toast } from 'react-toastify';
-import { updateCompany } from '../../../../services/company';
+import { updateCompanyAdmin } from '../../../../services/adminCompany';
 
-const EditCompanyModal = ({ company, onClose, onSuccess }) => {
+const EditAdminModalInline = ({ admin, companyId, onClose, onSuccess }) => {
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
-    name: company.name || '',
-    slug: company.slug || '',
+    full_name: admin.full_name || '',
+    email: admin.email || '',
   });
 
   const updateMutation = useMutation({
-    mutationFn: (data) => updateCompany(company.id, data),
+    mutationFn: (data) => updateCompanyAdmin(companyId, admin.id, data),
     onSuccess: (response) => {
-      toast.success(response.message || 'Company updated successfully');
-      queryClient.invalidateQueries({ queryKey: ['companies'] });
+      toast.success(response.message || 'Admin updated successfully');
+      queryClient.invalidateQueries({ queryKey: ['companyAdmins', companyId] });
       onSuccess();
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Failed to update company');
+      toast.error(error.response?.data?.message || 'Failed to update admin');
     },
   });
 
@@ -29,10 +29,10 @@ const EditCompanyModal = ({ company, onClose, onSuccess }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-60 p-4">
       <div className="bg-background rounded-lg shadow-lg max-w-md w-full">
         <div className="flex items-center justify-between p-6 border-b border-secondary/20">
-          <h2 className="text-xl font-bold text-text">Edit Company Information</h2>
+          <h2 className="text-xl font-bold text-text">Edit Admin</h2>
           <button onClick={onClose} className="p-1 hover:bg-secondary/10 rounded-lg transition-colors">
             <X size={20} className="text-secondary" />
           </button>
@@ -40,26 +40,29 @@ const EditCompanyModal = ({ company, onClose, onSuccess }) => {
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-text mb-2">Company Name</label>
+            <label className="block text-sm font-medium text-text mb-2">
+              Full Name <span className="text-red-500">*</span>
+            </label>
             <input
               type="text"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              value={formData.full_name}
+              onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
               className="w-full px-3 py-2 border border-secondary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 text-text"
               required
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-text mb-2">Slug</label>
+            <label className="block text-sm font-medium text-text mb-2">
+              Email <span className="text-red-500">*</span>
+            </label>
             <input
-              type="text"
-              value={formData.slug}
-              onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               className="w-full px-3 py-2 border border-secondary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 text-text"
               required
             />
           </div>
-
           <div className="flex gap-3 pt-4">
             <button
               type="button"
@@ -71,11 +74,9 @@ const EditCompanyModal = ({ company, onClose, onSuccess }) => {
             <button
               type="submit"
               disabled={updateMutation.isPending}
-              className="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+              className="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
             >
-              {updateMutation.isPending && <Loader size={16} className="animate-spin" />}
-              <Edit size={16} />
-              Save Changes
+              {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
         </form>
@@ -84,4 +85,4 @@ const EditCompanyModal = ({ company, onClose, onSuccess }) => {
   );
 };
 
-export default EditCompanyModal;
+export default EditAdminModalInline;
