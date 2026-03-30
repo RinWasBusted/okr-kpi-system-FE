@@ -168,11 +168,11 @@ const CompanyPage = () => {
               setStatusFilter(e.target.value);
               setCurrentPage(1);
             }}
-            className="bg-transparent border-none outline-none text-sm cursor-pointer text-text"
+            className="bg-background border-none outline-none text-sm cursor-pointer text-text"
           >
-            <option value="all">All Status</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
+            <option value="all" className="bg-background text-text">All Status</option>
+            <option value="active" className="bg-background text-text">Active</option>
+            <option value="inactive" className="bg-background text-text">Inactive</option>
           </select>
         </div>
       </div>
@@ -316,6 +316,10 @@ const CompanyPage = () => {
           onSuccess={() => {
             setIsEditModalOpen(false);
             setSelectedCompany(null);
+          }}
+          onCancel={() => {
+            setIsEditModalOpen(false);
+            setIsManageModalOpen(true);
           }}
         />
       )}

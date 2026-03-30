@@ -1,14 +1,28 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { X, Loader } from 'lucide-react';
+import { X, Loader, Camera } from 'lucide-react';
 import { toast } from 'react-toastify';
-import { updateCompanyAdmin } from '../../../../services/adminCompany';
+import { updateCompanyAdmin, uploadCompanyAdminAvatar } from '../../../../services/adminCompany';
 
 const EditAdminModalInline = ({ admin, companyId, onClose, onSuccess }) => {
   const queryClient = useQueryClient();
+  const fileInputRef = useRef(null);
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState(admin.avatar_url || null);
   const [formData, setFormData] = useState({
     full_name: admin.full_name || '',
     email: admin.email || '',
+  });
+
+  const avatarMutation = useMutation({
+    mutationFn: (file) => uploadCompanyAdminAvatar(companyId, admin.id, file),
+    onSuccess: (response) => {
+      toast.success(response.message || 'Avatar updated successfully');
+      queryClient.invalidateQueries({ queryKey: ['companyAdmins', companyId] });
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || 'Failed to update avatar');
+    },
   });
 
   const updateMutation = useMutation({
@@ -23,8 +37,30 @@ const EditAdminModalInline = ({ admin, companyId, onClose, onSuccess }) => {
     },
   });
 
-  const handleSubmit = (e) => {
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleAvatarChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setAvatarFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Upload avatar first if changed
+    if (avatarFile) {
+      await avatarMutation.mutateAsync(avatarFile);
+    }
+
     updateMutation.mutate(formData);
   };
 
@@ -39,6 +75,45 @@ const EditAdminModalInline = ({ admin, companyId, onClose, onSuccess }) => {
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {/* Avatar Section */}
+          <div className="flex flex-col items-center">
+            <div
+              onClick={handleAvatarClick}
+              className="relative w-24 h-24 rounded-full overflow-hidden cursor-pointer group border-2 border-secondary/20 hover:border-primary transition-colors"
+            >
+              {avatarPreview ? (
+                <img
+                  src={avatarPreview}
+                  alt="Avatar preview"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-secondary/10 flex items-center justify-center">
+                  <span className="text-2xl text-secondary font-medium">
+                    {admin.full_name?.charAt(0).toUpperCase() || 'A'}
+                  </span>
+                </div>
+              )}
+              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <Camera size={24} className="text-white" />
+              </div>
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarChange}
+              className="hidden"
+            />
+            <button
+              type="button"
+              onClick={handleAvatarClick}
+              className="mt-2 text-sm text-primary hover:text-primary/80 transition-colors"
+            >
+              Change Avatar
+            </button>
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-text mb-2">
               Full Name <span className="text-red-500">*</span>
@@ -73,10 +148,17 @@ const EditAdminModalInline = ({ admin, companyId, onClose, onSuccess }) => {
             </button>
             <button
               type="submit"
-              disabled={updateMutation.isPending}
+              disabled={updateMutation.isPending || avatarMutation.isPending}
               className="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
             >
-              {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
+              {updateMutation.isPending || avatarMutation.isPending ? (
+                <span className="flex items-center justify-center gap-2">
+                  <Loader size={16} className="animate-spin" />
+                  Saving...
+                </span>
+              ) : (
+                'Save Changes'
+              )}
             </button>
           </div>
         </form>

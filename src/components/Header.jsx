@@ -11,7 +11,7 @@ import {
 import { getCurrentUser, refreshToken, logout } from '../services/auth';
 import { useTheme } from '../hooks/useTheme';
 import { useAuthStore } from '../hooks/useAuth';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 
 // Mock data cho notifications
 const MOCK_NOTIFICATIONS = [
@@ -81,9 +81,10 @@ const Header = () => {
     setTheme(theme === 'light' ? 'dark' : 'light');
   };
 
-  const handleLogout = async () => {
-    try {
-      await logout();
+  const logoutMutation = useMutation({
+    mutationFn: logout,
+    onSuccess: () => {
+      toast.success('Signed out successfully');
       clearAuth();
       const companySlug = getCompanySlug();
       if (companySlug) {
@@ -91,9 +92,15 @@ const Header = () => {
       } else {
         navigate('/admin/login');
       }
-    } catch (error) {
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || 'Logout failed');
       console.error('Logout failed:', error);
-    }
+    },
+  });
+
+  const handleLogout = () => {
+    logoutMutation.mutate();
   };
 
   // Lấy initials từ full_name
