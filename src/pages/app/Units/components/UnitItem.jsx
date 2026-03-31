@@ -1,22 +1,32 @@
 import { useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Building2, ChevronDown, ChevronRight } from 'lucide-react';
+import { Building2, ChevronDown, ChevronRight, Users, Target, ArrowUpRight } from 'lucide-react';
 
 // Recursive Unit Item Component
 const UnitItem = ({ unit, level = 0, expandedUnits, toggleExpand, searchQuery }) => {
   const navigate = useNavigate();
   const { company_slug } = useParams();
+
   // Use sub_units from API response
   const subUnits = unit.sub_units || [];
   const hasChildren = subUnits.length > 0;
   const isExpanded = expandedUnits.has(unit.id);
 
   // Mock progress data (API doesn't provide these yet)
-  const okrCount = Math.floor(Math.random() * 5);
-  const kpiCount = Math.floor(Math.random() * 3);
-  const okrProgress = okrCount > 0 ? Math.floor(Math.random() * 40) + 40 : 0;
-  const kpiProgress = kpiCount > 0 ? Math.floor(Math.random() * 30) + 60 : 0;
-  const overallProgress = okrCount + kpiCount > 0 ? Math.round((okrProgress + kpiProgress) / 2) : 0;
+  const okrCount = Math.floor(Math.random() * 5) + 1;
+  const kpiCount = Math.floor(Math.random() * 3) + 1;
+  const okrProgress = Math.floor(Math.random() * 40) + 40;
+  const kpiHealth = Math.floor(Math.random() * 50) + 50;
+
+  // Determine color based on progress/health
+  const getProgressColor = (value) => {
+    if (value >= 80) return 'bg-green-500';
+    if (value >= 60) return 'bg-orange-400';
+    return 'bg-red-500';
+  };
+
+  const okrColor = getProgressColor(okrProgress);
+  const kpiColor = getProgressColor(kpiHealth);
 
   // Filter children by search query
   const filteredChildren = useMemo(() => {
@@ -28,130 +38,119 @@ const UnitItem = ({ unit, level = 0, expandedUnits, toggleExpand, searchQuery })
   }, [subUnits, searchQuery]);
 
   // Calculate indentation based on level
-  const indentPadding = level * 32; // 32px per level
+  const indentPadding = level * 24;
 
   return (
     <div className="w-full">
       {/* Unit Row Container */}
       <div
-        className={`
-          relative rounded-lg transition-all duration-200
-          ${level > 0 ? 'mt-2' : ''}
-          hover:bg-secondary/10
-        `}
+        className={`relative rounded-lg transition-all duration-200 ${level > 0 ? 'mt-2' : ''}`}
         style={{ marginLeft: `${indentPadding}px` }}
       >
-        {/* Connector line for child items */}
-        {level > 0 && (
-          <div className="absolute -left-4 top-0 bottom-0 w-px bg-secondary/30" />
-        )}
-
-        {/* Horizontal connector */}
-        {level > 0 && (
-          <div className="absolute -left-4 top-6 w-4 h-px bg-secondary/30" />
-        )}
-
         {/* Main Card */}
-        <div 
-          className="bg-background rounded-lg border border-secondary/20 p-4 hover:shadow-md transition-shadow cursor-pointer"
-          onClick={() => navigate(`/${company_slug}/app/units/${unit.id}`)}
+        <div className="bg-background rounded-lg border border-secondary/20 hover:shadow-md transition-shadow"
         >
-          {/* Main Row */}
-          <div className="flex items-center justify-between">
-            {/* Left: Expand Button + Icon + Name + Manager */}
-            <div className="flex items-center gap-3 flex-1 min-w-0">
+          <div className="p-4">
+            <div className="flex items-center gap-4">
               {/* Expand/Collapse Button */}
-              {hasChildren ? (
-                <button
-                  onClick={() => toggleExpand(unit.id)}
-                  className="p-1 rounded hover:bg-secondary/20 transition-colors shrink-0"
-                >
-                  {isExpanded ? (
-                    <ChevronDown size={18} className="text-secondary" />
-                  ) : (
-                    <ChevronRight size={18} className="text-secondary" />
-                  )}
-                </button>
-              ) : (
-                <span className="w-7 shrink-0" />
-              )}
+              <div className="w-6 shrink-0">
+                {hasChildren ? (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleExpand(unit.id);
+                    }}
+                    className="p-1 rounded hover:bg-secondary/20 transition-colors"
+                  >
+                    {isExpanded ? (
+                      <ChevronDown size={16} className="text-secondary" />
+                    ) : (
+                      <ChevronRight size={16} className="text-secondary" />
+                    )}
+                  </button>
+                ) : (
+                  <span className="w-6" />
+                )}
+              </div>
 
               {/* Unit Icon */}
-              <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center shrink-0">
-                <Building2 size={20} className="text-orange-500" />
+              <div className="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center shrink-0">
+                <Building2 size={24} className="text-primary" />
               </div>
 
               {/* Unit Info */}
-              <div className="min-w-0 flex-1">
-                <h3 className="font-semibold text-text truncate">{unit.name}</h3>
-                <p className="text-sm text-secondary">
-                  Quản lý: {unit.manager?.full_name || 'Chưa có'} • {unit.member_count || 0} thành viên
-                </p>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-semibold text-text text-lg">{unit.name}</h3>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/${company_slug}/app/units/${unit.id}`);
+                    }}
+                    className="text-sm text-primary hover:underline flex items-center gap-0.5"
+                  >
+                    Chi tiết
+                    <ArrowUpRight size={12} />
+                  </button>
+                </div>
+                <div className="text-sm text-secondary">
+                  {unit.manager?.full_name || 'Chưa có quản lý'}
+                  {unit.manager?.role && ` (${unit.manager.role})`}
+                </div>
+                <div className="flex items-center gap-4 mt-1 text-xs text-secondary">
+                  <span className="flex items-center gap-1">
+                    <Users size={12} />
+                    {unit.member_count || 0} thành viên
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Target size={12} />
+                    {okrCount} OKR
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Target size={12} className="rotate-45" />
+                    {kpiCount} KPI
+                  </span>
+                </div>
               </div>
-            </div>
 
-            {/* Right: OKR/KPI Counts */}
-            <div className="flex items-center gap-6 mr-6">
-              <div className="text-center min-w-12">
-                <span className="text-xs text-secondary uppercase block">OKR</span>
-                <p className="text-lg font-semibold text-text">{okrCount}</p>
-              </div>
-              <div className="text-center min-w-12">
-                <span className="text-xs text-secondary uppercase block">KPI</span>
-                <p className="text-lg font-semibold text-text">{kpiCount}</p>
-              </div>
-            </div>
+              {/* Progress Bars */}
+              <div className="flex items-center gap-6 shrink-0">
+                {/* OKR Progress */}
+                <div className="w-36">
+                  <div className="flex items-center justify-between text-xs mb-1">
+                    <span className="text-secondary">OKR Progress</span>
+                    <span className="font-semibold text-text">{okrProgress}%</span>
+                  </div>
+                  <div className="h-2 bg-secondary/20 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full ${okrColor} rounded-full transition-all duration-300`}
+                      style={{ width: `${okrProgress}%` }}
+                    />
+                  </div>
+                </div>
 
-            {/* Overall Progress */}
-            <div className="text-center min-w-16">
-              <span className="text-xs text-secondary uppercase block">Tiến độ</span>
-              <p className={`text-lg font-bold ${overallProgress >= 50 ? 'text-green-600' : 'text-orange-500'}`}>
-                {overallProgress}%
-              </p>
-            </div>
-          </div>
-
-          {/* Progress Bars */}
-          <div className="flex gap-4 mt-4 ml-12">
-            {/* OKR Progress */}
-            <div className="flex-1">
-              <div className="flex items-center justify-between text-xs mb-1">
-                <span className="text-secondary">OKR</span>
-                <span className="text-orange-500 font-medium">{okrProgress}%</span>
-              </div>
-              <div className="h-2 bg-secondary/15 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-orange-500 rounded-full transition-all duration-300"
-                  style={{ width: `${okrProgress}%` }}
-                />
-              </div>
-            </div>
-
-            {/* KPI Progress */}
-            <div className="flex-1">
-              <div className="flex items-center justify-between text-xs mb-1">
-                <span className="text-secondary">KPI</span>
-                <span className="text-green-500 font-medium">{kpiProgress}%</span>
-              </div>
-              <div className="h-2 bg-secondary/15 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-green-500 rounded-full transition-all duration-300"
-                  style={{ width: `${kpiProgress}%` }}
-                />
+                {/* KPI Health */}
+                <div className="w-36">
+                  <div className="flex items-center justify-between text-xs mb-1">
+                    <span className="text-secondary">KPI Health</span>
+                    <span className="font-semibold text-text">{kpiHealth}%</span>
+                  </div>
+                  <div className="h-2 bg-secondary/20 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full ${kpiColor} rounded-full transition-all duration-300`}
+                      style={{ width: `${kpiHealth}%` }}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Children - Render with connector lines */}
+      {/* Children */}
       {hasChildren && isExpanded && (
-        <div className="relative">
-          {/* Vertical connector line for children */}
-          <div
-            className="absolute top-0 bottom-0 w-px bg-secondary/30"
-            style={{ left: `${indentPadding + 16}px` }}
-          />
+        <div className="relative mt-2">
           {filteredChildren.map(child => (
             <UnitItem
               key={child.id}

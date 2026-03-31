@@ -36,7 +36,7 @@ const Login = () => {
                     navigate(`/${userData.company_slug}/app`);
                 }
             } else {
-                toast.error(response.message || 'Login failed');
+                toast.error(response?.data?.error?.message || 'Login failed');
             }
         },
         onError: (error) => {
@@ -62,27 +62,31 @@ const Login = () => {
         handleLogin(payload);
     };
 
-// Check if already has refresh token and can refresh session
+    // Check if already has refresh token and can refresh session
     useEffect(() => {
         const checkExistingSession = async () => {
-            const refreshResponse = await refreshToken();
-            if (refreshResponse?.success) {
-                const userData = await getCurrentUser();
-                if (userData) {
-                    setUser(userData);
-                    // Redirect based on role
-                    if (userData?.data?.user?.role === 'ADMIN') {
-                        navigate('/admin');
-                    } else if (company_slug && company_slug !== 'admin') {
-                        navigate(`/${company_slug}/app`);
-                    } else if (userData?.company_slug) {
-                        navigate(`/${userData.company_slug}/app`);
+            try {
+                const refreshResponse = await refreshToken();
+                if (refreshResponse?.success) {
+                    const userData = await getCurrentUser();
+                    if (userData?.data?.user) {
+                        setUser(userData.data.user);
+                        // Redirect based on role
+                        if (userData.data.user.role === 'ADMIN') {
+                            navigate('/admin');
+                        } else if (company_slug && company_slug !== 'admin') {
+                            navigate(`/${company_slug}/app`);
+                        } else if (userData.data.user.company_slug) {
+                            navigate(`/${userData.data.user.company_slug}/app`);
+                        }
                     }
                 }
+            } catch (error) {
+                // Silent fail - user stays on login page if no active session
+                console.debug('Session check failed:', error?.message);
             }
         };
-        
-        
+
         checkExistingSession();
     }, [setUser, navigate, company_slug]);
 
