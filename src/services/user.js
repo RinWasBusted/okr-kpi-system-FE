@@ -52,3 +52,13 @@ export const updateUser = async (id, data) => {
   const response = await axiosClient.put(`/users/${id}`, data);
   return response.data;
 };
+
+/**
+ * Delete employee (soft delete)
+ * @param {number} id - User ID
+ * @returns {Promise} API response
+ */
+export const deleteUser = async (id) => {
+  const response = await axiosClient.delete(`/users/${id}`);
+  return response.data;
+};
