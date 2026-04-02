@@ -1,9 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
-import { Loader } from 'lucide-react';
 import { getUsers } from '../../../../services/user';
+import MemberListSkeleton from './MemberListSkeleton';
 
 const MemberList = ({ unit, memberCount }) => {
-  // Fetch members of this unit using user API with unit_id filter
+  // Fetch members of this unit independently
   const { data: membersData, isLoading: membersLoading } = useQuery({
     queryKey: ['users', { unit_id: unit.id }],
     queryFn: () => getUsers({ unit_id: unit.id, per_page: 100 }),
@@ -13,6 +13,11 @@ const MemberList = ({ unit, memberCount }) => {
   const allMembers = membersData?.data || [];
   // Filter out the manager from the members list
   const members = allMembers.filter(member => member.id !== unit.manager?.id);
+
+  // Show skeleton placeholder while loading
+  if (membersLoading) {
+    return <MemberListSkeleton />;
+  }
 
   return (
     <div className="space-y-6">
@@ -43,16 +48,12 @@ const MemberList = ({ unit, memberCount }) => {
       </div>
 
       {/* Members List - Only show if there are members other than manager */}
-      {members.length > 0 && (
+      {memberCount > 0 && (
       <div className="bg-background rounded-xl border border-secondary/20 overflow-hidden">
         <div className="p-6 border-b border-secondary/20">
           <h3 className="text-lg font-semibold text-text">Thành viên ({members.length})</h3>
         </div>
-        {membersLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader size={24} className="text-primary animate-spin" />
-          </div>
-        ) : members.length > 0 ? (
+        {members.length > 0 ? (
           <div className="divide-y divide-secondary/10 max-h-96 overflow-y-auto">
             {members.map((member) => (
               <div key={member.id} className="p-4 hover:bg-secondary/5 transition-colors">

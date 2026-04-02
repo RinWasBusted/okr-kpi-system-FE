@@ -12,6 +12,7 @@ const Login = () => {
     const [password, setPassword] = useState('');
     const navigate = useNavigate();
     const { company_slug } = useParams();
+    console.debug('Login page rendered with company_slug:', company_slug);
     const { user, isAuthenticated, setUser } = useAuthStore();
 
     // Setup login mutation with react-query

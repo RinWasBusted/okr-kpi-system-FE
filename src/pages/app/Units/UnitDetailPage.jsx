@@ -1,19 +1,17 @@
-import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, Building2, Users, Target, TrendingUp, Loader, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Building2, Users, Target, TrendingUp, AlertCircle } from 'lucide-react';
 import { getUnitDetail } from '../../../services/unit';
-import { getKPIAssignments } from '../../../services/kpi';
-import { getOKRAssignments } from '../../../services/okr';
 import OKRList from './components/OKRList';
 import KPIList from './components/KPIList';
 import MemberList from './components/MemberList';
+import MemberListSkeleton from './components/MemberListSkeleton';
 
 const UnitDetailPage = () => {
   const { unitId, company_slug } = useParams();
   const navigate = useNavigate();
 
-  // Fetch unit details
+  // Fetch unit details only
   const { data: unitData, isLoading: unitLoading, error: unitError } = useQuery({
     queryKey: ['unit', unitId],
     queryFn: () => getUnitDetail(unitId),
@@ -22,38 +20,10 @@ const UnitDetailPage = () => {
 
   const unit = unitData?.data;
 
-  // Fetch OKRs for this unit
-  const { data: okrData, isLoading: okrLoading } = useQuery({
-    queryKey: ['okr-assignments', { unit_id: unitId }],
-    queryFn: () => getOKRAssignments({ unit_id: unitId, per_page: 100 }),
-    enabled: !!unitId,
-  });
+  // Calculate statistics from unit data only
+  const memberCount = unit?.member_count || 0;
 
-  // Fetch KPIs for this unit
-  const { data: kpiData, isLoading: kpiLoading } = useQuery({
-    queryKey: ['kpi-assignments', { unit_id: unitId }],
-    queryFn: () => getKPIAssignments({ unit_id: unitId, per_page: 100 }),
-    enabled: !!unitId,
-  });
-
-  const okrs = okrData?.data || [];
-  const kpis = kpiData?.data || [];
-
-  // Calculate statistics with correct field names
-  const calculateStats = (items) => {
-    if (items.length === 0) return 0;
-    return Math.round(items.reduce((sum, item) => sum + (item.progress_percentage || 0), 0) / items.length);
-  };
-
-  if (unitLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader size={32} className="text-primary animate-spin" />
-      </div>
-    );
-  }
-
-  if (unitError || !unit) {
+  if (unitError) {
     return (
       <div className="space-y-6">
         <button
@@ -76,13 +46,6 @@ const UnitDetailPage = () => {
     );
   }
 
-  // Calculate statistics
-  const okrCount = okrs.length;
-  const kpiCount = kpis.length;
-  const okrProgress = calculateStats(okrs);
-  const kpiProgress = calculateStats(kpis);
-  const memberCount = unit.member_count || 0;
-
   return (
     <div className="space-y-6">
       {/* Header with back button */}
@@ -98,23 +61,36 @@ const UnitDetailPage = () => {
         {/* Main Content - Left Side (2 columns) */}
         <div className="lg:col-span-2 space-y-6">
           {/* Unit Info Card */}
-          <div className="bg-background rounded-xl border border-secondary/20 p-6">
-            <div className="flex items-start gap-4">
-              <div className="w-16 h-16 rounded-xl bg-orange-100 flex items-center justify-center shrink-0">
-                <Building2 size={32} className="text-orange-500" />
-              </div>
-              <div className="flex-1">
-                <h1 className="text-2xl font-bold text-text mb-2">{unit.name}</h1>
-                <div className="space-y-1 text-sm text-secondary">
-                  <p>Quản lý: <span className="text-text font-medium">{unit.manager?.full_name || 'Chưa có'}</span></p>
-                  <p>Tổng số thành viên: <span className="text-text font-medium">{memberCount}</span></p>
-                  {unit.parent_unit && (
-                    <p>Đơn vị cha: <span className="text-text font-medium">{unit.parent_unit.name}</span></p>
-                  )}
+          {unitLoading ? (
+            <div className="bg-background rounded-xl border border-secondary/20 p-6">
+              <div className="flex items-start gap-4">
+                <div className="w-16 h-16 rounded-xl bg-secondary/20 shrink-0 animate-pulse" />
+                <div className="flex-1 space-y-3">
+                  <div className="h-7 w-48 bg-secondary/20 rounded animate-pulse" />
+                  <div className="h-4 w-32 bg-secondary/20 rounded animate-pulse" />
+                  <div className="h-4 w-40 bg-secondary/20 rounded animate-pulse" />
                 </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="bg-background rounded-xl border border-secondary/20 p-6">
+              <div className="flex items-start gap-4">
+                <div className="w-16 h-16 rounded-xl bg-orange-100 flex items-center justify-center shrink-0">
+                  <Building2 size={32} className="text-orange-500" />
+                </div>
+                <div className="flex-1">
+                  <h1 className="text-2xl font-bold text-text mb-2">{unit.name}</h1>
+                  <div className="space-y-1 text-sm text-secondary">
+                    <p>Quản lý: <span className="text-text font-medium">{unit.manager?.full_name || 'Chưa có'}</span></p>
+                    <p>Tổng số thành viên: <span className="text-text font-medium">{memberCount}</span></p>
+                    {unit.parent_unit && (
+                      <p>Đơn vị cha: <span className="text-text font-medium">{unit.parent_unit.name}</span></p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Statistics Cards */}
           <div className="grid grid-cols-3 gap-4">
@@ -124,16 +100,13 @@ const UnitDetailPage = () => {
                 <span className="text-sm font-medium text-secondary">OKR</span>
                 <Target size={20} className="text-orange-500" />
               </div>
-              <div className="space-y-2">
-                <p className="text-2xl font-bold text-text">{okrCount}</p>
-                <div className="w-full h-2 bg-secondary/15 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-orange-500 rounded-full transition-all duration-300"
-                    style={{ width: `${okrProgress}%` }}
-                  />
+              {unitLoading ? (
+                <div className="h-2 bg-secondary/20 rounded-full animate-pulse" />
+              ) : (
+                <div className="h-2 bg-secondary/15 rounded-full overflow-hidden">
+                  <div className="h-full bg-orange-500/30 rounded-full animate-pulse" />
                 </div>
-                <p className="text-xs text-secondary">Tiến độ: {okrProgress}%</p>
-              </div>
+              )}
             </div>
 
             {/* KPI Stats */}
@@ -142,16 +115,13 @@ const UnitDetailPage = () => {
                 <span className="text-sm font-medium text-secondary">KPI</span>
                 <TrendingUp size={20} className="text-green-500" />
               </div>
-              <div className="space-y-2">
-                <p className="text-2xl font-bold text-text">{kpiCount}</p>
-                <div className="w-full h-2 bg-secondary/15 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-green-500 rounded-full transition-all duration-300"
-                    style={{ width: `${kpiProgress}%` }}
-                  />
+              {unitLoading ? (
+                <div className="h-2 bg-secondary/20 rounded-full animate-pulse" />
+              ) : (
+                <div className="h-2 bg-secondary/15 rounded-full overflow-hidden">
+                  <div className="h-full bg-green-500/30 rounded-full animate-pulse" />
                 </div>
-                <p className="text-xs text-secondary">Tiến độ: {kpiProgress}%</p>
-              </div>
+              )}
             </div>
 
             {/* Members Stats */}
@@ -160,23 +130,31 @@ const UnitDetailPage = () => {
                 <span className="text-sm font-medium text-secondary">Thành viên</span>
                 <Users size={20} className="text-blue-500" />
               </div>
-              <div className="space-y-2">
-                <p className="text-2xl font-bold text-text">{memberCount}</p>
-                <p className="text-xs text-secondary">Người trong đơn vị</p>
-              </div>
+              {unitLoading ? (
+                <div className="h-8 w-12 bg-secondary/20 rounded animate-pulse" />
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-2xl font-bold text-text">{memberCount}</p>
+                  <p className="text-xs text-secondary">Người trong đơn vị</p>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* OKR List */}
-          <OKRList okrs={okrs} isLoading={okrLoading} count={okrCount} />
+          {/* OKR List - Loads independently */}
+          <OKRList unitId={unitId} />
 
-          {/* KPI List */}
-          <KPIList kpis={kpis} isLoading={kpiLoading} count={kpiCount} />
+          {/* KPI List - Loads independently */}
+          <KPIList unitId={unitId} />
         </div>
 
-        {/* Right Sidebar - Managers and Users */}
+        {/* Right Sidebar - Members */}
         <div className="lg:col-span-1">
-          <MemberList unit={unit} memberCount={memberCount} />
+          {unitLoading ? (
+            <MemberListSkeleton />
+          ) : (
+            <MemberList unit={unit} memberCount={memberCount} />
+          )}
         </div>
       </div>
     </div>
