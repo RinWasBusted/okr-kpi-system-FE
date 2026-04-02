@@ -5,6 +5,7 @@ import axiosClient from '../utils/axios.js';
  * @param {Object} params - Query parameters
  * @param {number} params.page - Current page number (default: 1)
  * @param {number} params.per_page - Records per page (default: 100)
+ * @param {string} params.mode - Units retrieval mode (optional, value = "tree" returns hierarchical structure with sub_units, "list" returns flat list)
  * @returns {Promise} API response with units list
  */
 export const getUnits = async (params = {}) => {

@@ -6,7 +6,7 @@ import DeleteUnitConfirmModal from './DeleteUnitConfirmModal';
 import { useAuthStore } from '../../../../hooks/useAuth';
 
 // Recursive Unit Item Component
-const UnitItem = ({ unit, level = 0, expandedUnits, toggleExpand, searchQuery }) => {
+const UnitItem = ({ unit, level = 0, expandedUnits, toggleExpand, searchQuery, isSearchMode = false }) => {
   const navigate = useNavigate();
   const { company_slug } = useParams();
 
@@ -18,8 +18,8 @@ const UnitItem = ({ unit, level = 0, expandedUnits, toggleExpand, searchQuery })
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
-  // Use sub_units from API response
-  const subUnits = unit.sub_units || [];
+  // Use sub_units from API response (only in tree mode)
+  const subUnits = isSearchMode ? [] : (unit.sub_units || []);
   const hasChildren = subUnits.length > 0;
   const isExpanded = expandedUnits.has(unit.id);
 
@@ -197,6 +197,7 @@ const UnitItem = ({ unit, level = 0, expandedUnits, toggleExpand, searchQuery })
                 expandedUnits={expandedUnits}
                 toggleExpand={toggleExpand}
                 searchQuery={searchQuery}
+                isSearchMode={isSearchMode}
               />
             ))}
           </div>

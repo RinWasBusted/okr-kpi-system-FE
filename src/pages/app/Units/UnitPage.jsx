@@ -11,25 +11,37 @@ const UnitPage = () => {
   const [expandedUnits, setExpandedUnits] = useState(new Set());
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
-  // Fetch units data
-  const { data: unitsResponse, isLoading, error } = useQuery({
-    queryKey: ['units'],
-    queryFn: () => getUnits({ per_page: 100 }),
+  // Fetch units data (tree mode for initial display)
+  const { data: unitsTreeResponse, isLoading: isLoadingTree, error } = useQuery({
+    queryKey: ['units', 'tree'],
+    queryFn: () => getUnits({ per_page: 100, mode: 'tree' }),
   });
 
-  const units = unitsResponse?.data || [];
+  // Fetch units data (list mode in background for search)
+  const { data: unitsListResponse, isLoading: isLoadingList } = useQuery({
+    queryKey: ['units', 'list'],
+    queryFn: () => getUnits({ per_page: 1000, mode: 'list' }),
+  });
 
-  // Auto-expand all units when data is loaded
+  const unitsTree = unitsTreeResponse?.data || [];
+  const unitsList = unitsListResponse?.data || [];
+
+  // Determine which data to display based on search state
+  const isSearchActive = searchQuery.trim().length > 0;
+  const displayUnits = isSearchActive ? unitsList : unitsTree;
+  const isLoading = isSearchActive ? isLoadingList : isLoadingTree;
+
+  // Auto-expand all units when tree data is loaded (only for tree mode)
   useEffect(() => {
-    if (units.length > 0) {
-      const allIds = units.map(u => u.id);
+    if (!isSearchActive && unitsTree.length > 0) {
+      const allIds = unitsTree.map(u => u.id);
       setExpandedUnits(new Set(allIds));
     }
-  }, [units]);
+  }, [unitsTree, isSearchActive]);
 
-  // Calculate stats
+  // Calculate stats (based on tree data for total count)
   const stats = useMemo(() => {
-    const totalUnits = units.length;
+    const totalUnits = unitsTree.length;
 
     // Mock data for progress/health (since API doesn't provide these yet)
     // In real scenario, these should come from API
@@ -45,7 +57,7 @@ const UnitPage = () => {
       avgKpiHealth,
       kpiTrend,
     };
-  }, [units]);
+  }, [unitsTree]);
 
   // Toggle expand/collapse
   const toggleExpand = (unitId) => {
@@ -60,14 +72,14 @@ const UnitPage = () => {
     });
   };
 
-  // Filter root units by search query
-  const filteredRootUnits = useMemo(() => {
-    if (!searchQuery) return units;
-    return units.filter(unit =>
+  // Filter units by search query (only applies to list mode)
+  const filteredUnits = useMemo(() => {
+    if (!isSearchActive) return displayUnits;
+    return displayUnits.filter(unit =>
       unit.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       unit.manager?.full_name?.toLowerCase().includes(searchQuery.toLowerCase())
     );
-  }, [units, searchQuery]);
+  }, [displayUnits, searchQuery, isSearchActive]);
 
   if (error) {
     return (
@@ -168,21 +180,22 @@ const UnitPage = () => {
               <UnitItemSkeleton key={index} level={0} />
             ))}
           </div>
-        ) : units.length === 0 ? (
+        ) : displayUnits.length === 0 ? (
           <div className="text-center py-12 text-secondary">
             <Building2 size={48} className="mx-auto mb-4 opacity-50" />
-            <p>Chưa có đơn vị nào</p>
+            <p>{isSearchActive ? 'Không tìm thấy đơn vị nào' : 'Chưa có đơn vị nào'}</p>
           </div>
         ) : (
           <div className="p-4 space-y-2">
-            {filteredRootUnits.map(unit => (
+            {filteredUnits.map(unit => (
               <UnitItem
                 key={unit.id}
                 unit={unit}
-                level={0}
+                level={isSearchActive ? 0 : 0}
                 expandedUnits={expandedUnits}
                 toggleExpand={toggleExpand}
                 searchQuery={searchQuery}
+                isSearchMode={isSearchActive}
               />
             ))}
           </div>
@@ -195,13 +208,13 @@ const UnitPage = () => {
           onClose={() => setIsAddModalOpen(false)}
           onSuccess={() => {
             // Auto-expand all units after adding new unit
-            if (units.length > 0) {
-              const allIds = units.map(u => u.id);
+            if (unitsTree.length > 0) {
+              const allIds = unitsTree.map(u => u.id);
               setExpandedUnits(new Set(allIds));
             }
           }}
-          units={units}
-          isLoadingUnits={isLoading}
+          units={unitsTree}
+          isLoadingUnits={isLoadingTree}
         />
       )}
     </div>
