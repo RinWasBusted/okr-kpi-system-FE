@@ -41,7 +41,7 @@ const DeleteUnitConfirmModal = ({ onClose, onSuccess, unit }) => {
           <button
             onClick={onClose}
             disabled={deleteMutation.isPending}
-            className="p-1 hover:bg-secondary/10 rounded-lg transition-colors disabled:opacity-50"
+            className="p-1 hover:bg-secondary/10 rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
           >
             <X size={20} className="text-secondary" />
           </button>
@@ -75,7 +75,7 @@ const DeleteUnitConfirmModal = ({ onClose, onSuccess, unit }) => {
               type="button"
               onClick={onClose}
               disabled={deleteMutation.isPending}
-              className="flex-1 px-4 py-2 border border-secondary/20 rounded-lg text-text hover:bg-secondary/5 transition-colors disabled:opacity-50"
+              className="flex-1 px-4 py-2 border border-secondary/20 rounded-lg text-text hover:bg-secondary/5 transition-colors disabled:opacity-50 cursor-pointer"
             >
               Hủy
             </button>
@@ -83,7 +83,7 @@ const DeleteUnitConfirmModal = ({ onClose, onSuccess, unit }) => {
               type="button"
               onClick={handleConfirmDelete}
               disabled={deleteMutation.isPending}
-              className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+              className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
             >
               {deleteMutation.isPending && (
                 <Loader size={16} className="animate-spin" />

@@ -12,6 +12,7 @@ import AppPage from "../pages/app/AppPage.jsx";
 import Dashboard from "../pages/app/Dashboard/Dashboard.jsx";
 import UnitPage from "../pages/app/Units/UnitPage.jsx";
 import UnitDetailPage from "../pages/app/Units/UnitDetailPage.jsx";
+import CyclePage from "../pages/app/Cycles/CyclePage.jsx";
 
 const router = createBrowserRouter([
     {
@@ -71,7 +72,11 @@ const router = createBrowserRouter([
             {
                 path: "units/:unitId",
                 element: <UnitDetailPage />
-            }
+            },
+            {
+                path: "cycles",
+                element: <CyclePage />
+            },
         ]
     },
     {

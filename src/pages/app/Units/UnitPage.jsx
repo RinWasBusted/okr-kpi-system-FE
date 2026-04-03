@@ -39,23 +39,60 @@ const UnitPage = () => {
     }
   }, [unitsTree, isSearchActive]);
 
-  // Calculate stats (based on tree data for total count)
+  // Calculate stats from actual API data
   const stats = useMemo(() => {
-    const totalUnits = unitsTree.length;
+    // Helper function to traverse tree and collect all units
+    const collectAllUnits = (units) => {
+      let count = 0;
+      let totalOkrProgress = 0;
+      let totalKpiHealth = 0;
+      let okrCount = 0;
+      let kpiCount = 0;
 
-    // Mock data for progress/health (since API doesn't provide these yet)
-    // In real scenario, these should come from API
-    const avgOkrProgress = 78;
-    const okrTrend = 5;
-    const avgKpiHealth = 80;
-    const kpiTrend = 3;
+      const traverse = (unitList) => {
+        unitList.forEach(unit => {
+          count++;
+
+          // Accumulate OKR progress (only if > 0 or has OKRs)
+          if (unit.okr_progress !== undefined) {
+            totalOkrProgress += unit.okr_progress;
+            if (unit.okr_progress > 0 || unit.okr_count > 0) {
+              okrCount++;
+            }
+          }
+
+          // Accumulate KPI health (only if > 0 or has KPIs)
+          if (unit.kpi_health !== undefined) {
+            totalKpiHealth += unit.kpi_health;
+            if (unit.kpi_health > 0 || unit.kpi_count > 0) {
+              kpiCount++;
+            }
+          }
+
+          // Recursively process sub_units
+          if (unit.sub_units && unit.sub_units.length > 0) {
+            traverse(unit.sub_units);
+          }
+        });
+      };
+
+      traverse(units);
+
+      return {
+        totalUnits: count,
+        avgOkrProgress: okrCount > 0 ? Math.round(totalOkrProgress / okrCount) : 0,
+        avgKpiHealth: kpiCount > 0 ? Math.round(totalKpiHealth / kpiCount) : 0,
+      };
+    };
+
+    const result = collectAllUnits(unitsTree);
 
     return {
-      totalUnits,
-      avgOkrProgress,
-      okrTrend,
-      avgKpiHealth,
-      kpiTrend,
+      totalUnits: result.totalUnits,
+      avgOkrProgress: result.avgOkrProgress,
+      okrTrend: 0, // Can be calculated if historical data available
+      avgKpiHealth: result.avgKpiHealth,
+      kpiTrend: 0, // Can be calculated if historical data available
     };
   }, [unitsTree]);
 
@@ -107,7 +144,7 @@ const UnitPage = () => {
         </div>
         <button
           onClick={() => setIsAddModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors cursor-pointer"
         >
           <Plus size={18} />
           Tạo đơn vị cấp cao
@@ -134,9 +171,11 @@ const UnitPage = () => {
           ) : (
             <div className="flex items-center gap-2">
               <p className="text-3xl font-bold text-text">{stats.avgOkrProgress}%</p>
-              <span className="text-xs text-green-500 flex items-center">
-                ↑ {stats.okrTrend}%
-              </span>
+              {stats.okrTrend !== 0 && (
+                <span className="text-xs text-green-500 flex items-center">
+                  ↑ {stats.okrTrend}%
+                </span>
+              )}
             </div>
           )}
         </div>
@@ -149,9 +188,11 @@ const UnitPage = () => {
           ) : (
             <div className="flex items-center gap-2">
               <p className="text-3xl font-bold text-text">{stats.avgKpiHealth}%</p>
-              <span className="text-xs text-green-500 flex items-center">
-                ↑ {stats.kpiTrend}%
-              </span>
+              {stats.kpiTrend !== 0 && (
+                <span className="text-xs text-green-500 flex items-center">
+                  ↑ {stats.kpiTrend}%
+                </span>
+              )}
             </div>
           )}
         </div>

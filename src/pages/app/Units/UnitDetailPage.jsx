@@ -28,7 +28,7 @@ const UnitDetailPage = () => {
       <div className="space-y-6">
         <button
           onClick={() => navigate(`/${company_slug}/app/units`)}
-          className="flex items-center gap-2 text-primary hover:text-primary/80 transition-colors"
+          className="flex items-center gap-2 text-primary hover:text-primary/80 transition-colors cursor-pointer"
         >
           <ArrowLeft size={20} />
           Quay lại
@@ -51,7 +51,7 @@ const UnitDetailPage = () => {
       {/* Header with back button */}
       <button
         onClick={() => navigate(`/${company_slug}/app/units`)}
-        className="flex items-center gap-2 text-primary hover:text-primary/80 transition-colors"
+        className="flex items-center gap-2 text-primary hover:text-primary/80 transition-colors cursor-pointer"
       >
         <ArrowLeft size={20} />
         Quay lại

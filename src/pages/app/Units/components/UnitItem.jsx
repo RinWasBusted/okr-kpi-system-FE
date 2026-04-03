@@ -23,12 +23,6 @@ const UnitItem = ({ unit, level = 0, expandedUnits, toggleExpand, searchQuery, i
   const hasChildren = subUnits.length > 0;
   const isExpanded = expandedUnits.has(unit.id);
 
-  // Mock progress data (API doesn't provide these yet)
-  const okrCount = Math.floor(Math.random() * 5) + 1;
-  const kpiCount = Math.floor(Math.random() * 3) + 1;
-  const okrProgress = Math.floor(Math.random() * 40) + 40;
-  const kpiHealth = Math.floor(Math.random() * 50) + 50;
-
   // Determine color based on progress/health
   const getProgressColor = (value) => {
     if (value >= 80) return 'bg-green-500';
@@ -36,8 +30,8 @@ const UnitItem = ({ unit, level = 0, expandedUnits, toggleExpand, searchQuery, i
     return 'bg-red-500';
   };
 
-  const okrColor = getProgressColor(okrProgress);
-  const kpiColor = getProgressColor(kpiHealth);
+  const okrColor = getProgressColor(unit.okr_progress || 0);
+  const kpiColor = getProgressColor(unit.kpi_health || 0);
 
   // Filter children by search query
   const filteredChildren = useMemo(() => {
@@ -72,7 +66,7 @@ const UnitItem = ({ unit, level = 0, expandedUnits, toggleExpand, searchQuery, i
                         e.stopPropagation();
                         toggleExpand(unit.id);
                       }}
-                      className="p-1 rounded hover:bg-secondary/20 transition-colors"
+                      className="p-1 rounded hover:bg-secondary/20 transition-colors cursor-pointer"
                     >
                       {isExpanded ? (
                         <ChevronDown size={16} className="text-secondary" />
@@ -99,7 +93,7 @@ const UnitItem = ({ unit, level = 0, expandedUnits, toggleExpand, searchQuery, i
                         e.stopPropagation();
                         navigate(`/${company_slug}/app/units/${unit.id}`);
                       }}
-                      className="text-sm text-primary hover:underline flex items-center gap-0.5"
+                      className="text-sm text-primary hover:underline flex items-center gap-0.5 cursor-pointer"
                     >
                       Chi tiết
                       <ArrowUpRight size={12} />
@@ -116,11 +110,11 @@ const UnitItem = ({ unit, level = 0, expandedUnits, toggleExpand, searchQuery, i
                     </span>
                     <span className="flex items-center gap-1">
                       <Target size={12} />
-                      {okrCount} OKR
+                      {unit.okr_count || 0} OKR
                     </span>
                     <span className="flex items-center gap-1">
                       <Target size={12} className="rotate-45" />
-                      {kpiCount} KPI
+                      {unit.kpi_count || 0} KPI
                     </span>
                   </div>
                 </div>
@@ -131,12 +125,12 @@ const UnitItem = ({ unit, level = 0, expandedUnits, toggleExpand, searchQuery, i
                   <div className="w-36">
                     <div className="flex items-center justify-between text-xs mb-1">
                       <span className="text-secondary">OKR Progress</span>
-                      <span className="font-semibold text-text">{okrProgress}%</span>
+                      <span className="font-semibold text-text">{unit.okr_progress || 0}%</span>
                     </div>
                     <div className="h-2 bg-secondary/20 rounded-full overflow-hidden">
                       <div
                         className={`h-full ${okrColor} rounded-full transition-all duration-300`}
-                        style={{ width: `${okrProgress}%` }}
+                        style={{ width: `${unit.okr_progress || 0}%` }}
                       />
                     </div>
                   </div>
@@ -145,12 +139,12 @@ const UnitItem = ({ unit, level = 0, expandedUnits, toggleExpand, searchQuery, i
                   <div className="w-36">
                     <div className="flex items-center justify-between text-xs mb-1">
                       <span className="text-secondary">KPI Health</span>
-                      <span className="font-semibold text-text">{kpiHealth}%</span>
+                      <span className="font-semibold text-text">{unit.kpi_health || 0}%</span>
                     </div>
                     <div className="h-2 bg-secondary/20 rounded-full overflow-hidden">
                       <div
                         className={`h-full ${kpiColor} rounded-full transition-all duration-300`}
-                        style={{ width: `${kpiHealth}%` }}
+                        style={{ width: `${unit.kpi_health || 0}%` }}
                       />
                     </div>
                   </div>

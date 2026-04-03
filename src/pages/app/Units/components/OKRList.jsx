@@ -23,7 +23,7 @@ const CycleFilterDropdown = ({ cycles, selectedCycles, onToggle, onClear }) => {
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-1 px-3 py-1.5 text-sm border border-secondary/30 rounded-lg hover:bg-secondary/5 transition-colors"
+        className="flex items-center gap-1 px-3 py-1.5 text-sm border border-secondary/30 rounded-lg hover:bg-secondary/5 transition-colors cursor-pointer"
       >
         <span>Tất cả chu kỳ</span>
         {selectedCount > 0 && (
@@ -46,7 +46,7 @@ const CycleFilterDropdown = ({ cycles, selectedCycles, onToggle, onClear }) => {
               {selectedCount > 0 && (
                 <button
                   onClick={onClear}
-                  className="text-xs text-orange-500 hover:text-orange-600"
+                  className="text-xs text-orange-500 hover:text-orange-600 cursor-pointer"
                 >
                   Xóa lọc
                 </button>

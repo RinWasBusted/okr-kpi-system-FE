@@ -118,7 +118,7 @@ const EditUnitModal = ({ onClose, onSuccess, unit }) => {
           <h2 className="text-xl font-bold text-text">Chỉnh sửa đơn vị</h2>
           <button
             onClick={onClose}
-            className="p-1 hover:bg-secondary/10 rounded-lg transition-colors"
+            className="p-1 hover:bg-secondary/10 rounded-lg transition-colors cursor-pointer"
           >
             <X size={20} className="text-secondary" />
           </button>
@@ -203,14 +203,14 @@ const EditUnitModal = ({ onClose, onSuccess, unit }) => {
               type="button"
               onClick={onClose}
               disabled={updateMutation.isPending}
-              className="flex-1 px-4 py-2 border border-secondary/20 rounded-lg text-text hover:bg-secondary/5 transition-colors disabled:opacity-50"
+              className="flex-1 px-4 py-2 border border-secondary/20 rounded-lg text-text hover:bg-secondary/5 transition-colors disabled:opacity-50 cursor-pointer"
             >
               Hủy
             </button>
             <button
               type="submit"
               disabled={updateMutation.isPending || isLoadingUnits || isLoadingUsers}
-              className="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+              className="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
             >
               {updateMutation.isPending && (
                 <Loader size={16} className="animate-spin" />
