@@ -20,7 +20,7 @@ const UnitPage = () => {
   // Fetch units data (list mode in background for search)
   const { data: unitsListResponse, isLoading: isLoadingList } = useQuery({
     queryKey: ['units', 'list'],
-    queryFn: () => getUnits({ per_page: 1000, mode: 'list' }),
+    queryFn: () => getUnits({ per_page: 100, mode: 'list' }),
   });
 
   const unitsTree = unitsTreeResponse?.data || [];

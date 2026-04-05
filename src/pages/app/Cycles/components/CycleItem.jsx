@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Target, TrendingUp, Users, Calendar, Lock, LockOpen, Edit, Trash2, AlertCircle } from 'lucide-react';
+import { Target, TrendingUp, Calendar, Lock, LockOpen, Edit, Trash2 } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import { lockCycle } from '../../../../services/cycle';
@@ -86,12 +86,12 @@ const CycleItem = ({ cycle, onRefetch }) => {
   const duration = calculateDuration();
   const dateRange = formatDateRange();
 
-  // Placeholder data - should come from API or calculated
-  const objectives = cycle.statistics?.total_objectives || Math.floor(Math.random() * 20) + 30;
-  const avgProgress = cycle.statistics?.avg_objective_progress || Math.floor(Math.random() * 20) + 70;
-  const employees = cycle.statistics?.total_employees || Math.floor(Math.random() * 50) + 200;
-  const okrs = cycle.statistics?.total_okrs || Math.floor(Math.random() * 10) + 40;
-  const kpis = cycle.statistics?.total_kpis || Math.floor(Math.random() * 20) + 90;
+  // Get data from API response (statistics object)
+  const statistics = cycle.statistics || {};
+  const objectives = statistics.total_objectives || 0;
+  const kpis = statistics.total_kpis || 0;
+  const avgObjectiveProgress = statistics.avg_objective_progress || 0;
+  const avgKpiProgress = statistics.avg_kpi_progress || 0;
 
   return (
     <>
@@ -110,7 +110,7 @@ const CycleItem = ({ cycle, onRefetch }) => {
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-4 gap-6 mt-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
               {/* Objectives */}
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center">
@@ -122,36 +122,36 @@ const CycleItem = ({ cycle, onRefetch }) => {
                 </div>
               </div>
 
-              {/* Average Progress */}
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-cyan-100 flex items-center justify-center">
-                  <TrendingUp size={20} className="text-cyan-600" />
-                </div>
-                <div>
-                  <p className="text-xs text-secondary">Tiến độ TB</p>
-                  <p className="text-lg font-bold text-text">{avgProgress}%</p>
-                </div>
-              </div>
-
-              {/* Employees */}
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center">
-                  <Users size={20} className="text-emerald-600" />
-                </div>
-                <div>
-                  <p className="text-xs text-secondary">Nhân viên</p>
-                  <p className="text-lg font-bold text-text">{employees}</p>
-                </div>
-              </div>
-
-              {/* OKRs/KPIs */}
+              {/* KPIs */}
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
                   <Calendar size={20} className="text-amber-600" />
                 </div>
                 <div>
-                  <p className="text-xs text-secondary">OKRs/KPIs</p>
-                  <p className="text-lg font-bold text-text">{okrs}/{kpis}</p>
+                  <p className="text-xs text-secondary">KPIs</p>
+                  <p className="text-lg font-bold text-text">{kpis}</p>
+                </div>
+              </div>
+
+              {/* Average Objective Progress */}
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-cyan-100 flex items-center justify-center">
+                  <TrendingUp size={20} className="text-cyan-600" />
+                </div>
+                <div>
+                  <p className="text-xs text-secondary">Tiến độ OKR TB</p>
+                  <p className="text-lg font-bold text-text">{avgObjectiveProgress}%</p>
+                </div>
+              </div>
+
+              {/* Average KPI Progress */}
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center">
+                  <TrendingUp size={20} className="text-emerald-600" />
+                </div>
+                <div>
+                  <p className="text-xs text-secondary">Tiến độ KPI TB</p>
+                  <p className="text-lg font-bold text-text">{avgKpiProgress}%</p>
                 </div>
               </div>
             </div>

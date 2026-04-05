@@ -35,7 +35,7 @@ export default function LoginLeftPanel() {
         <ul className="space-y-3">
           {features.map((feature, index) => (
             <li key={index} className="flex items-center gap-3 text-secondary text-sm">
-              <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0"></span>
+              <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0"></span>
               <span>{feature}</span>
             </li>
           ))}

@@ -3,16 +3,11 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Building2, ChevronDown, ChevronRight, Users, Target, ArrowUpRight, Edit, Trash2 } from 'lucide-react';
 import EditUnitModal from './EditUnitModal';
 import DeleteUnitConfirmModal from './DeleteUnitConfirmModal';
-import { useAuthStore } from '../../../../hooks/useAuth';
 
 // Recursive Unit Item Component
 const UnitItem = ({ unit, level = 0, expandedUnits, toggleExpand, searchQuery, isSearchMode = false }) => {
   const navigate = useNavigate();
   const { company_slug } = useParams();
-
-  // Get user role from auth store
-  const { user } = useAuthStore();
-  const isAdmin = user?.role === 'ADMIN_COMPANY';
 
   // Modal states
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -150,18 +145,21 @@ const UnitItem = ({ unit, level = 0, expandedUnits, toggleExpand, searchQuery, i
                   </div>
 
                   {/* Action Buttons */}
-                  {isAdmin && (
+                  {unit?.permission?.editable && (
                   <div className="flex items-center gap-2 border-l border-secondary/20 pl-4">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setIsEditModalOpen(true);
-                      }}
-                      className="p-2 text-secondary hover:text-primary hover:bg-orange-100 rounded-lg transition-colors cursor-pointer"
+                    {unit?.permission?.editable && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsEditModalOpen(true);
+                        }}
+                        className="p-2 text-secondary hover:text-primary hover:bg-orange-100 rounded-lg transition-colors cursor-pointer"
                       title="Chỉnh sửa"
                     >
                       <Edit size={18} />
                     </button>
+                    )}
+                    {unit?.permission?.deletable && (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -172,6 +170,7 @@ const UnitItem = ({ unit, level = 0, expandedUnits, toggleExpand, searchQuery, i
                     >
                       <Trash2 size={18} />
                     </button>
+                    )}
                   </div>
                   )}
                 </div>

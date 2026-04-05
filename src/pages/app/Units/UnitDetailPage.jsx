@@ -1,15 +1,20 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, Building2, Users, Target, TrendingUp, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Building2, Users, Target, TrendingUp, AlertCircle, Edit, Trash2 } from 'lucide-react';
+import { useState } from 'react';
 import { getUnitDetail } from '../../../services/unit';
 import OKRList from './components/OKRList';
 import KPIList from './components/KPIList';
 import MemberList from './components/MemberList';
 import MemberListSkeleton from './components/MemberListSkeleton';
+import EditUnitModal from './components/EditUnitModal';
+import DeleteUnitConfirmModal from './components/DeleteUnitConfirmModal';
 
 const UnitDetailPage = () => {
   const { unitId, company_slug } = useParams();
   const navigate = useNavigate();
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   // Fetch unit details only
   const { data: unitData, isLoading: unitLoading, error: unitError } = useQuery({
@@ -74,19 +79,42 @@ const UnitDetailPage = () => {
             </div>
           ) : (
             <div className="bg-background rounded-xl border border-secondary/20 p-6">
-              <div className="flex items-start gap-4">
-                <div className="w-16 h-16 rounded-xl bg-orange-100 flex items-center justify-center shrink-0">
-                  <Building2 size={32} className="text-orange-500" />
-                </div>
-                <div className="flex-1">
-                  <h1 className="text-2xl font-bold text-text mb-2">{unit.name}</h1>
-                  <div className="space-y-1 text-sm text-secondary">
-                    <p>Quản lý: <span className="text-text font-medium">{unit.manager?.full_name || 'Chưa có'}</span></p>
-                    <p>Tổng số thành viên: <span className="text-text font-medium">{memberCount}</span></p>
-                    {unit.parent_unit && (
-                      <p>Đơn vị cha: <span className="text-text font-medium">{unit.parent_unit.name}</span></p>
-                    )}
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start gap-4 flex-1">
+                  <div className="w-16 h-16 rounded-xl bg-orange-100 flex items-center justify-center shrink-0">
+                    <Building2 size={32} className="text-orange-500" />
                   </div>
+                  <div className="flex-1">
+                    <h1 className="text-2xl font-bold text-text mb-2">{unit.name}</h1>
+                    <div className="space-y-1 text-sm text-secondary">
+                      <p>Quản lý: <span className="text-text font-medium">{unit.manager?.full_name || 'Chưa có'}</span></p>
+                      <p>Tổng số thành viên: <span className="text-text font-medium">{memberCount}</span></p>
+                      {unit.parent_unit && (
+                        <p>Đơn vị cha: <span className="text-text font-medium">{unit.parent_unit.name}</span></p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                {/* Action Buttons */}
+                <div className="flex items-center gap-2">
+                  {unit.permission?.editable && (
+                    <button
+                      onClick={() => setIsEditModalOpen(true)}
+                      className="p-2 text-secondary hover:text-primary hover:bg-orange-100 rounded-lg transition-colors cursor-pointer"
+                      title="Chỉnh sửa"
+                    >
+                      <Edit size={18} />
+                    </button>
+                  )}
+                  {unit.permission?.deletable && (
+                    <button
+                      onClick={() => setIsDeleteModalOpen(true)}
+                      className="p-2 text-secondary hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                      title="Xóa"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -157,6 +185,26 @@ const UnitDetailPage = () => {
           )}
         </div>
       </div>
+
+      {/* Edit Modal */}
+      {isEditModalOpen && (
+        <EditUnitModal
+          unit={unit}
+          onClose={() => setIsEditModalOpen(false)}
+        />
+      )}
+
+      {/* Delete Modal */}
+      {isDeleteModalOpen && (
+        <DeleteUnitConfirmModal
+          unit={unit}
+          onClose={() => setIsDeleteModalOpen(false)}
+          onSuccess={() => {
+            setIsDeleteModalOpen(false);
+            navigate(`/${company_slug}/app/units`);
+          }}
+        />
+      )}
     </div>
   );
 };
