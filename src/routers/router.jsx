@@ -14,6 +14,7 @@ import UnitPage from "../pages/app/Units/UnitPage.jsx";
 import UnitDetailPage from "../pages/app/Units/UnitDetailPage.jsx";
 import CyclePage from "../pages/app/Cycles/CyclePage.jsx";
 import OKRPage from "../pages/app/OKR/OKRPage.jsx";
+import ObjectiveDetailPage from "../pages/app/OKR/ObjectiveDetailPage.jsx";
 import KPIDictionariesPage from "../pages/app/KPIDictionaries/KPIDictionariesPage.jsx";
 import KPIPage from "../pages/app/KPI/KPIPage.jsx";
 
@@ -85,13 +86,17 @@ const router = createBrowserRouter([
                 element: <OKRPage />
             },
             {
+                path: "okr/:objectiveId",
+                element: <ObjectiveDetailPage />
+            },
+            {
                 path: "kpi",
                 element: <KPIPage />
             },
             {
                 path: "kpi-dictionaries",
                 element: <KPIDictionariesPage />
-            }
+            },
         ]
     },
     {

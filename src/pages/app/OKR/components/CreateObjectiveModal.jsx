@@ -3,8 +3,9 @@ import { X, Eye, EyeOff, Lock } from 'lucide-react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import { createObjective, getAvailableParentObjectives } from '../../../../services/okr.js';
-import { getUnits, getUnitMembers } from '../../../../services/unit.js';
+import { getUnits } from '../../../../services/unit.js';
 import { getCycles } from '../../../../services/cycle.js';
+import { getUsers } from '../../../../services/user.js';
 
 const CreateObjectiveModal = ({ onClose, onSuccess }) => {
   const queryClient = useQueryClient();
@@ -31,9 +32,9 @@ const CreateObjectiveModal = ({ onClose, onSuccess }) => {
   });
 
   // Fetch users of selected unit
-  const { data: unitMembersResponse, isLoading: isLoadingUnitMembers } = useQuery({
-    queryKey: ['unitMembers', formData.unit_id],
-    queryFn: () => getUnitMembers(formData.unit_id, { per_page: 100 }),
+  const { data: usersResponse, isLoading: isLoadingUsers } = useQuery({
+    queryKey: ['users', formData.unit_id],
+    queryFn: () => getUsers({ unit_id: formData.unit_id, per_page: 100 }),
     enabled: !!formData.unit_id,
   });
 
@@ -49,7 +50,7 @@ const CreateObjectiveModal = ({ onClose, onSuccess }) => {
 
   const units = unitsResponse?.data || [];
   const cycles = cyclesResponse?.data || [];
-  const unitMembers = unitMembersResponse?.data || [];
+  const users = usersResponse?.data || [];
   const parentObjectivesData = parentObjectivesResponse?.data || [];
 
   // Flatten parent objectives from grouped data
@@ -100,7 +101,7 @@ const CreateObjectiveModal = ({ onClose, onSuccess }) => {
       onClose();
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi tạo Objective');
+      toast.error(error.response?.data?.error?.message || 'Có lỗi xảy ra khi tạo Objective');
     },
   });
 
@@ -275,19 +276,19 @@ const CreateObjectiveModal = ({ onClose, onSuccess }) => {
               <select
                 value={formData.owner_id}
                 onChange={(e) => setFormData({ ...formData, owner_id: e.target.value })}
-                disabled={!formData.unit_id || isLoadingUnitMembers}
+                disabled={!formData.unit_id || isLoadingUsers}
                 className="w-full px-4 py-2 rounded-lg border border-secondary/20 bg-background text-text focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer disabled:opacity-50"
               >
                 <option value="">
                   {!formData.unit_id
                     ? 'Chọn đơn vị trước'
-                    : isLoadingUnitMembers
+                    : isLoadingUsers
                       ? 'Đang tải...'
                       : 'Cả đơn vị'}
                 </option>
-                {unitMembers.map((member) => (
-                  <option key={member.id} value={member.id}>
-                    {member.full_name}
+                {users.map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.full_name}
                   </option>
                 ))}
               </select>
