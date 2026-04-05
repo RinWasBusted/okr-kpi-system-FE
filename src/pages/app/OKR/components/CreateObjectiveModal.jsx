@@ -1,30 +1,94 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { X, Eye, EyeOff, Lock } from 'lucide-react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
-import { createObjective } from '../../../../services/okr.js';
-import { getUnits } from '../../../../services/unit.js';
-import { useQuery } from '@tanstack/react-query';
+import { createObjective, getAvailableParentObjectives } from '../../../../services/okr.js';
+import { getUnits, getUnitMembers } from '../../../../services/unit.js';
+import { getCycles } from '../../../../services/cycle.js';
 
-const CreateObjectiveModal = ({ onClose, onSuccess, cycles }) => {
+const CreateObjectiveModal = ({ onClose, onSuccess }) => {
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    owner: '',
+    owner_id: '',
     unit_id: '',
-    cycle_id: cycles[0]?.id || '',
-    status: 'Draft',
-    visibility: 'INTERNAL',
+    cycle_id: '',
+    parent_objective_id: '',
+    visibility: 'PUBLIC',
   });
 
-  // Fetch units for dropdown
+  // Fetch units tree for dropdown
   const { data: unitsResponse, isLoading: isLoadingUnits } = useQuery({
-    queryKey: ['units', 'list'],
-    queryFn: () => getUnits({ mode: 'list', per_page: 100 }),
+    queryKey: ['units', 'tree'],
+    queryFn: () => getUnits({ mode: 'tree', per_page: 100 }),
+  });
+
+  // Fetch cycles for dropdown
+  const { data: cyclesResponse, isLoading: isLoadingCycles } = useQuery({
+    queryKey: ['cycles', 'list'],
+    queryFn: () => getCycles({ per_page: 100 }),
+  });
+
+  // Fetch users of selected unit
+  const { data: unitMembersResponse, isLoading: isLoadingUnitMembers } = useQuery({
+    queryKey: ['unitMembers', formData.unit_id],
+    queryFn: () => getUnitMembers(formData.unit_id, { per_page: 100 }),
+    enabled: !!formData.unit_id,
+  });
+
+  // Fetch available parent objectives for selected unit
+  const { data: parentObjectivesResponse, isLoading: isLoadingParentObjectives } = useQuery({
+    queryKey: ['availableParentObjectives', formData.unit_id, formData.cycle_id],
+    queryFn: () => getAvailableParentObjectives({
+      unit_id: formData.unit_id,
+      cycle_id: formData.cycle_id || undefined,
+    }),
+    enabled: !!formData.unit_id,
   });
 
   const units = unitsResponse?.data || [];
+  const cycles = cyclesResponse?.data || [];
+  const unitMembers = unitMembersResponse?.data || [];
+  const parentObjectivesData = parentObjectivesResponse?.data || [];
+
+  // Flatten parent objectives from grouped data
+  const parentObjectives = useMemo(() => {
+    const objectives = [];
+    parentObjectivesData.forEach((group) => {
+      if (group.objectives && group.objectives.length > 0) {
+        group.objectives.forEach((obj) => {
+          objectives.push({
+            ...obj,
+            unitName: group.unit?.name || 'Không xác định',
+          });
+        });
+      }
+    });
+    return objectives;
+  }, [parentObjectivesData]);
+
+  // Flatten units for selection with hierarchical display
+  const flatUnits = useMemo(() => {
+    const options = [];
+
+    const traverse = (items, level = 0) => {
+      items.forEach((item) => {
+        options.push({
+          id: item.id,
+          name: item.name,
+          level,
+          prefix: level > 0 ? '　'.repeat(level) + '└ ' : '',
+        });
+        if (item.sub_units?.length) {
+          traverse(item.sub_units, level + 1);
+        }
+      });
+    };
+
+    traverse(units);
+    return options;
+  }, [units]);
 
   // Create mutation
   const createMutation = useMutation({
@@ -53,15 +117,26 @@ const CreateObjectiveModal = ({ onClose, onSuccess, cycles }) => {
       return;
     }
 
+    if (!formData.unit_id) {
+      toast.error('Vui lòng chọn đơn vị');
+      return;
+    }
+
     const payload = {
       title: formData.title,
       description: formData.description,
       cycle_id: parseInt(formData.cycle_id),
+      unit_id: parseInt(formData.unit_id),
       visibility: formData.visibility,
     };
 
-    if (formData.unit_id) {
-      payload.unit_id = parseInt(formData.unit_id);
+    // Optional fields - only add if they have values
+    if (formData.owner_id) {
+      payload.owner_id = parseInt(formData.owner_id);
+    }
+
+    if (formData.parent_objective_id) {
+      payload.parent_objective_id = parseInt(formData.parent_objective_id);
     }
 
     createMutation.mutate(payload);
@@ -71,27 +146,24 @@ const CreateObjectiveModal = ({ onClose, onSuccess, cycles }) => {
     {
       value: 'PUBLIC',
       label: 'Công khai',
-      description: 'Mọi người',
+      description: 'Mọi người đều xem được',
       icon: Eye,
+      warning: null,
     },
     {
       value: 'INTERNAL',
       label: 'Nội bộ',
-      description: 'Phòng ban',
+      description: 'Trong nhánh đơn vị',
       icon: EyeOff,
+      warning: 'Chỉ các thành viên thuộc đơn vị này, đơn vị cha và đơn vị con có thể xem.',
     },
     {
       value: 'PRIVATE',
       label: 'Riêng tư',
-      description: 'Chỉ mình tôi',
+      description: 'Hạn chế nhất',
       icon: Lock,
+      warning: 'Chỉ người sở hữu và các thành viên đơn vị cấp trên được xem.',
     },
-  ];
-
-  const statusOptions = [
-    { value: 'Draft', label: 'Draft' },
-    { value: 'Active', label: 'Active' },
-    { value: 'Pending_Approval', label: 'Pending Approval' },
   ];
 
   return (
@@ -146,41 +218,33 @@ const CreateObjectiveModal = ({ onClose, onSuccess, cycles }) => {
             />
           </div>
 
-          {/* Owner and Unit */}
+          {/* Unit and Cycle */}
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-text mb-1">
-                Owner <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                placeholder="VD: Sales Team"
-                value={formData.owner}
-                onChange={(e) => setFormData({ ...formData, owner: e.target.value })}
-                className="w-full px-4 py-2 rounded-lg border border-secondary/20 bg-background text-text placeholder:text-secondary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-              />
-            </div>
             <div>
               <label className="block text-sm font-medium text-text mb-1">
                 Đơn vị/Phòng ban <span className="text-red-500">*</span>
               </label>
               <select
                 value={formData.unit_id}
-                onChange={(e) => setFormData({ ...formData, unit_id: e.target.value })}
-                className="w-full px-4 py-2 rounded-lg border border-secondary/20 bg-background text-text focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer"
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    unit_id: e.target.value,
+                    owner_id: '', // Reset owner when unit changes
+                    parent_objective_id: '', // Reset parent objective when unit changes
+                  })
+                }
+                disabled={isLoadingUnits}
+                className="w-full px-4 py-2 rounded-lg border border-secondary/20 bg-background text-text focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer disabled:opacity-50"
               >
-                <option value="">Chọn đơn vị</option>
-                {units.map((unit) => (
+                <option value="">{isLoadingUnits ? 'Đang tải...' : 'Chọn đơn vị'}</option>
+                {flatUnits.map((unit) => (
                   <option key={unit.id} value={unit.id}>
-                    {unit.name}
+                    {unit.prefix + unit.name}
                   </option>
                 ))}
               </select>
             </div>
-          </div>
-
-          {/* Cycle and Status */}
-          <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-text mb-1">
                 Chu kỳ <span className="text-red-500">*</span>
@@ -188,10 +252,11 @@ const CreateObjectiveModal = ({ onClose, onSuccess, cycles }) => {
               <select
                 value={formData.cycle_id}
                 onChange={(e) => setFormData({ ...formData, cycle_id: e.target.value })}
-                className="w-full px-4 py-2 rounded-lg border border-secondary/20 bg-background text-text focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer"
+                disabled={isLoadingCycles}
+                className="w-full px-4 py-2 rounded-lg border border-secondary/20 bg-background text-text focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer disabled:opacity-50"
                 required
               >
-                <option value="">Chọn chu kỳ</option>
+                <option value="">{isLoadingCycles ? 'Đang tải...' : 'Chọn chu kỳ'}</option>
                 {cycles.map((cycle) => (
                   <option key={cycle.id} value={cycle.id}>
                     {cycle.name}
@@ -199,18 +264,56 @@ const CreateObjectiveModal = ({ onClose, onSuccess, cycles }) => {
                 ))}
               </select>
             </div>
+          </div>
+
+          {/* Owner and Parent Objective */}
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-text mb-1">
-                Trạng thái <span className="text-red-500">*</span>
+                Người sở hữu
               </label>
               <select
-                value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                className="w-full px-4 py-2 rounded-lg border border-secondary/20 bg-background text-text focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer"
+                value={formData.owner_id}
+                onChange={(e) => setFormData({ ...formData, owner_id: e.target.value })}
+                disabled={!formData.unit_id || isLoadingUnitMembers}
+                className="w-full px-4 py-2 rounded-lg border border-secondary/20 bg-background text-text focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer disabled:opacity-50"
               >
-                {statusOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
+                <option value="">
+                  {!formData.unit_id
+                    ? 'Chọn đơn vị trước'
+                    : isLoadingUnitMembers
+                      ? 'Đang tải...'
+                      : 'Cả đơn vị'}
+                </option>
+                {unitMembers.map((member) => (
+                  <option key={member.id} value={member.id}>
+                    {member.full_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-text mb-1">
+                Objective cha
+              </label>
+              <select
+                value={formData.parent_objective_id}
+                onChange={(e) =>
+                  setFormData({ ...formData, parent_objective_id: e.target.value })
+                }
+                disabled={!formData.unit_id || isLoadingParentObjectives}
+                className="w-full px-4 py-2 rounded-lg border border-secondary/20 bg-background text-text focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer disabled:opacity-50"
+              >
+                <option value="">
+                  {!formData.unit_id
+                    ? 'Chọn đơn vị trước'
+                    : isLoadingParentObjectives
+                      ? 'Đang tải...'
+                      : 'Không có'}
+                </option>
+                {parentObjectives.map((obj) => (
+                  <option key={obj.id} value={obj.id}>
+                    [{obj.unitName}] {obj.title}
                   </option>
                 ))}
               </select>
@@ -243,18 +346,27 @@ const CreateObjectiveModal = ({ onClose, onSuccess, cycles }) => {
                         className={`shrink-0 mt-0.5 ${isSelected ? 'text-primary' : 'text-secondary'}`}
                       />
                       <div>
-                        <div className={`text-sm font-medium ${isSelected ? 'text-primary' : 'text-text'}`}>
+                        <div
+                          className={`text-sm font-medium ${isSelected ? 'text-primary' : 'text-text'}`}
+                        >
                           {option.label}
                         </div>
-                        <div className="text-xs text-secondary">
-                          {option.description}
-                        </div>
+                        <div className="text-xs text-secondary">{option.description}</div>
                       </div>
                     </div>
                   </button>
                 );
               })}
             </div>
+            {/* Visibility Warning */}
+            {formData.visibility !== 'PUBLIC' && (
+              <div className="mt-3 p-3 rounded-lg bg-amber-50 border border-amber-200">
+                <p className="text-sm text-amber-800">
+                  <span className="font-medium">Lưu ý: </span>
+                  {visibilityOptions.find((opt) => opt.value === formData.visibility)?.warning}
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Footer */}

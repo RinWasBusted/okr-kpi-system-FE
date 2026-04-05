@@ -25,12 +25,16 @@ import axiosClient from '../utils/axios.js';
  * @returns {Array<Object>} response.data - Array of objective objects
  * @returns {number} response.data[].id - Objective ID
  * @returns {string} response.data[].title - Objective title
- * @returns {string} [response.data[].description] - Objective description
+ * @returns {string} [response.data[].description] - Objective description (nullable)
  * @returns {string} response.data[].status - Status (Draft, Active, Pending_Approval, Rejected, Completed)
  * @returns {string} response.data[].visibility - Visibility level (PUBLIC < INTERNAL < PRIVATE)
  * @returns {number} response.data[].progress_percentage - Progress percentage (0-100)
  * @returns {string} response.data[].progress_status - Progress status (NOT_STARTED, DANGER, WARNING, ON_TRACK, COMPLETED)
  * @returns {Object} [response.data[].cycle] - Associated cycle object (nullable)
+ * @returns {number} [response.data[].cycle.id] - Cycle ID
+ * @returns {string} [response.data[].cycle.name] - Cycle name
+ * @returns {string} [response.data[].cycle.start_date] - Cycle start date (format: date)
+ * @returns {string} [response.data[].cycle.end_date] - Cycle end date (format: date)
  * @returns {Object} [response.data[].owner] - Owner user object (nullable)
  * @returns {Object} [response.data[].unit] - Associated unit object (nullable)
  * @returns {Object} [response.data[].parent_objective] - Parent objective object (nullable)
@@ -42,7 +46,8 @@ import axiosClient from '../utils/axios.js';
  * 
  * @throws {Error} If request fails or query parameters are invalid
  * 
- * @description Child objectives cannot be more public than parent objectives (visibility hierarchy enforcement)
+ * @description Retrieve objectives with visibility hierarchy enforcement.
+ * Child objectives cannot be more public than parent objectives (PUBLIC < INTERNAL < PRIVATE).
  * 
  * @example
  * const objectives = await getObjectives({ 
@@ -59,21 +64,68 @@ export const getObjectives = async (params = {}) => {
 };
 
 /**
+ * Get available parent objectives for a unit
+ * @async
+ * @function getAvailableParentObjectives
+ * @param {Object} params - Query parameters
+ * @param {number} params.unit_id - The unit ID for which to find available parent objectives (required)
+ * @param {number} [params.cycle_id] - Optional filter by cycle
+ * @param {boolean} [params.include_key_results] - Include associated key results in response (default: false)
+ * 
+ * @returns {Promise<Object>} Response object
+ * @returns {boolean} response.success - Whether request was successful
+ * @returns {string} response.message - Response message
+ * @returns {Array<Object>} response.data - Array of grouped objectives by unit
+ * @returns {Object} [response.data[].unit] - Unit object (nullable)
+ * @returns {Array<Object>} response.data[].objectives - Array of objectives in this unit
+ * @returns {number} response.data[].objectives[].id - Objective ID
+ * @returns {string} response.data[].objectives[].title - Objective title
+ * @returns {string} response.data[].objectives[].status - Status (Active or Completed)
+ * @returns {string} response.data[].objectives[].visibility - Visibility level
+ * @returns {number} response.data[].objectives[].progress_percentage - Progress percentage
+ * @returns {Object} response.meta - Metadata
+ * @returns {number} response.meta.unit_id - The requested unit ID
+ * @returns {Array<number>} response.meta.unit_ids_searched - All unit IDs searched (specified unit + ancestors)
+ * @returns {number} response.meta.total - Total number of available parent objectives
+ * 
+ * @throws {Error} If request fails
+ *   - 400: Invalid unit_id
+ *   - 404: Unit not found
+ * 
+ * @description Retrieve objectives that can be set as parent for a new objective in the specified unit.
+ * Returns objectives from the specified unit and all its ancestor units.
+ * Only includes objectives with status "Active" or "Completed".
+ * Results are filtered by visibility permissions.
+ * 
+ * @example
+ * const availableParents = await getAvailableParentObjectives({
+ *   unit_id: 5,
+ *   cycle_id: 1,
+ *   include_key_results: false
+ * });
+ */
+export const getAvailableParentObjectives = async (params = {}) => {
+  const response = await axiosClient.get('/objectives/available-parents', { params });
+  return response.data;
+};
+
+/**
  * Create a new objective with visibility hierarchy enforcement
  * @async
  * @function createObjective
  * @param {Object} data - Objective data
  * @param {string} data.title - Objective title (required, 1-255 characters)
  * @param {number} data.cycle_id - Cycle ID this objective belongs to (required)
- * @param {string} [data.description] - Objective description (optional, max 1000 characters)
  * @param {number} [data.unit_id] - Target unit ID (optional)
  * @param {number} [data.owner_id] - Assign to specific user ID (optional)
- * @param {number} [data.parent_objective_id] - Parent objective ID for hierarchy (optional)
+ * @param {number} [data.parent_objective_id] - Parent objective ID for hierarchy (optional, child visibility must be >= parent visibility)
  * @param {string} [data.visibility] - Visibility level (default: INTERNAL)
  *   - PUBLIC: Visible to all users
  *   - INTERNAL: Visible within unit hierarchy
  *   - PRIVATE: Only visible to owner and unit ancestors
  *   Note: If parent_objective_id provided, child visibility must be >= parent visibility (more private or equal)
+ *   Numeric values: PUBLIC (1) < INTERNAL (2) < PRIVATE (3)
+ * @param {string} [data.description] - Objective description (optional, max 1000 characters)
  * 
  * @returns {Promise<Object>} Response object
  * @returns {boolean} response.success - Whether request was successful
@@ -118,10 +170,11 @@ export const createObjective = async (data) => {
  * @param {number} id - Objective ID (required)
  * @param {Object} data - Update data
  * @param {string} [data.title] - Objective title (1-255 characters)
- * @param {string} [data.description] - Objective description (max 1000 characters)
- * @param {number} [data.parent_objective_id] - Change parent objective ID (nullable)
+ * @param {number} [data.parent_objective_id] - Change parent objective ID (nullable, child visibility must be >= parent visibility)
  * @param {string} [data.visibility] - Visibility level (PUBLIC, INTERNAL, PRIVATE)
+ *   - PUBLIC (1) < INTERNAL (2) < PRIVATE (3)
  *   Note: Must be >= parent visibility if parent changes (more private or equal)
+ * @param {string} [data.description] - Objective description (max 1000 characters)
  * 
  * @returns {Promise<Object>} Response object
  * @returns {boolean} response.success - Whether request was successful
@@ -186,10 +239,11 @@ export const submitObjective = async (id) => {
  * @param {number} id - Objective ID (required)
  * @param {Object} [data] - Optional approval data with updates
  * @param {string} [data.title] - Update objective title (1-255 characters)
- * @param {string} [data.description] - Update objective description (max 1000 characters)
- * @param {number} [data.parent_objective_id] - Set parent objective ID (nullable)
+ * @param {number} [data.parent_objective_id] - Set parent objective ID (nullable, child visibility must be >= parent visibility)
  * @param {string} [data.visibility] - Set visibility level (PUBLIC, INTERNAL, PRIVATE)
+ *   - PUBLIC (1) < INTERNAL (2) < PRIVATE (3)
  *   Note: Must be >= parent visibility if parent is set (more private or equal)
+ * @param {string} [data.description] - Update objective description (max 1000 characters)
  * 
  * @returns {Promise<Object>} Response object
  * @returns {boolean} response.success - Whether request was successful
@@ -208,7 +262,7 @@ export const submitObjective = async (id) => {
  *   - 422: Validation error (e.g., child visibility more public than parent)
  * 
  * @description Objective status must be Pending_Approval.
- * Can optionally update title, description, parent, or visibility during approval process.
+ * Can optionally update title, parent, visibility, or description during approval process.
  * Child visibility must be >= parent visibility if parent changes (more private or equal).
  * 
  * @example
