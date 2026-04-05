@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Edit, Trash2 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { getKeyResults, deleteKeyResult } from '../../../../services/okr.js';
+import CreateKeyResultModal from './CreateKeyResultModal.jsx';
 
 const KeyResultItem = ({ keyResult, onEdit, onDelete }) => {
   const progress = keyResult.progress_percentage || Math.round((keyResult.current_value / keyResult.target_value) * 100) || 0;
@@ -98,7 +99,7 @@ const KeyResultItem = ({ keyResult, onEdit, onDelete }) => {
 
 const KeyResultsSection = ({ objectiveId }) => {
   const queryClient = useQueryClient();
-  const [, setIsCreateModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [, setEditingKeyResult] = useState(null);
 
   // Fetch key results
@@ -175,6 +176,18 @@ const KeyResultsSection = ({ objectiveId }) => {
           ))
         )}
       </div>
+
+      {/* Create Key Result Modal */}
+      {isCreateModalOpen && (
+        <CreateKeyResultModal
+          objectiveId={objectiveId}
+          onClose={() => setIsCreateModalOpen(false)}
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ['keyResults', objectiveId] });
+            queryClient.invalidateQueries({ queryKey: ['objective', objectiveId] });
+          }}
+        />
+      )}
     </div>
   );
 };

@@ -1,19 +1,34 @@
 import { useMemo } from 'react';
 
+// Predefined color palette for key result segments
+const COLOR_PALETTE = [
+  'bg-red-500',
+  'bg-orange-500',
+  'bg-amber-500',
+  'bg-yellow-500',
+  'bg-lime-500',
+  'bg-green-500',
+  'bg-emerald-500',
+  'bg-teal-500',
+  'bg-cyan-500',
+  'bg-sky-500',
+  'bg-blue-500',
+  'bg-indigo-500',
+  'bg-violet-500',
+  'bg-purple-500',
+  'bg-fuchsia-500',
+  'bg-pink-500',
+  'bg-rose-500',
+];
+
+// Generate a stable color based on key result ID
+const getColorById = (id) => {
+  const index = id % COLOR_PALETTE.length;
+  return COLOR_PALETTE[index];
+};
+
 const ProgressSection = ({ objective }) => {
   const keyResults = objective?.key_results || [];
-
-  const getSegmentColor = (status) => {
-    switch (status) {
-      case 'COMPLETED':
-      case 'ON_TRACK':
-        return 'bg-emerald-500';
-      case 'WARNING':
-        return 'bg-orange-400';
-      default:
-        return 'bg-sky-500';
-    }
-  };
 
   // Calculate segments based on key results weights
   const totalWeight = keyResults.reduce((sum, kr) => sum + (kr.weight || 0), 0) || 100;
@@ -22,7 +37,7 @@ const ProgressSection = ({ objective }) => {
     return keyResults.map(kr => ({
       id: kr.id,
       weight: ((kr.weight || 33.33) / totalWeight) * 100,
-      color: getSegmentColor(kr.progress_status),
+      color: getColorById(kr.id),
       title: kr.title,
       percentage: kr.progress_percentage || 0
     }));

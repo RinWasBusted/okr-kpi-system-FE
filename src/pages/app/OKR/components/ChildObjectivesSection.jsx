@@ -51,10 +51,10 @@ const ChildObjectivesSection = ({ childObjectives = [] }) => {
                   </div>
 
                   <Link
-                    to={`../${child.id}`}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-sky-100 text-sky-700 rounded-lg text-sm hover:bg-sky-200 transition-colors"
+                    to={`../okr/${child.id}`}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-primary text-white rounded-lg text-sm hover:bg-primary/90 transition-colors cursor-pointer"
                   >
-                    Xem Key Results ({child.key_results?.length || 0})
+                    Chi tiết
                   </Link>
                 </div>
 
