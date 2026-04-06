@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
 import { ChevronDown, ChevronRight, BarChart3, Edit, Trash2, ArrowUpRight, Eye, EyeOff, Users } from 'lucide-react';
 
 // Visibility badge component
@@ -92,15 +93,16 @@ const CycleTooltip = ({ cycle }) => {
 };
 
 // Recursive KPI Item Component
-const KPIItem = ({ kpi, level = 0, allKPIs, onUpdate, onEdit, onDelete }) => {
-  // Find child KPIs
-  const childKPIs = allKPIs?.filter(k => k.parent_assignment_id === kpi.id) || [];
+const KPIItem = ({ kpi, level = 0, expandedKPIs, toggleExpand, isSearchMode = false, onUpdate, onEdit, onDelete }) => {
+  const { company_slug } = useParams();
+  // Use sub_assignments from tree mode (only in tree mode)
+  const childKPIs = isSearchMode ? [] : (kpi.sub_assignments || []);
   const hasChildren = childKPIs.length > 0;
-  const [isExpanded, setIsExpanded] = useState(hasChildren);
+  const isExpanded = expandedKPIs.has(kpi.id);
 
   // Check permissions
-  const canEdit = kpi.permission?.editable === true;
-  const canDelete = kpi.permission?.deletable === true;
+  const canEdit = kpi.permission?.edit === true;
+  const canDelete = kpi.permission?.delete === true;
   const canViewDetail = true;
   const hasActions = canEdit || canDelete || canViewDetail;
 
@@ -121,10 +123,10 @@ const KPIItem = ({ kpi, level = 0, allKPIs, onUpdate, onEdit, onDelete }) => {
   const indentPadding = level * 24;
 
   const formatValue = (value, unit) => {
-    if (value === null || value === undefined) return '0';
+    if (value === null || value === undefined) return '0' + (unit ? ` ${unit}` : '');
     if (unit === '%') return `${value}%`;
     if (unit === 'VNĐ') return `${value.toLocaleString('vi-VN')} VNĐ`;
-    return value.toLocaleString('vi-VN');
+    return `${value.toLocaleString('vi-VN')}${unit ? ` ${unit}` : ''}`;
   };
 
   return (
@@ -144,7 +146,10 @@ const KPIItem = ({ kpi, level = 0, allKPIs, onUpdate, onEdit, onDelete }) => {
               <div className="w-6 shrink-0">
                 {hasChildren ? (
                   <button
-                    onClick={() => setIsExpanded(!isExpanded)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleExpand(kpi.id);
+                    }}
                     className="mt-1 p-1 rounded hover:bg-secondary/20 transition-colors cursor-pointer"
                   >
                     {isExpanded ? (
@@ -173,7 +178,6 @@ const KPIItem = ({ kpi, level = 0, allKPIs, onUpdate, onEdit, onDelete }) => {
                 </div>
 
                 <div className="flex items-center gap-2 text-sm text-secondary flex-wrap">
-                  <span>{kpi.kpi_dictionary?.unit || 'Không có đơn vị'}</span>
                   {kpi.owner && (
                     <>
                       <span>•</span>
@@ -208,14 +212,14 @@ const KPIItem = ({ kpi, level = 0, allKPIs, onUpdate, onEdit, onDelete }) => {
               {/* Action Buttons */}
               {hasActions && (
                 <div className="flex items-center gap-2 border-l border-secondary/20 pl-4 shrink-0">
-                  <button
-                    onClick={() => {/* View detail */}}
+                  <Link
+                    to={`/${company_slug}/app/kpi/${kpi.id}`}
                     className="flex items-center gap-1 px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
                     title="Xem chi tiết"
                   >
                     Chi tiết
                     <ArrowUpRight size={14} />
-                  </button>
+                  </Link>
                   {canEdit && (
                     <button
                       onClick={() => onEdit?.(kpi)}
@@ -249,7 +253,9 @@ const KPIItem = ({ kpi, level = 0, allKPIs, onUpdate, onEdit, onDelete }) => {
               key={child.id}
               kpi={child}
               level={level + 1}
-              allKPIs={allKPIs}
+              expandedKPIs={expandedKPIs}
+              toggleExpand={toggleExpand}
+              isSearchMode={isSearchMode}
               onUpdate={onUpdate}
               onEdit={onEdit}
               onDelete={onDelete}

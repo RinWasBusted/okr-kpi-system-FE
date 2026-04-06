@@ -55,10 +55,10 @@ const ObjectiveDetailPage = () => {
     queryKey: ['objective', objectiveId],
     queryFn: () => getObjectiveById(objectiveId),
     enabled: !!objectiveId && !cachedObjective,
-    initialData: cachedObjective ? { data: cachedObjective, success: true } : undefined,
+    initialData: cachedObjective ? { data: { objective: cachedObjective }, success: true } : undefined,
   });
 
-  const objective = objectiveResponse?.data || cachedObjective || {};
+  const objective = objectiveResponse?.data?.objective || cachedObjective || {};
   const canEdit = objective.permission?.editable === true;
   const canDelete = objective.permission?.deletable === true;
 

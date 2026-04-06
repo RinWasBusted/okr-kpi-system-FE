@@ -332,30 +332,77 @@ export const deleteObjective = async (id) => {
 };
 
 /**
- * Get objective detail by ID
+ * Get objective details by ID
  * @async
  * @function getObjectiveById
  * @param {number} id - Objective ID (required)
+ * 
  * @returns {Promise<Object>} Response object
  * @returns {boolean} response.success - Whether request was successful
  * @returns {string} response.message - Response message
- * @returns {Object} response.data - Objective detail object
- * @returns {number} response.data.id - Objective ID
- * @returns {string} response.data.title - Objective title
- * @returns {string} [response.data.description] - Objective description
- * @returns {string} response.data.status - Status (Draft, Active, Pending_Approval, Rejected, Completed)
- * @returns {string} response.data.visibility - Visibility level
- * @returns {number} response.data.progress_percentage - Progress percentage (0-100)
- * @returns {string} response.data.progress_status - Progress status
- * @returns {Object} [response.data.cycle] - Associated cycle object
- * @returns {Object} [response.data.owner] - Owner user object
- * @returns {Object} [response.data.unit] - Associated unit object
- * @returns {Array<Object>} [response.data.key_results] - Associated key results
- * @returns {Array<Object>} [response.data.sub_objectives] - Child objectives
- * @returns {Object} [response.data.permission] - Permission object with editable, deletable
- * @throws {Error} If objective not found or no permission
+ * @returns {Object} response.data - Objective data wrapper
+ * @returns {Object} response.data.objective - Objective detail object
+ * @returns {number} response.data.objective.id - Objective ID
+ * @returns {string} response.data.objective.title - Objective title
+ * @returns {string} [response.data.objective.description] - Objective description (nullable)
+ * @returns {string} response.data.objective.status - Status (Draft, Active, Pending_Approval, Rejected, Completed)
+ * @returns {string} response.data.objective.visibility - Visibility level (PUBLIC, INTERNAL, PRIVATE)
+ * @returns {number} response.data.objective.progress_percentage - Progress percentage (0-100)
+ * @returns {string} response.data.objective.progress_status - Progress status (NOT_STARTED, DANGER, WARNING, ON_TRACK, COMPLETED)
+ * @returns {Object} [response.data.objective.cycle] - Associated cycle object (nullable)
+ * @returns {number} [response.data.objective.cycle.id] - Cycle ID
+ * @returns {string} [response.data.objective.cycle.name] - Cycle name
+ * @returns {string} [response.data.objective.cycle.start_date] - Cycle start date (YYYY-MM-DD)
+ * @returns {string} [response.data.objective.cycle.end_date] - Cycle end date (YYYY-MM-DD)
+ * @returns {Object} [response.data.objective.owner] - Owner user object (nullable)
+ * @returns {number} [response.data.objective.owner.id] - User ID
+ * @returns {string} [response.data.objective.owner.full_name] - User full name
+ * @returns {string} [response.data.objective.owner.email] - User email
+ * @returns {Object} [response.data.objective.unit] - Associated unit object (nullable)
+ * @returns {number} [response.data.objective.unit.id] - Unit ID
+ * @returns {string} [response.data.objective.unit.name] - Unit name
+ * @returns {Object} [response.data.objective.parent_objective] - Parent objective object (nullable)
+ * @returns {number} [response.data.objective.parent_objective.id] - Parent objective ID
+ * @returns {string} [response.data.objective.parent_objective.title] - Parent objective title
+ * @returns {Array<Object>} [response.data.objective.key_results] - Associated key results array (nullable)
+ * @returns {number} [response.data.objective.key_results[].id] - Key result ID
+ * @returns {string} [response.data.objective.key_results[].title] - Key result title
+ * @returns {number} [response.data.objective.key_results[].target_value] - Target value
+ * @returns {number} [response.data.objective.key_results[].current_value] - Current value
+ * @returns {string} [response.data.objective.key_results[].unit] - Unit of measurement
+ * @returns {number} [response.data.objective.key_results[].progress_percentage] - Progress percentage (0-100)
+ * 
+ * @throws {Error} If request fails:
+ *   - 400: Invalid objective ID
+ *   - 403: No permission to view this objective (visibility rules)
+ *   - 404: Objective not found
+ * 
+ * @description Retrieve a single objective with its key results.
+ * User must have permission to view the objective based on visibility rules (PUBLIC < INTERNAL < PRIVATE).
+ * Response includes associated cycle, owner, unit, parent objective, and key results.
+ * 
  * @example
  * const objective = await getObjectiveById(1);
+ * // Returns: {
+ * //   success: true,
+ * //   message: 'Objective retrieved successfully',
+ * //   data: {
+ * //     objective: {
+ * //       id: 1,
+ * //       title: 'Increase customer satisfaction',
+ * //       description: 'Improve satisfaction score to 95%',
+ * //       status: 'Active',
+ * //       visibility: 'INTERNAL',
+ * //       progress_percentage: 75,
+ * //       progress_status: 'ON_TRACK',
+ * //       cycle: { id: 1, name: 'Q1 2026', start_date: '2026-01-01', end_date: '2026-03-31' },
+ * //       owner: { id: 1, full_name: 'John Doe', email: 'john@example.com' },
+ * //       unit: { id: 5, name: 'Engineering' },
+ * //       parent_objective: null,
+ * //       key_results: [...]
+ * //     }
+ * //   }
+ * // }
  */
 export const getObjectiveById = async (id) => {
   const response = await axiosClient.get(`/objectives/${id}`);

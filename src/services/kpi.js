@@ -84,6 +84,116 @@ export const getKPIAssignments = async (params = {}) => {
 };
 
 /**
+ * Get KPI Assignment details by ID
+ * @async
+ * @function getKPIAssignmentById
+ * @param {number} id - KPI Assignment ID (required)
+ *
+ * @returns {Promise<Object>} Response object
+ * @returns {boolean} response.success - Whether request was successful
+ * @returns {string} response.message - Response message
+ * @returns {Object} response.data - KPI assignment data wrapper
+ * @returns {Object} response.data.kpi_assignment - KPI assignment object
+ * @returns {number} response.data.kpi_assignment.id - Assignment ID
+ * @returns {Object} response.data.kpi_assignment.kpi_dictionary - Associated KPI definition
+ * @returns {number} response.data.kpi_assignment.kpi_dictionary.id - KPI Dictionary ID
+ * @returns {string} response.data.kpi_assignment.kpi_dictionary.name - KPI name
+ * @returns {string} response.data.kpi_assignment.kpi_dictionary.unit - Unit of measurement
+ * @returns {string} response.data.kpi_assignment.kpi_dictionary.evaluation_method - Evaluation method (Positive, Negative, Stabilizing)
+ * @returns {number} response.data.kpi_assignment.target_value - Target value to achieve
+ * @returns {number} response.data.kpi_assignment.current_value - Current value progress
+ * @returns {number} response.data.kpi_assignment.progress_percentage - Progress percentage (0-100)
+ * @returns {string} response.data.kpi_assignment.progress_status - Calculated progress status (NOT_STARTED, ON_TRACK, AT_RISK, CRITICAL, COMPLETED)
+ * @returns {string} response.data.kpi_assignment.status - Activity status (active, deleted)
+ * @returns {string} response.data.kpi_assignment.visibility - Visibility level (PUBLIC, INTERNAL, PRIVATE)
+ * @returns {Object} [response.data.kpi_assignment.owner] - Owner user object (nullable)
+ * @returns {Object} [response.data.kpi_assignment.unit] - Unit object (nullable)
+ * @returns {Object} [response.data.kpi_assignment.cycle] - Cycle information (nullable)
+ * @returns {Object} [response.data.kpi_assignment.parent_assignment] - Parent assignment object (nullable)
+ * @returns {Object} [response.data.kpi_assignment.latest_record] - Latest KPI record (nullable)
+ *
+ * @throws {Error} If request fails:
+ *   - 400: Invalid assignment ID
+ *   - 403: No permission to view this assignment
+ *   - 404: KPI Assignment not found
+ *
+ * @description Retrieve detailed information about a specific KPI assignment including its dictionary,
+ * owner, unit, cycle, and latest record.
+ *
+ * @example
+ * const kpi = await getKPIAssignmentById(1);
+ */
+export const getKPIAssignmentById = async (id) => {
+  const response = await axiosClient.get(`/kpi-assignments/${id}`);
+  return response.data;
+};
+
+/**
+ * Get available parent KPI assignments for a unit
+ * @async
+ * @function getAvailableParentKPIs
+ * @param {Object} [params] - Query parameters (optional)
+ * @param {number} params.unit_id - Unit ID to find available parents for (required)
+ * @param {number} [params.kpi_dictionary_id] - Filter by KPI dictionary ID (optional)
+ *   Only includes parent assignments using the same KPI dictionary if specified
+ * 
+ * @returns {Promise<Object>} Response object
+ * @returns {boolean} response.success - Whether request was successful
+ * @returns {string} response.message - Response message
+ * @returns {Array<Object>} response.data - Array of unit groups with available parent assignments
+ * @returns {Object} [response.data[].unit] - Unit information (nullable)
+ * @returns {number} [response.data[].unit.id] - Unit ID
+ * @returns {string} [response.data[].unit.name] - Unit name
+ * @returns {Array<Object>} response.data[].assignments - Array of available parent assignments from this unit
+ * @returns {number} response.data[].assignments[].id - Assignment ID
+ * @returns {Object} response.data[].assignments[].kpi_dictionary - KPI definition
+ * @returns {number} response.data[].assignments[].kpi_dictionary.id - KPI Dictionary ID
+ * @returns {string} response.data[].assignments[].kpi_dictionary.name - KPI name
+ * @returns {string} response.data[].assignments[].kpi_dictionary.unit - Unit of measurement
+ * @returns {string} response.data[].assignments[].kpi_dictionary.evaluation_method - Evaluation method (Positive, Negative, Stabilizing)
+ * @returns {number} response.data[].assignments[].target_value - Target value
+ * @returns {number} response.data[].assignments[].current_value - Current value progress
+ * @returns {number} response.data[].assignments[].progress_percentage - Progress percentage (0-100)
+ * @returns {Object} response.meta - Response metadata
+ * @returns {number} response.meta.unit_id - Target unit ID that was searched
+ * @returns {Array<number>} response.meta.unit_ids_searched - All unit IDs searched (target + ancestors)
+ * @returns {number} [response.meta.kpi_dictionary_id] - KPI dictionary ID filter if provided (nullable)
+ * @returns {number} response.meta.total - Total number of available parent assignments
+ * 
+ * @throws {Error} If request fails:
+ *   - 400: Invalid unit_id
+ *   - 404: Unit not found
+ * 
+ * @description Retrieve KPI assignments that can be set as parent for a new KPI in the specified unit.
+ * Returns root assignments (without parent) from the specified unit and all its ancestor units.
+ * Filtered by visibility permissions and optionally by KPI dictionary.
+ * Only includes assignments without a parent (root assignments).
+ * 
+ * @example
+ * const availableParents = await getAvailableParentKPIs({ unit_id: 5 });
+ * const filteredParents = await getAvailableParentKPIs({ unit_id: 5, kpi_dictionary_id: 10 });
+ * // Returns: {
+ * //   data: [
+ * //     {
+ * //       unit: { id: 5, name: 'Engineering' },
+ * //       assignments: [
+ * //         { id: 1, kpi_dictionary: {...}, target_value: 100, current_value: 50, progress_percentage: 50 }
+ * //       ]
+ * //     },
+ * //     {
+ * //       unit: { id: 1, name: 'Company' },
+ * //       assignments: [...]
+ * //     }
+ * //   ],
+ * //   meta: { unit_id: 5, unit_ids_searched: [5, 1], kpi_dictionary_id: null, total: 2 }
+ * // }
+ */
+export const getAvailableParentKPIs = async (params = {}) => {
+  const response = await axiosClient.get('/kpi-assignments/available-parents', { params });
+  return response.data;
+};
+
+/**
  * Create a new KPI Assignment
  * @async
  * @function createKPIAssignment

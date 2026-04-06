@@ -1,31 +1,52 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Filter, Plus, AlertCircle, BarChart3, Search } from 'lucide-react';
 import { getKPIAssignments, getKPIDictionaries } from '../../../services/kpi';
 import { getCycles } from '../../../services/cycle';
 import KPIItem from './components/KPIItem';
 import KPIItemSkeleton from './components/KPIItemSkeleton';
+import CreateKPIModal from './components/CreateKPIModal';
+import DeleteConfirmModal from './components/DeleteConfirmModal';
 
 const KPIPage = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [selectedKPI, setSelectedKPI] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [expandedKPIs, setExpandedKPIs] = useState(new Set());
 
   // Filter states
   const [selectedVisibility, setSelectedVisibility] = useState('');
   const [selectedCycle, setSelectedCycle] = useState('');
   const [selectedUnit, setSelectedUnit] = useState('');
 
-  // Fetch KPI assignments
+  // Fetch KPI assignments in tree mode (for display)
   const {
-    data: kpiResponse,
-    isLoading: isLoadingKPIs,
-    error: kpiError,
-    refetch: refetchKPIs
+    data: treeResponse,
+    isLoading: isLoadingTree,
+    error: treeError,
+    refetch: refetchTree
   } = useQuery({
-    queryKey: ['kpi-assignments'],
+    queryKey: ['kpi-assignments', 'tree'],
     queryFn: () => getKPIAssignments({
+      mode: 'tree',
       per_page: 100,
     }),
+  });
+
+  // Fetch KPI assignments in list mode (for search/filter - background)
+  const {
+    data: listResponse,
+    isLoading: isLoadingList,
+  } = useQuery({
+    queryKey: ['kpi-assignments', 'list'],
+    queryFn: () => getKPIAssignments({
+      mode: 'list',
+      per_page: 100,
+    }),
+    // Chạy ngầm, không block UI
+    staleTime: 5 * 60 * 1000,
   });
 
   // Fetch cycles for filter
@@ -34,15 +55,29 @@ const KPIPage = () => {
     queryFn: () => getCycles({ per_page: 100 }),
   });
 
-  // Fetch KPI dictionaries for reference
-  const { data: dictionariesResponse } = useQuery({
-    queryKey: ['kpi-dictionaries'],
-    queryFn: () => getKPIDictionaries(),
-  });
 
-  const rawKPIs = kpiResponse?.data || [];
+  const rawTreeKPIs = treeResponse?.data || [];
+  const rawListKPIs = listResponse?.data || [];
   const cycles = cyclesResponse?.data || [];
-  const dictionaries = dictionariesResponse?.data || [];
+
+  // Auto-expand all root KPIs when tree data loads
+  useEffect(() => {
+    if (rawTreeKPIs.length > 0 && expandedKPIs.size === 0) {
+      // Collect all KPI IDs recursively
+      const collectAllIds = (kpis) => {
+        const ids = [];
+        kpis.forEach(kpi => {
+          ids.push(kpi.id);
+          if (kpi.sub_assignments?.length > 0) {
+            ids.push(...collectAllIds(kpi.sub_assignments));
+          }
+        });
+        return ids;
+      };
+      const allIds = collectAllIds(rawTreeKPIs);
+      setExpandedKPIs(new Set(allIds));
+    }
+  }, [rawTreeKPIs]);
 
   // Determine if we should show search results
   const isSearchActive = searchQuery.trim().length > 0;
@@ -55,45 +90,41 @@ const KPIPage = () => {
     return matchesVisibility && matchesCycle && matchesUnit;
   };
 
-  // Build tree structure from flat list (using parent_assignment_id)
-  const buildKPITree = (kpis) => {
-    const kpiMap = new Map(kpis.map(k => [k.id, { ...k, children: [] }]));
-    const rootKPIs = [];
+  // Helper: Recursively filter tree (giữ lại parent nếu có child match)
+  const filterTreeRecursive = (items) => {
+    return items
+      .map((item) => {
+        // Lọc children đệ quy
+        const filteredChildren = item.children
+          ? filterTreeRecursive(item.children)
+          : [];
 
-    kpis.forEach(kpi => {
-      const node = kpiMap.get(kpi.id);
-      if (kpi.parent_assignment_id && kpiMap.has(kpi.parent_assignment_id)) {
-        const parent = kpiMap.get(kpi.parent_assignment_id);
-        parent.children.push(node);
-      } else {
-        rootKPIs.push(node);
-      }
-    });
+        // Kiểm tra nếu item này match filter
+        const itemMatches = matchesFilters(item);
 
-    return rootKPIs;
+        // Nếu item match hoặc có con match, giữ lại
+        if (itemMatches || filteredChildren.length > 0) {
+          return {
+            ...item,
+            children: filteredChildren,
+          };
+        }
+        return null;
+      })
+      .filter(Boolean);
   };
 
-  // Filtered KPIs (for tree view - only root items)
+  // Filtered tree data (cho tree view)
+  const treeKPIs = useMemo(() => {
+    if (!selectedVisibility && !selectedCycle && !selectedUnit) return rawTreeKPIs;
+    return filterTreeRecursive(rawTreeKPIs);
+  }, [rawTreeKPIs, selectedVisibility, selectedCycle, selectedUnit]);
+
+  // Filtered list data (cho search) - lọc theo filters và search query
   const filteredKPIs = useMemo(() => {
-    if (!selectedVisibility && !selectedCycle && !selectedUnit) return rawKPIs;
-    return rawKPIs.filter(matchesFilters);
-  }, [rawKPIs, selectedVisibility, selectedCycle, selectedUnit]);
-
-  // Tree structure for display
-  const kpiTree = useMemo(() => {
-    return buildKPITree(filteredKPIs);
-  }, [filteredKPIs]);
-
-  // Get root KPIs (no parent)
-  const rootKPIs = useMemo(() => {
-    return kpiTree;
-  }, [kpiTree]);
-
-  // Search results (flat list)
-  const searchResults = useMemo(() => {
     if (!isSearchActive) return [];
     const query = searchQuery.toLowerCase();
-    return rawKPIs.filter((kpi) => {
+    return rawListKPIs.filter((kpi) => {
       // Lọc theo filters trước
       if (!matchesFilters(kpi)) return false;
       // Lọc theo search query
@@ -106,7 +137,20 @@ const KPIPage = () => {
         ownerName.includes(query)
       );
     });
-  }, [rawKPIs, searchQuery, isSearchActive, selectedVisibility, selectedCycle, selectedUnit]);
+  }, [rawListKPIs, searchQuery, isSearchActive, selectedVisibility, selectedCycle, selectedUnit]);
+
+  // Toggle expand/collapse for a KPI
+  const toggleExpand = (kpiId) => {
+    setExpandedKPIs((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(kpiId)) {
+        newSet.delete(kpiId);
+      } else {
+        newSet.add(kpiId);
+      }
+      return newSet;
+    });
+  };
 
   // Visibility options for filter
   const visibilityOptions = [
@@ -119,29 +163,33 @@ const KPIPage = () => {
   // Unique units from KPIs
   const units = useMemo(() => {
     const unitMap = new Map();
-    rawKPIs.forEach(kpi => {
+    rawListKPIs.forEach(kpi => {
       if (kpi.unit) {
         unitMap.set(kpi.unit.id, kpi.unit);
       }
     });
     return Array.from(unitMap.values());
-  }, [rawKPIs]);
+  }, [rawListKPIs]);
+
+  // Combine loading states
+  const isLoading = isLoadingTree || (isSearchActive && isLoadingList);
+  const kpiError = treeError;
 
   // Handle refresh
   const handleRefresh = () => {
-    refetchKPIs();
+    refetchTree();
   };
 
   // Handle edit
   const handleEdit = (kpi) => {
-    // TODO: Open edit modal
-    console.log('Edit KPI:', kpi);
+    setSelectedKPI(kpi);
+    setIsEditModalOpen(true);
   };
 
   // Handle delete
   const handleDelete = (kpi) => {
-    // TODO: Open delete confirmation modal
-    console.log('Delete KPI:', kpi);
+    setSelectedKPI(kpi);
+    setIsDeleteModalOpen(true);
   };
 
   if (kpiError) {
@@ -252,13 +300,13 @@ const KPIPage = () => {
       {/* Search Results Indicator */}
       {isSearchActive && (
         <div className="text-sm text-secondary">
-          Tìm thấy <strong className="text-text">{searchResults.length}</strong> kết quả cho "<strong className="text-text">{searchQuery}</strong>"
+          Tìm thấy <strong className="text-text">{filteredKPIs.length}</strong> kết quả cho "<strong className="text-text">{searchQuery}</strong>"
         </div>
       )}
 
       {/* KPIs List */}
       <div className="space-y-4">
-        {isLoadingKPIs ? (
+        {isLoading ? (
           // Loading skeletons
           <div className="space-y-4">
             {Array.from({ length: 3 }).map((_, index) => (
@@ -267,18 +315,20 @@ const KPIPage = () => {
           </div>
         ) : isSearchActive ? (
           // Search results in list mode
-          searchResults.length === 0 ? (
+          filteredKPIs.length === 0 ? (
             <div className="bg-background rounded-xl border border-secondary/20 p-12 text-center">
               <BarChart3 size={48} className="mx-auto mb-4 opacity-50 text-secondary" />
               <p className="text-secondary">Không tìm thấy KPI nào</p>
             </div>
           ) : (
             <div className="space-y-4">
-              {searchResults.map(kpi => (
+              {filteredKPIs.map(kpi => (
                 <KPIItem
                   key={kpi.id}
                   kpi={kpi}
-                  allKPIs={rawKPIs}
+                  expandedKPIs={expandedKPIs}
+                  toggleExpand={toggleExpand}
+                  isSearchMode={true}
                   onUpdate={handleRefresh}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
@@ -288,18 +338,20 @@ const KPIPage = () => {
           )
         ) : (
           // Tree view (default)
-          rootKPIs.length === 0 ? (
+          treeKPIs.length === 0 ? (
             <div className="bg-background rounded-xl border border-secondary/20 p-12 text-center">
               <BarChart3 size={48} className="mx-auto mb-4 opacity-50 text-secondary" />
               <p className="text-secondary">Chưa có KPI nào</p>
             </div>
           ) : (
             <div className="space-y-4">
-              {rootKPIs.map(kpi => (
+              {treeKPIs.map(kpi => (
                 <KPIItem
                   key={kpi.id}
                   kpi={kpi}
-                  allKPIs={rawKPIs}
+                  expandedKPIs={expandedKPIs}
+                  toggleExpand={toggleExpand}
+                  isSearchMode={false}
                   onUpdate={handleRefresh}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
@@ -310,22 +362,36 @@ const KPIPage = () => {
         )}
       </div>
 
-      {/* Create KPI Modal - Placeholder */}
+      {/* Create KPI Modal */}
       {isCreateModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-background rounded-xl p-6 max-w-md w-full mx-4">
-            <h2 className="text-xl font-bold mb-4">Tạo KPI mới</h2>
-            <p className="text-secondary mb-4">Chức năng đang được phát triển...</p>
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setIsCreateModalOpen(false)}
-                className="px-4 py-2 border border-secondary/20 rounded-lg hover:bg-secondary/10 transition-colors"
-              >
-                Đóng
-              </button>
-            </div>
-          </div>
-        </div>
+        <CreateKPIModal
+          onClose={() => setIsCreateModalOpen(false)}
+          onSuccess={handleRefresh}
+        />
+      )}
+
+      {/* Edit KPI Modal */}
+      {isEditModalOpen && selectedKPI && (
+        <CreateKPIModal
+          kpi={selectedKPI}
+          onClose={() => {
+            setIsEditModalOpen(false);
+            setSelectedKPI(null);
+          }}
+          onSuccess={handleRefresh}
+        />
+      )}
+
+      {/* Delete Confirm Modal */}
+      {isDeleteModalOpen && selectedKPI && (
+        <DeleteConfirmModal
+          kpi={selectedKPI}
+          onClose={() => {
+            setIsDeleteModalOpen(false);
+            setSelectedKPI(null);
+          }}
+          onSuccess={handleRefresh}
+        />
       )}
     </div>
   );
