@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronDown, ChevronRight, Target, Edit, Trash2, ArrowUpRight } from 'lucide-react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { ChevronDown, ChevronRight, Target, Edit, Trash2, ArrowUpRight, TrendingUp, Loader2 } from 'lucide-react';
+import { getKeyResults } from '../../../../services/okr';
 import { EditObjectiveModal, DeleteObjectiveConfirmModal } from './EditObjectiveModal';
 
 // Status badge component
@@ -86,6 +88,108 @@ const CycleTooltip = ({ cycle }) => {
         </div>
       )}
     </span>
+  );
+};
+
+// Key Result Item - compact display
+const KeyResultItem = ({ kr }) => {
+  const progress = kr.progress_percentage || 0;
+
+  const getProgressColor = (value) => {
+    if (value >= 80) return 'bg-emerald-500';
+    if (value >= 50) return 'bg-cyan-500';
+    if (value >= 30) return 'bg-orange-400';
+    return 'bg-red-500';
+  };
+
+  return (
+    <div className="py-3 border-b border-secondary/10 last:border-b-0">
+      <div className="flex items-center justify-between">
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-text truncate" title={kr.title}>
+            {kr.title}
+          </p>
+          <div className="flex items-center gap-2 mt-1">
+            <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden max-w-[200px]">
+              <div
+                className={`h-full ${getProgressColor(progress)} rounded-full`}
+                style={{ width: `${Math.min(progress, 100)}%` }}
+              />
+            </div>
+            <span className="text-xs font-medium text-secondary">
+              {progress}%
+            </span>          </div>
+        </div>
+        <div className="text-xs text-secondary ml-4 shrink-0">
+          <span className="font-medium">{kr.current_value}</span>
+          <span className="mx-1">/</span>
+          <span>{kr.target_value} {kr.unit}</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Key Results Section
+const KeyResultsSection = ({ objectiveId }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const queryClient = useQueryClient();
+  const [hasPrefetched, setHasPrefetched] = useState(false);
+
+  // Prefetch on hover
+  const handleMouseEnter = useCallback(() => {
+    if (!hasPrefetched) {
+      queryClient.prefetchQuery({
+        queryKey: ['keyResults', objectiveId],
+        queryFn: () => getKeyResults(objectiveId, { per_page: 100 }),
+        staleTime: 5 * 60 * 1000,
+      });
+      setHasPrefetched(true);
+    }
+  }, [queryClient, objectiveId, hasPrefetched]);
+
+  const { data: keyResultsData, isLoading } = useQuery({
+    queryKey: ['keyResults', objectiveId],
+    queryFn: () => getKeyResults(objectiveId, { per_page: 100 }),
+    enabled: isExpanded,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const keyResults = keyResultsData?.data || [];
+
+  return (
+    <div className="mt-4 pt-4 border-t border-secondary/10" onMouseEnter={handleMouseEnter}>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsExpanded(!isExpanded);
+        }}
+        className="flex items-center gap-2 text-sm font-medium text-text hover:text-primary transition-colors cursor-pointer"
+      >
+        <TrendingUp size={16} className="text-primary" />
+        <span>Các Key Results</span>
+        {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+      </button>
+
+      {isExpanded && (
+        <div className="mt-3 pl-4 border-l-2 border-primary/20">
+          {isLoading ? (
+            <div className="flex items-center gap-2 py-4 text-secondary">
+              <Loader2 size={16} className="animate-spin" />
+              <span className="text-sm">Đang tải...</span>
+            </div>
+          ) : keyResults.length === 0 ? (
+            <p className="py-4 text-sm text-secondary">Chưa có key result nào</p>
+          ) : (
+            <div className="bg-secondary/5 rounded-lg px-4">
+              {keyResults.map((kr) => (
+                <KeyResultItem key={kr.id} kr={kr} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   );
 };
 
@@ -240,6 +344,9 @@ const ObjectiveItem = ({ objective, level = 0, onUpdate }) => {
                   </div>
                 )}
               </div>
+
+              {/* Key Results Section */}
+              <KeyResultsSection objectiveId={objective.id} />
             </div>
           </div>
         </div>

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, Calendar } from 'lucide-react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
+import DatePicker from 'react-datepicker';
 import { createKeyResult, getKeyResults } from '../../../../services/okr.js';
 
 const CreateKeyResultModal = ({ objectiveId, onClose, onSuccess }) => {
@@ -12,6 +13,7 @@ const CreateKeyResultModal = ({ objectiveId, onClose, onSuccess }) => {
     target_value: 100,
     unit: '',
     weight: 0,
+    due_date: null,
   });
   const [weightError, setWeightError] = useState('');
 
@@ -101,6 +103,9 @@ const CreateKeyResultModal = ({ objectiveId, onClose, onSuccess }) => {
       target_value: targetValue,
       unit: formData.unit.trim(),
       weight: weight,
+      ...(formData.due_date && {
+        due_date: formData.due_date.toISOString(),
+      }),
     };
 
     createMutation.mutate(payload);
@@ -226,6 +231,26 @@ const CreateKeyResultModal = ({ objectiveId, onClose, onSuccess }) => {
               <div className="text-xs text-secondary mt-1">
                 Còn lại: <span className="font-medium text-emerald-600">{remainingWeight.toFixed(2)}%</span>
               </div>
+            </div>
+          </div>
+
+          {/* Due Date */}
+          <div>
+            <label className="block text-sm font-medium text-text mb-1">
+              Hạn chót
+              <span className="text-secondary text-xs ml-1">(tùy chọn)</span>
+            </label>
+            <div className="relative">
+              <DatePicker
+                selected={formData.due_date}
+                onChange={(date) => handleChange('due_date', date)}
+                dateFormat="dd/MM/yyyy"
+                placeholderText="Chọn ngày hạn chót"
+                className="w-full px-4 py-2 pl-10 rounded-lg border border-secondary/20 bg-background text-text placeholder:text-secondary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                isClearable
+                minDate={new Date()}
+              />
+              <Calendar size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary pointer-events-none" />
             </div>
           </div>
 
