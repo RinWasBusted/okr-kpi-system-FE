@@ -332,6 +332,42 @@ export const deleteObjective = async (id) => {
 };
 
 /**
+ * Revert objective to draft status
+ * @async
+ * @function revertObjectiveToDraft
+ * @param {number} id - Objective ID (required)
+ * 
+ * @returns {Promise<Object>} Response object
+ * @returns {boolean} response.success - Whether request was successful
+ * @returns {string} response.message - Response message
+ * @returns {Object} response.data - Reverted objective object
+ * @returns {Object} response.data.objective - Objective details
+ * @returns {number} response.data.objective.id - Objective ID
+ * @returns {string} response.data.objective.title - Objective title
+ * @returns {string} [response.data.objective.description] - Objective description
+ * @returns {string} response.data.objective.status - Updated status (Draft)
+ * @returns {string} response.data.objective.visibility - Visibility level
+ * @returns {number} response.data.objective.progress_percentage - Progress percentage
+ * @returns {string} response.data.objective.progress_status - Progress status
+ * 
+ * @throws {Error} If revert fails:
+ *   - 400: Invalid objective ID or cannot revert from current status
+ *   - 403: No permission to revert this objective (only owner, unit manager, or company admin can revert)
+ *   - 404: Objective not found
+ * 
+ * @description Revert an objective from Rejected, Pending_Approval, Active, or Completed status back to Draft.
+ * Only the objective owner, unit manager, or company admin can perform this action.
+ * After reverting to Draft, the objective can be edited and resubmitted for approval.
+ * 
+ * @example
+ * const reverted = await revertObjectiveToDraft(1);
+ */
+export const revertObjectiveToDraft = async (id) => {
+  const response = await axiosClient.post(`/objectives/${id}/revert-to-draft`);
+  return response.data;
+};
+
+/**
  * Get objective details by ID
  * @async
  * @function getObjectiveById

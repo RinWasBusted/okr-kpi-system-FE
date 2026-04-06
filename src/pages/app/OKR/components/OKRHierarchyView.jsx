@@ -16,6 +16,23 @@ import 'reactflow/dist/style.css';
 // Status badge component matching ObjectiveItem style
 const StatusBadge = ({ status, progressStatus }) => {
   const getStatusConfig = () => {
+    // First check objective status
+    switch (status) {
+      case 'Draft':
+        return { bg: 'bg-gray-100', text: 'text-gray-700', label: 'Bản nháp' };
+      case 'Active':
+        return { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Hoạt động' };
+      case 'Pending_Approval':
+        return { bg: 'bg-amber-100', text: 'text-amber-700', label: 'Chờ duyệt' };
+      case 'Rejected':
+        return { bg: 'bg-red-100', text: 'text-red-700', label: 'Từ chối' };
+      case 'Completed':
+        return { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Hoàn thành' };
+      default:
+        break;
+    }
+
+    // Fallback to progress status
     switch (progressStatus) {
       case 'COMPLETED':
         return { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'completed' };
@@ -26,19 +43,6 @@ const StatusBadge = ({ status, progressStatus }) => {
       case 'DANGER':
       case 'NOT_STARTED':
         return { bg: 'bg-red-100', text: 'text-red-700', label: 'at-risk' };
-      default:
-        break;
-    }
-
-    switch (status) {
-      case 'Draft':
-        return { bg: 'bg-gray-100', text: 'text-gray-700', label: 'draft' };
-      case 'Active':
-        return { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'on-track' };
-      case 'Pending_Approval':
-        return { bg: 'bg-orange-100', text: 'text-orange-700', label: 'pending' };
-      case 'Completed':
-        return { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'completed' };
       default:
         return { bg: 'bg-gray-100', text: 'text-gray-700', label: status?.toLowerCase() || 'draft' };
     }
@@ -503,7 +507,7 @@ const OKRHierarchyView = ({ objectives }) => {
   }, [reactFlowInstance, nodes, hasFitted]);
 
   return (
-    <div className="h-[800px] bg-gray-50 rounded-xl border border-secondary/20 overflow-hidden">
+    <div className="h-200 bg-gray-50 rounded-xl border border-secondary/20 overflow-hidden">
       <ReactFlow
         nodes={nodes}
         edges={edges}

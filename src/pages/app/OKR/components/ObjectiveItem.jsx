@@ -8,31 +8,33 @@ import { EditObjectiveModal, DeleteObjectiveConfirmModal } from './EditObjective
 // Status badge component
 const StatusBadge = ({ status, progressStatus }) => {
   const getStatusConfig = () => {
-    // First check progress_status
-    switch (progressStatus) {
-      case 'COMPLETED':
-        return { bg: 'bg-green-100', text: 'text-green-700', label: 'completed' };
-      case 'ON_TRACK':
-        return { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'on-track' };
-      case 'WARNING':
-        return { bg: 'bg-yellow-100', text: 'text-yellow-700', label: 'at-risk' };
-      case 'DANGER':
-      case 'NOT_STARTED':
-        return { bg: 'bg-red-100', text: 'text-red-700', label: 'at-risk' };
+    // First check objective status
+    switch (status) {
+      case 'Draft':
+        return { bg: 'bg-gray-100', text: 'text-gray-700', label: 'Bản nháp' };
+      case 'Active':
+        return { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Hoạt động' };
+      case 'Pending_Approval':
+        return { bg: 'bg-amber-100', text: 'text-amber-700', label: 'Chờ duyệt' };
+      case 'Rejected':
+        return { bg: 'bg-red-100', text: 'text-red-700', label: 'Từ chối' };
+      case 'Completed':
+        return { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Hoàn thành' };
       default:
         break;
     }
 
-    // Fallback to status
-    switch (status) {
-      case 'Draft':
-        return { bg: 'bg-gray-100', text: 'text-gray-700', label: 'draft' };
-      case 'Active':
-        return { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'active' };
-      case 'Pending_Approval':
-        return { bg: 'bg-yellow-100', text: 'text-yellow-700', label: 'pending' };
-      case 'Completed':
-        return { bg: 'bg-green-100', text: 'text-green-700', label: 'completed' };
+    // Fallback to progress_status
+    switch (progressStatus) {
+      case 'COMPLETED':
+        return { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'completed' };
+      case 'ON_TRACK':
+        return { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'on-track' };
+      case 'WARNING':
+        return { bg: 'bg-orange-100', text: 'text-orange-700', label: 'at-risk' };
+      case 'DANGER':
+      case 'NOT_STARTED':
+        return { bg: 'bg-red-100', text: 'text-red-700', label: 'at-risk' };
       default:
         return { bg: 'bg-gray-100', text: 'text-gray-700', label: status?.toLowerCase() || 'draft' };
     }
@@ -110,7 +112,7 @@ const KeyResultItem = ({ kr }) => {
             {kr.title}
           </p>
           <div className="flex items-center gap-2 mt-1">
-            <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden max-w-[200px]">
+            <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden max-w-50">
               <div
                 className={`h-full ${getProgressColor(progress)} rounded-full`}
                 style={{ width: `${Math.min(progress, 100)}%` }}
@@ -204,11 +206,14 @@ const ObjectiveItem = ({ objective, level = 0, onUpdate }) => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
-  // Check permissions
-  const canEdit = objective.permission?.editable === true;
-  const canDelete = objective.permission?.deletable === true;
-  const canViewDetail = true; // Luôn cho phép xem chi tiết
-  const hasActions = canEdit || canDelete || canViewDetail;
+  // Check permissions from API
+  const canView = objective.permission?.view === true;
+  const canEdit = objective.permission?.edit === true;
+  const canDelete = objective.permission?.delete === true;
+  const canSubmit = objective.permission?.submit === true;
+  const canApprove = objective.permission?.approve === true;
+  const canReject = objective.permission?.reject === true;
+  const hasActions = canEdit || canDelete || canView;
 
   const getProgressColor = (value) => {
     if (value >= 80) return 'bg-cyan-500';
