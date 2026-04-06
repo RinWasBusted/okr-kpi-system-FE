@@ -91,7 +91,7 @@ const Sidebar = () => {
           id: 3,
           title: 'Nhân sự',
           icon: Users,
-          path: `/${companySlug}/app/hr`,
+          path: `/${companySlug}/app/employees`,
         },
         {
           id: 4,

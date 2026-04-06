@@ -18,6 +18,7 @@ import ObjectiveDetailPage from "../pages/app/OKR/ObjectiveDetailPage.jsx";
 import KPIDictionariesPage from "../pages/app/KPIDictionaries/KPIDictionariesPage.jsx";
 import KPIPage from "../pages/app/KPI/KPIPage.jsx";
 import KPIDetailPage from "../pages/app/KPI/KPIDetailPage.jsx";
+import EmployeePage from "../pages/app/Employees/EmployeePage.jsx";
 
 const router = createBrowserRouter([
     {
@@ -77,6 +78,10 @@ const router = createBrowserRouter([
             {
                 path: "units/:unitId",
                 element: <UnitDetailPage />
+            },
+            {
+                path: "employees",
+                element: <EmployeePage />
             },
             {
                 path: "cycles",
