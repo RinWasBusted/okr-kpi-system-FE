@@ -1,0 +1,1 @@
+docker build --build-arg "VITE_SERVER_BASE_URL=$(grep VITE_SERVER_BASE_URL .env | cut -d '=' -f2 | tr -d '\r')" -t tylerpham2708/okr-kpi-system-client:latest .

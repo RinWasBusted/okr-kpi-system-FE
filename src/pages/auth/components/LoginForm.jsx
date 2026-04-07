@@ -10,6 +10,8 @@ export default function LoginForm({
   setEmail,
   password,
   setPassword,
+  rememberMe,
+  setRememberMe,
 }) {
   const { theme, toggleTheme } = useTheme();
   const [errors, setErrors] = useState({});
@@ -149,6 +151,8 @@ export default function LoginForm({
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
                 className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
               />
               <span className="text-sm text-text">Remember me</span>

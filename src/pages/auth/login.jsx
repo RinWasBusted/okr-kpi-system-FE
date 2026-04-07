@@ -10,14 +10,16 @@ import LoginForm from './components/LoginForm';
 const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [rememberMe, setRememberMe] = useState(false);
     const navigate = useNavigate();
     const { company_slug } = useParams();
+    console.debug('Login page rendered with company_slug:', company_slug);
     const { user, isAuthenticated, setUser } = useAuthStore();
 
     // Setup login mutation with react-query
     const { mutate: handleLogin, isPending } = useMutation({
         mutationFn: async (credentials) => {
-            return await loginAPI(credentials.email, credentials.password, credentials.company_slug);
+            return await loginAPI(credentials.email, credentials.password, credentials.company_slug, credentials.remember_me);
         },
         onSuccess: (response) => {
             if (response.success) {
@@ -52,6 +54,7 @@ const Login = () => {
         const payload = {
             email,
             password,
+            remember_me: rememberMe,
         };
 
         // Nếu company_slug không phải admin thì thêm vào payload
@@ -100,6 +103,8 @@ const Login = () => {
                 setEmail={setEmail}
                 password={password}
                 setPassword={setPassword}
+                rememberMe={rememberMe}
+                setRememberMe={setRememberMe}
             />
         </div>
     );

@@ -11,41 +11,90 @@ const UnitPage = () => {
   const [expandedUnits, setExpandedUnits] = useState(new Set());
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
-  // Fetch units data
-  const { data: unitsResponse, isLoading, error } = useQuery({
-    queryKey: ['units'],
-    queryFn: () => getUnits({ per_page: 100 }),
+  // Fetch units data (tree mode for initial display)
+  const { data: unitsTreeResponse, isLoading: isLoadingTree, error } = useQuery({
+    queryKey: ['units', 'tree'],
+    queryFn: () => getUnits({ per_page: 100, mode: 'tree' }),
   });
 
-  const units = unitsResponse?.data || [];
+  // Fetch units data (list mode in background for search)
+  const { data: unitsListResponse, isLoading: isLoadingList } = useQuery({
+    queryKey: ['units', 'list'],
+    queryFn: () => getUnits({ per_page: 100, mode: 'list' }),
+  });
 
-  // Auto-expand all units when data is loaded
+  const unitsTree = unitsTreeResponse?.data || [];
+  const unitsList = unitsListResponse?.data || [];
+
+  // Determine which data to display based on search state
+  const isSearchActive = searchQuery.trim().length > 0;
+  const displayUnits = isSearchActive ? unitsList : unitsTree;
+  const isLoading = isSearchActive ? isLoadingList : isLoadingTree;
+
+  // Auto-expand all units when tree data is loaded (only for tree mode)
   useEffect(() => {
-    if (units.length > 0) {
-      const allIds = units.map(u => u.id);
+    if (!isSearchActive && unitsTree.length > 0) {
+      const allIds = unitsTree.map(u => u.id);
       setExpandedUnits(new Set(allIds));
     }
-  }, [units]);
+  }, [unitsTree, isSearchActive]);
 
-  // Calculate stats
+  // Calculate stats from actual API data
   const stats = useMemo(() => {
-    const totalUnits = units.length;
+    // Helper function to traverse tree and collect all units
+    const collectAllUnits = (units) => {
+      let count = 0;
+      let totalOkrProgress = 0;
+      let totalKpiHealth = 0;
+      let okrCount = 0;
+      let kpiCount = 0;
 
-    // Mock data for progress/health (since API doesn't provide these yet)
-    // In real scenario, these should come from API
-    const avgOkrProgress = 78;
-    const okrTrend = 5;
-    const avgKpiHealth = 80;
-    const kpiTrend = 3;
+      const traverse = (unitList) => {
+        unitList.forEach(unit => {
+          count++;
+
+          // Accumulate OKR progress (only if > 0 or has OKRs)
+          if (unit.okr_progress !== undefined) {
+            totalOkrProgress += unit.okr_progress;
+            if (unit.okr_progress > 0 || unit.okr_count > 0) {
+              okrCount++;
+            }
+          }
+
+          // Accumulate KPI health (only if > 0 or has KPIs)
+          if (unit.kpi_health !== undefined) {
+            totalKpiHealth += unit.kpi_health;
+            if (unit.kpi_health > 0 || unit.kpi_count > 0) {
+              kpiCount++;
+            }
+          }
+
+          // Recursively process sub_units
+          if (unit.sub_units && unit.sub_units.length > 0) {
+            traverse(unit.sub_units);
+          }
+        });
+      };
+
+      traverse(units);
+
+      return {
+        totalUnits: count,
+        avgOkrProgress: okrCount > 0 ? Math.round(totalOkrProgress / okrCount) : 0,
+        avgKpiHealth: kpiCount > 0 ? Math.round(totalKpiHealth / kpiCount) : 0,
+      };
+    };
+
+    const result = collectAllUnits(unitsTree);
 
     return {
-      totalUnits,
-      avgOkrProgress,
-      okrTrend,
-      avgKpiHealth,
-      kpiTrend,
+      totalUnits: result.totalUnits,
+      avgOkrProgress: result.avgOkrProgress,
+      okrTrend: 0, // Can be calculated if historical data available
+      avgKpiHealth: result.avgKpiHealth,
+      kpiTrend: 0, // Can be calculated if historical data available
     };
-  }, [units]);
+  }, [unitsTree]);
 
   // Toggle expand/collapse
   const toggleExpand = (unitId) => {
@@ -60,14 +109,14 @@ const UnitPage = () => {
     });
   };
 
-  // Filter root units by search query
-  const filteredRootUnits = useMemo(() => {
-    if (!searchQuery) return units;
-    return units.filter(unit =>
+  // Filter units by search query (only applies to list mode)
+  const filteredUnits = useMemo(() => {
+    if (!isSearchActive) return displayUnits;
+    return displayUnits.filter(unit =>
       unit.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       unit.manager?.full_name?.toLowerCase().includes(searchQuery.toLowerCase())
     );
-  }, [units, searchQuery]);
+  }, [displayUnits, searchQuery, isSearchActive]);
 
   if (error) {
     return (
@@ -95,7 +144,7 @@ const UnitPage = () => {
         </div>
         <button
           onClick={() => setIsAddModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors cursor-pointer"
         >
           <Plus size={18} />
           Tạo đơn vị cấp cao
@@ -122,9 +171,11 @@ const UnitPage = () => {
           ) : (
             <div className="flex items-center gap-2">
               <p className="text-3xl font-bold text-text">{stats.avgOkrProgress}%</p>
-              <span className="text-xs text-green-500 flex items-center">
-                ↑ {stats.okrTrend}%
-              </span>
+              {stats.okrTrend !== 0 && (
+                <span className="text-xs text-green-500 flex items-center">
+                  ↑ {stats.okrTrend}%
+                </span>
+              )}
             </div>
           )}
         </div>
@@ -137,9 +188,11 @@ const UnitPage = () => {
           ) : (
             <div className="flex items-center gap-2">
               <p className="text-3xl font-bold text-text">{stats.avgKpiHealth}%</p>
-              <span className="text-xs text-green-500 flex items-center">
-                ↑ {stats.kpiTrend}%
-              </span>
+              {stats.kpiTrend !== 0 && (
+                <span className="text-xs text-green-500 flex items-center">
+                  ↑ {stats.kpiTrend}%
+                </span>
+              )}
             </div>
           )}
         </div>
@@ -168,21 +221,22 @@ const UnitPage = () => {
               <UnitItemSkeleton key={index} level={0} />
             ))}
           </div>
-        ) : units.length === 0 ? (
+        ) : displayUnits.length === 0 ? (
           <div className="text-center py-12 text-secondary">
             <Building2 size={48} className="mx-auto mb-4 opacity-50" />
-            <p>Chưa có đơn vị nào</p>
+            <p>{isSearchActive ? 'Không tìm thấy đơn vị nào' : 'Chưa có đơn vị nào'}</p>
           </div>
         ) : (
           <div className="p-4 space-y-2">
-            {filteredRootUnits.map(unit => (
+            {filteredUnits.map(unit => (
               <UnitItem
                 key={unit.id}
                 unit={unit}
-                level={0}
+                level={isSearchActive ? 0 : 0}
                 expandedUnits={expandedUnits}
                 toggleExpand={toggleExpand}
                 searchQuery={searchQuery}
+                isSearchMode={isSearchActive}
               />
             ))}
           </div>
@@ -195,13 +249,13 @@ const UnitPage = () => {
           onClose={() => setIsAddModalOpen(false)}
           onSuccess={() => {
             // Auto-expand all units after adding new unit
-            if (units.length > 0) {
-              const allIds = units.map(u => u.id);
+            if (unitsTree.length > 0) {
+              const allIds = unitsTree.map(u => u.id);
               setExpandedUnits(new Set(allIds));
             }
           }}
-          units={units}
-          isLoadingUnits={isLoading}
+          units={unitsTree}
+          isLoadingUnits={isLoadingTree}
         />
       )}
     </div>

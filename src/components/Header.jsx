@@ -132,7 +132,7 @@ const Header = () => {
         {/* Theme Toggle */}
         <button
           onClick={handleThemeToggle}
-          className="p-2 rounded-lg text-text hover:bg-secondary/10 transition-colors"
+          className="p-2 rounded-lg text-text hover:bg-secondary/10 transition-colors cursor-pointer"
           aria-label="Toggle theme"
         >
           {theme === 'dark' ? (
@@ -146,7 +146,7 @@ const Header = () => {
         <div className="relative" ref={notiMenuRef}>
           <button
             onClick={() => setIsNotiOpen(!isNotiOpen)}
-            className="p-2 rounded-lg text-text hover:bg-secondary/10 transition-colors relative"
+            className="p-2 rounded-lg text-text hover:bg-secondary/10 transition-colors relative cursor-pointer"
             aria-label="Notifications"
           >
             <Bell className="w-5 h-5" />
@@ -188,15 +188,23 @@ const Header = () => {
         <div className="relative" ref={userMenuRef}>
           <button
             onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-            className="flex items-center gap-2 p-1 rounded-lg hover:bg-secondary/10 transition-colors"
+            className="flex items-center gap-2 p-1 rounded-lg hover:bg-secondary/10 transition-colors cursor-pointer"
           >
-            <div className="w-9 h-9 md:w-10 md:h-10 bg-primary rounded-full flex items-center justify-center text-white font-semibold text-sm">
-              {isUserLoading ? (
-                <div className="w-5 h-5 bg-white/30 rounded-full animate-pulse" />
-              ) : (
-                getInitials(userData?.data?.user?.full_name || userData?.full_name)
-              )}
-            </div>
+            {userData?.data?.user?.avatar_url || userData?.avatar_url ? (
+              <img
+                src={userData?.data?.user?.avatar_url || userData?.avatar_url}
+                alt="User Avatar"
+                className="w-9 h-9 md:w-10 md:h-10 rounded-full"
+              />
+            ) : (
+              <div className="w-9 h-9 md:w-10 md:h-10 bg-primary rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                {isUserLoading ? (
+                  <div className="w-5 h-5 bg-white/30 rounded-full animate-pulse" />
+                ) : (
+                  getInitials(userData?.data?.user?.full_name || userData?.full_name)
+                )}
+              </div>
+            )}
           </button>
 
           {/* User Dropdown */}
@@ -224,7 +232,7 @@ const Header = () => {
                     setIsUserMenuOpen(false);
                     // Navigate to profile
                   }}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 text-text hover:bg-secondary/10 transition-colors text-left"
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-text hover:bg-secondary/10 transition-colors text-left cursor-pointer"
                 >
                   <User className="w-4 h-4" />
                   <span className="text-sm">Profile</span>
@@ -234,7 +242,7 @@ const Header = () => {
                     setIsUserMenuOpen(false);
                     // Navigate to settings
                   }}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 text-text hover:bg-secondary/10 transition-colors text-left"
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-text hover:bg-secondary/10 transition-colors text-left cursor-pointer"
                 >
                   <Settings className="w-4 h-4" />
                   <span className="text-sm">Settings</span>
@@ -242,7 +250,7 @@ const Header = () => {
                 <div className="border-t border-secondary/20 my-1" />
                 <button
                   onClick={handleLogout}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors text-left"
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors text-left cursor-pointer"
                 >
                   <LogOut className="w-4 h-4" />
                   <span className="text-sm">Log out</span>

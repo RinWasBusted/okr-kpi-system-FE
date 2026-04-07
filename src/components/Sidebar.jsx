@@ -91,7 +91,7 @@ const Sidebar = () => {
           id: 3,
           title: 'Nhân sự',
           icon: Users,
-          path: `/${companySlug}/app/hr`,
+          path: `/${companySlug}/app/employees`,
         },
         {
           id: 4,
@@ -113,9 +113,9 @@ const Sidebar = () => {
         },
         {
           id: 7,
-          title: 'KPI Dictionary',
+          title: 'Mẫu KPI',
           icon: BookOpen,
-          path: `/${companySlug}/app/kpi-dictionary`,
+          path: `/${companySlug}/app/kpi-dictionaries`,
         },
         {
           id: 8,
