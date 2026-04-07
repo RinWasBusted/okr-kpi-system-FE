@@ -83,7 +83,7 @@ const AddCycleModal = ({ onClose, onSuccess }) => {
 
       {/* Modal */}
       <div className="fixed inset-0 flex items-center justify-center p-4">
-        <div className="bg-background rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="bg-background rounded-xl shadow-xl w-full max-w-lg">
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-secondary/20">
             <h2 className="text-xl font-bold text-text">Tạo chu kỳ mới</h2>
@@ -128,6 +128,7 @@ const AddCycleModal = ({ onClose, onSuccess }) => {
                     required
                     className={datePickerClassName}
                     calendarClassName="bg-background border border-secondary/20 rounded-lg shadow-lg"
+                    popperPlacement="bottom-start"
                   />
                   <Calendar size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-secondary pointer-events-none" />
                 </div>
@@ -145,6 +146,7 @@ const AddCycleModal = ({ onClose, onSuccess }) => {
                     required
                     className={datePickerClassName}
                     calendarClassName="bg-background border border-secondary/20 rounded-lg shadow-lg"
+                    popperPlacement="bottom-start"
                   />
                   <Calendar size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-secondary pointer-events-none" />
                 </div>
