@@ -14,13 +14,13 @@ import DeleteConfirmModal from './components/DeleteConfirmModal';
 const StatusBadge = ({ isActive }) => {
   if (isActive) {
     return (
-      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-500/20 text-green-600 dark:text-green-400">
         Đang làm việc
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-500/20 text-yellow-600 dark:text-yellow-400">
       Nghỉ phép
     </span>
   );
@@ -167,18 +167,18 @@ const EmployeePage = () => {
         <tr key={index} className="animate-pulse">
           <td className="px-4 py-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-gray-200" />
-              <div className="h-4 w-24 bg-gray-200 rounded" />
+              <div className="w-10 h-10 rounded-full bg-secondary/20" />
+              <div className="h-4 w-24 bg-secondary/20 rounded" />
             </div>
           </td>
-          <td className="px-4 py-4"><div className="h-4 w-20 bg-gray-200 rounded" /></td>
-          <td className="px-4 py-4"><div className="h-4 w-32 bg-gray-200 rounded" /></td>
-          <td className="px-4 py-4"><div className="h-4 w-28 bg-gray-200 rounded" /></td>
-          <td className="px-4 py-4"><div className="h-6 w-20 bg-gray-200 rounded-full" /></td>
+          <td className="px-4 py-4"><div className="h-4 w-20 bg-secondary/20 rounded" /></td>
+          <td className="px-4 py-4"><div className="h-4 w-32 bg-secondary/20 rounded" /></td>
+          <td className="px-4 py-4"><div className="h-4 w-28 bg-secondary/20 rounded" /></td>
+          <td className="px-4 py-4"><div className="h-6 w-20 bg-secondary/20 rounded-full" /></td>
           <td className="px-4 py-4">
             <div className="flex items-center gap-2">
-              <div className="h-8 w-8 bg-gray-200 rounded" />
-              <div className="h-8 w-8 bg-gray-200 rounded" />
+              <div className="h-8 w-8 bg-secondary/20 rounded" />
+              <div className="h-8 w-8 bg-secondary/20 rounded" />
             </div>
           </td>
         </tr>
@@ -191,12 +191,12 @@ const EmployeePage = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Quản lý Nhân sự</h1>
-          <p className="text-gray-500 text-sm mt-1">Manage employees and their information</p>
+          <h1 className="text-2xl font-bold text-text">Quản lý Nhân sự</h1>
+          <p className="text-secondary text-sm mt-1">Manage employees and their information</p>
         </div>
         <button
           onClick={() => setIsAddModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors cursor-pointer"
+          className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors cursor-pointer"
         >
           <Plus size={18} />
           Thêm nhân viên
@@ -204,17 +204,17 @@ const EmployeePage = () => {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4">
+      <div className="bg-background rounded-xl border border-secondary/20 p-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {/* Search */}
           <div className="relative">
-            <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary/50" />
             <input
               type="text"
               placeholder="Tìm kiếm nhân viên..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all"
+              className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-secondary/20 bg-background text-text placeholder:text-secondary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
             />
           </div>
 
@@ -222,7 +222,7 @@ const EmployeePage = () => {
           <div>
             <select
               disabled
-              className="w-full px-3 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed"
+              className="w-full px-3 py-2.5 rounded-lg border border-secondary/20 bg-secondary/5 text-secondary/50 cursor-not-allowed"
             >
               <option>Tất cả chức vụ</option>
             </select>
@@ -231,12 +231,12 @@ const EmployeePage = () => {
           {/* Unit Filter */}
           <div>
             {isLoadingUnits ? (
-              <div className="animate-pulse h-10 bg-gray-100 rounded-lg" />
+              <div className="animate-pulse h-10 bg-secondary/10 rounded-lg" />
             ) : (
               <select
                 value={selectedUnit}
                 onChange={(e) => setSelectedUnit(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-lg border border-gray-200 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all"
+                className="w-full px-3 py-2.5 rounded-lg border border-secondary/20 bg-background text-text focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
               >
                 <option value="">Tất cả đơn vị</option>
                 {units.map((unit) => (
@@ -253,7 +253,7 @@ const EmployeePage = () => {
             <select
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-lg border border-gray-200 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all"
+              className="w-full px-3 py-2.5 rounded-lg border border-secondary/20 bg-background text-text focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
             >
               <option value="">Tất cả trạng thái</option>
               <option value="true">Đang làm việc</option>
@@ -264,46 +264,46 @@ const EmployeePage = () => {
       </div>
 
       {/* Employees Table */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-background rounded-xl border border-secondary/20 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead className="bg-secondary/5 border-b border-secondary/20">
               <tr>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Tên</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Chức vụ</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Email</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Đơn vị</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Trạng thái</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Hành động</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-text">Tên</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-text">Chức vụ</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-text">Email</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-text">Đơn vị</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-text">Trạng thái</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-text">Hành động</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-secondary/10">
               {isLoadingUsers ? (
                 <LoadingRows />
               ) : filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center text-gray-500">
+                  <td colSpan={6} className="px-4 py-12 text-center text-secondary">
                     <div className="flex flex-col items-center gap-2">
-                      <Search size={48} className="text-gray-300" />
+                      <Search size={48} className="text-secondary/30" />
                       <p>Không tìm thấy nhân viên nào</p>
                     </div>
                   </td>
                 </tr>
               ) : (
                 filteredUsers.map((user) => (
-                  <tr key={user.id} className="hover:bg-gray-50 transition-colors">
+                  <tr key={user.id} className="hover:bg-secondary/5 transition-colors">
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-3">
                         <AvatarUploadOverlay
                           user={user}
                           onUpload={handleAvatarUpload}
                         />
-                        <span className="font-medium text-gray-900">{user.full_name}</span>
+                        <span className="font-medium text-text">{user.full_name}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-4 text-gray-600">{user.job_title || '-'}</td>
-                    <td className="px-4 py-4 text-gray-600">{user.email}</td>
-                    <td className="px-4 py-4 text-gray-600">{user.unit?.name || '-'}</td>
+                    <td className="px-4 py-4 text-secondary">{user.job_title || '-'}</td>
+                    <td className="px-4 py-4 text-secondary">{user.email}</td>
+                    <td className="px-4 py-4 text-secondary">{user.unit?.name || '-'}</td>
                     <td className="px-4 py-4">
                       <StatusBadge isActive={user.is_active} />
                     </td>
@@ -312,7 +312,7 @@ const EmployeePage = () => {
                         {user.editable && (
                           <button
                             onClick={() => setEditingUser(user)}
-                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                            className="p-1.5 text-primary hover:bg-primary/10 rounded-lg transition-colors cursor-pointer"
                             title="Chỉnh sửa"
                           >
                             <Pencil size={16} />
@@ -321,7 +321,7 @@ const EmployeePage = () => {
                         {user.deletable && (
                           <button
                             onClick={() => setDeletingUser(user)}
-                            className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                            className="p-1.5 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer"
                             title="Xóa"
                           >
                             <Trash2 size={16} />
