@@ -29,13 +29,24 @@ const MemberList = ({ unit, memberCount }) => {
         {unit.manager ? (
           <div className="p-6">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
-                <span className="text-sm font-semibold text-blue-600">
-                  {unit.manager.full_name?.charAt(0)?.toUpperCase()}
-                </span>
-              </div>
+              {unit.manager.avatar_url ? (
+                <img
+                  src={unit.manager.avatar_url}
+                  alt={unit.manager.full_name}
+                  className="w-12 h-12 rounded-full object-cover shrink-0"
+                />
+              ) : (
+                <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
+                  <span className="text-sm font-semibold text-blue-600">
+                    {unit.manager.full_name?.charAt(0)?.toUpperCase()}
+                  </span>
+                </div>
+              )}
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-text truncate">{unit.manager.full_name}</p>
+                {unit.manager.job_title && (
+                  <p className="text-xs text-secondary truncate">{unit.manager.job_title}</p>
+                )}
                 <p className="text-sm text-secondary truncate">{unit.manager.email}</p>
               </div>
             </div>
@@ -48,7 +59,7 @@ const MemberList = ({ unit, memberCount }) => {
       </div>
 
       {/* Members List - Only show if there are members other than manager */}
-      {memberCount > 0 && (
+      {members.length > 0 && (
       <div className="bg-background rounded-xl border border-secondary/20 overflow-hidden">
         <div className="p-6 border-b border-secondary/20">
           <h3 className="text-lg font-semibold text-text">Thành viên ({members.length})</h3>
@@ -58,13 +69,24 @@ const MemberList = ({ unit, memberCount }) => {
             {members.map((member) => (
               <div key={member.id} className="p-4 hover:bg-secondary/5 transition-colors">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center shrink-0">
-                    <span className="text-xs font-semibold text-purple-600">
-                      {member.full_name?.charAt(0)?.toUpperCase()}
-                    </span>
-                  </div>
+                  {member.avatar_url ? (
+                    <img
+                      src={member.avatar_url}
+                      alt={member.full_name}
+                      className="w-10 h-10 rounded-full object-cover shrink-0"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center shrink-0">
+                      <span className="text-xs font-semibold text-purple-600">
+                        {member.full_name?.charAt(0)?.toUpperCase()}
+                      </span>
+                    </div>
+                  )}
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-text truncate text-sm">{member.full_name}</p>
+                    {member.job_title && (
+                      <p className="text-xs text-secondary truncate">{member.job_title}</p>
+                    )}
                     <p className="text-xs text-secondary truncate">{member.email}</p>
                   </div>
                 </div>

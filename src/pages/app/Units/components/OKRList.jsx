@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Target, ChevronDown, Check } from 'lucide-react';
-import { getOKRAssignments } from '../../../../services/okr';
+import { getObjectives } from '../../../../services/okr';
 import { getCycles } from '../../../../services/cycle';
 import CardSkeleton from './CardSkeleton';
 
@@ -91,10 +91,10 @@ const CycleFilterDropdown = ({ cycles, selectedCycles, onToggle, onClear }) => {
 const OKRList = ({ unitId }) => {
   const [selectedCycleIds, setSelectedCycleIds] = useState([]);
 
-  // Fetch OKRs for this unit independently
+  // Fetch objectives for this unit independently
   const { data: okrData, isLoading: isLoadingOKRs } = useQuery({
-    queryKey: ['okr-assignments', { unit_id: unitId }],
-    queryFn: () => getOKRAssignments({ unit_id: unitId, per_page: 100 }),
+    queryKey: ['objectives', { unit_id: unitId }],
+    queryFn: () => getObjectives({ unit_id: unitId, per_page: 100 }),
     enabled: !!unitId,
   });
 
