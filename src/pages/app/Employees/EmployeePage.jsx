@@ -309,7 +309,7 @@ const EmployeePage = () => {
                     </td>
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-2">
-                        {user.editable && (
+                        {(user.editable === true || user.editable === undefined) && (
                           <button
                             onClick={() => setEditingUser(user)}
                             className="p-1.5 text-primary hover:bg-primary/10 rounded-lg transition-colors cursor-pointer"
@@ -318,7 +318,7 @@ const EmployeePage = () => {
                             <Pencil size={16} />
                           </button>
                         )}
-                        {user.deletable && (
+                        {(user.deletable === true || user.deletable === undefined) && (
                           <button
                             onClick={() => setDeletingUser(user)}
                             className="p-1.5 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer"
