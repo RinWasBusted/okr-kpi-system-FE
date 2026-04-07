@@ -34,7 +34,7 @@ const TreeSelect = ({ units, value, onChange, isLoading, disabled }) => {
   if (isLoading) {
     return (
       <div className="animate-pulse">
-        <div className="w-full h-10 bg-gray-100 rounded-lg" />
+        <div className="w-full h-10 bg-secondary/10 rounded-lg" />
       </div>
     );
   }
@@ -44,7 +44,7 @@ const TreeSelect = ({ units, value, onChange, isLoading, disabled }) => {
       value={value || ''}
       onChange={(e) => onChange(e.target.value ? parseInt(e.target.value) : null)}
       disabled={disabled}
-      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500/50 text-gray-900 bg-white disabled:opacity-50"
+      className="w-full px-3 py-2 border border-secondary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 text-text bg-background disabled:opacity-50"
     >
       <option value="">Chưa phân công</option>
       {treeOptions.map((unit) => (
@@ -85,7 +85,7 @@ const ImageDropzone = ({ onImageSelect, selectedImage }) => {
       {...getRootProps()}
       className={`
         border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors
-        ${isDragActive ? 'border-orange-500 bg-orange-50' : 'border-gray-300 hover:border-gray-400'}
+        ${isDragActive ? 'border-primary bg-primary/10' : 'border-secondary/30 hover:border-secondary/50'}
       `}
     >
       <input {...getInputProps()} />
@@ -96,18 +96,18 @@ const ImageDropzone = ({ onImageSelect, selectedImage }) => {
             alt="Preview"
             className="w-20 h-20 rounded-full object-cover"
           />
-          <p className="text-sm text-gray-600">{selectedImage.name}</p>
-          <p className="text-xs text-gray-400">Kéo thả hoặc bấm để thay đổi</p>
+          <p className="text-sm text-secondary">{selectedImage.name}</p>
+          <p className="text-xs text-secondary/50">Kéo thả hoặc bấm để thay đổi</p>
         </div>
       ) : (
         <div className="flex flex-col items-center gap-2">
-          <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
-            <Upload size={24} className="text-gray-400" />
+          <div className="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center">
+            <Upload size={24} className="text-secondary/50" />
           </div>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-secondary">
             {isDragActive ? 'Thả ảnh vào đây' : 'Kéo thả ảnh vào đây hoặc bấm để chọn'}
           </p>
-          <p className="text-xs text-gray-400">Hỗ trợ: JPEG, PNG, GIF (tối đa 5MB)</p>
+          <p className="text-xs text-secondary/50">Hỗ trợ: JPEG, PNG, GIF (tối đa 5MB)</p>
         </div>
       )}
     </div>
@@ -127,6 +127,7 @@ const AddEmployeeModal = ({ onClose, units, isLoadingUnits }) => {
     password: '',
     confirm_password: '',
     unit_id: null,
+    job_title: '',
   });
   const [avatar, setAvatar] = useState(null);
   const [errors, setErrors] = useState({});
@@ -168,6 +169,10 @@ const AddEmployeeModal = ({ onClose, units, isLoadingUnits }) => {
       newErrors.confirm_password = 'Mật khẩu xác nhận không khớp';
     }
 
+    if (formData.job_title && formData.job_title.length > 255) {
+      newErrors.job_title = 'Chức vụ không được vượt quá 255 ký tự';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -183,6 +188,9 @@ const AddEmployeeModal = ({ onClose, units, isLoadingUnits }) => {
     submitData.append('password', formData.password);
     if (formData.unit_id) {
       submitData.append('unit_id', formData.unit_id);
+    }
+    if (formData.job_title.trim()) {
+      submitData.append('job_title', formData.job_title.trim());
     }
     if (avatar) {
       submitData.append('avatar', avatar);
@@ -200,15 +208,15 @@ const AddEmployeeModal = ({ onClose, units, isLoadingUnits }) => {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-background rounded-lg shadow-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-900">Thêm nhân viên</h2>
+        <div className="flex items-center justify-between p-6 border-b border-secondary/20">
+          <h2 className="text-xl font-bold text-text">Thêm nhân viên</h2>
           <button
             onClick={onClose}
-            className="p-1 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+            className="p-1 hover:bg-secondary/10 rounded-lg transition-colors cursor-pointer"
           >
-            <X size={20} className="text-gray-500" />
+            <X size={20} className="text-secondary" />
           </button>
         </div>
 
@@ -216,13 +224,13 @@ const AddEmployeeModal = ({ onClose, units, isLoadingUnits }) => {
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {/* Avatar Upload */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Avatar</label>
+            <label className="block text-sm font-medium text-text mb-2">Avatar</label>
             <ImageDropzone onImageSelect={setAvatar} selectedImage={avatar} />
           </div>
 
           {/* Full Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-text mb-2">
               Họ và tên <span className="text-red-500">*</span>
             </label>
             <input
@@ -230,10 +238,10 @@ const AddEmployeeModal = ({ onClose, units, isLoadingUnits }) => {
               value={formData.full_name}
               onChange={(e) => handleChange('full_name', e.target.value)}
               maxLength={255}
-              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 text-gray-900 bg-white ${
+              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 text-text bg-background ${
                 errors.full_name
                   ? 'border-red-500 focus:ring-red-500/50'
-                  : 'border-gray-200 focus:ring-orange-500/50'
+                  : 'border-secondary/20 focus:ring-primary/50'
               }`}
               placeholder="Nhập họ và tên"
               disabled={createMutation.isPending}
@@ -241,24 +249,50 @@ const AddEmployeeModal = ({ onClose, units, isLoadingUnits }) => {
             {errors.full_name && (
               <p className="mt-1 text-sm text-red-500">{errors.full_name}</p>
             )}
-            <p className="mt-1 text-xs text-gray-400">
+            <p className="mt-1 text-xs text-secondary/50">
               {formData.full_name.length}/255 ký tự
+            </p>
+          </div>
+
+          {/* Job Title */}
+          <div>
+            <label className="block text-sm font-medium text-text mb-2">
+              Chức vụ
+            </label>
+            <input
+              type="text"
+              value={formData.job_title}
+              onChange={(e) => handleChange('job_title', e.target.value)}
+              maxLength={255}
+              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 text-text bg-background ${
+                errors.job_title
+                  ? 'border-red-500 focus:ring-red-500/50'
+                  : 'border-secondary/20 focus:ring-primary/50'
+              }`}
+              placeholder="Nhập chức vụ (không bắt buộc)"
+              disabled={createMutation.isPending}
+            />
+            {errors.job_title && (
+              <p className="mt-1 text-sm text-red-500">{errors.job_title}</p>
+            )}
+            <p className="mt-1 text-xs text-secondary/50">
+              {formData.job_title.length}/255 ký tự
             </p>
           </div>
 
           {/* Email */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-text mb-2">
               Email <span className="text-red-500">*</span>
             </label>
             <input
               type="email"
               value={formData.email}
               onChange={(e) => handleChange('email', e.target.value)}
-              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 text-gray-900 bg-white ${
+              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 text-text bg-background ${
                 errors.email
                   ? 'border-red-500 focus:ring-red-500/50'
-                  : 'border-gray-200 focus:ring-orange-500/50'
+                  : 'border-secondary/20 focus:ring-primary/50'
               }`}
               placeholder="Nhập email"
               disabled={createMutation.isPending}
@@ -270,17 +304,17 @@ const AddEmployeeModal = ({ onClose, units, isLoadingUnits }) => {
 
           {/* Password */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-text mb-2">
               Mật khẩu <span className="text-red-500">*</span>
             </label>
             <input
               type="password"
               value={formData.password}
               onChange={(e) => handleChange('password', e.target.value)}
-              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 text-gray-900 bg-white ${
+              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 text-text bg-background ${
                 errors.password
                   ? 'border-red-500 focus:ring-red-500/50'
-                  : 'border-gray-200 focus:ring-orange-500/50'
+                  : 'border-secondary/20 focus:ring-primary/50'
               }`}
               placeholder="Nhập mật khẩu"
               disabled={createMutation.isPending}
@@ -292,17 +326,17 @@ const AddEmployeeModal = ({ onClose, units, isLoadingUnits }) => {
 
           {/* Confirm Password */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-text mb-2">
               Nhập lại mật khẩu <span className="text-red-500">*</span>
             </label>
             <input
               type="password"
               value={formData.confirm_password}
               onChange={(e) => handleChange('confirm_password', e.target.value)}
-              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 text-gray-900 bg-white ${
+              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 text-text bg-background ${
                 errors.confirm_password
                   ? 'border-red-500 focus:ring-red-500/50'
-                  : 'border-gray-200 focus:ring-orange-500/50'
+                  : 'border-secondary/20 focus:ring-primary/50'
               }`}
               placeholder="Nhập lại mật khẩu"
               disabled={createMutation.isPending}
@@ -314,7 +348,7 @@ const AddEmployeeModal = ({ onClose, units, isLoadingUnits }) => {
 
           {/* Unit Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-text mb-2">
               Thuộc đơn vị
             </label>
             <TreeSelect
@@ -332,14 +366,14 @@ const AddEmployeeModal = ({ onClose, units, isLoadingUnits }) => {
               type="button"
               onClick={onClose}
               disabled={createMutation.isPending}
-              className="flex-1 px-4 py-2 border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 cursor-pointer"
+              className="flex-1 px-4 py-2 border border-secondary/20 rounded-lg text-text hover:bg-secondary/5 transition-colors disabled:opacity-50 cursor-pointer"
             >
               Hủy
             </button>
             <button
               type="submit"
               disabled={createMutation.isPending}
-              className="flex-1 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+              className="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
             >
               {createMutation.isPending && (
                 <Loader size={16} className="animate-spin" />

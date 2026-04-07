@@ -90,16 +90,17 @@ export const getUserById = async (id) => {
 
 /**
  * Create a new employee
- * @description Creates a new Employee account in the company. Email must be unique across the entire platform. 
+ * @description Creates a new Employee account in the company. Email must be unique across the entire platform.
  * Requires `accessToken` cookie and `ADMIN_COMPANY` role.
- * 
+ *
  * @param {FormData} data - User data with multipart/form-data format
  * @param {string} data.full_name - Employee full name (required, 1-255 chars)
  * @param {string} data.email - Employee email (required, must be unique, max 255 chars)
  * @param {string} data.password - Employee password (required, min 8 chars)
  * @param {number} [data.unit_id] - Unit ID to assign employee (optional, set null to leave unassigned)
+ * @param {string} [data.job_title] - Employee job title/position (optional, max 255 chars)
  * @param {File} [data.avatar] - Optional avatar image file (jpg, png, gif)
- * 
+ *
  * @returns {Promise<Object>} API response with created user
  * @returns {Promise<Object>} Response structure on success (HTTP 201):
  * {
