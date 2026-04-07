@@ -5,19 +5,19 @@ import { Trash2 } from 'lucide-react';
  */
 const getEvaluationMethodConfig = (method) => {
   switch (method) {
-    case 'Positive':
+    case 'MAXIMIZE':
       return {
-        label: 'Tích cực (↑ tốt)',
+        label: 'Tối đa hóa (↑ tốt)',
         color: 'text-green-600 bg-green-50',
       };
-    case 'Negative':
+    case 'MINIMIZE':
       return {
-        label: 'Tiêu cực (↓ tốt)',
+        label: 'Tối thiểu hóa (↓ tốt)',
         color: 'text-red-600 bg-red-50',
       };
-    case 'Stabilizing':
+    case 'TARGET':
       return {
-        label: 'Cân bằng (= tốt)',
+        label: 'Mục tiêu (= tốt)',
         color: 'text-blue-600 bg-blue-50',
       };
     default:

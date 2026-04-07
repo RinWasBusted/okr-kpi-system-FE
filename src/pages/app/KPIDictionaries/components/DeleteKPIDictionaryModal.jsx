@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { X, AlertTriangle, Loader } from 'lucide-react';
 import { toast } from 'react-toastify';
-import { deleteKPIDictionary } from '../../../../services/kpi';
+import { deleteKPIDictionary } from '../../../../services/kpi-dictionaries';
 
 /**
  * DeleteKPIDictionaryModal Component

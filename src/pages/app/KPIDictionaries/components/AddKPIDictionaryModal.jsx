@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { X, Plus, Loader } from 'lucide-react';
 import { toast } from 'react-toastify';
-import { createKPIDictionary } from '../../../../services/kpi';
+import { createKPIDictionary } from '../../../../services/kpi-dictionaries';
 
 /**
  * AddKPIDictionaryModal Component
@@ -21,7 +21,7 @@ const AddKPIDictionaryModal = ({ onClose, onSuccess, units = [], isLoadingUnits 
     name: '',
     description: '',
     unit: '',
-    evaluation_method: 'Positive',
+    evaluation_method: 'MAXIMIZE',
     unit_id: '',
   });
 
@@ -51,9 +51,9 @@ const AddKPIDictionaryModal = ({ onClose, onSuccess, units = [], isLoadingUnits 
 
   // Evaluation method options
   const evaluationMethods = [
-    { value: 'Positive', label: 'Tối đa hóa (Positive)', description: 'Giá trị cao hơn là tốt hơn' },
-    { value: 'Negative', label: 'Tối thiểu hóa (Negative)', description: 'Giá trị thấp hơn là tốt hơn' },
-    { value: 'Stabilizing', label: 'Cân bằng (Stabilizing)', description: 'Giá trị nên ổn định trong khoảng' },
+    { value: 'MAXIMIZE', label: 'Tối đa hóa (MAXIMIZE)', description: 'Giá trị cao hơn là tốt hơn' },
+    { value: 'MINIMIZE', label: 'Tối thiểu hóa (MINIMIZE)', description: 'Giá trị thấp hơn là tốt hơn' },
+    { value: 'TARGET', label: 'Mục tiêu (TARGET)', description: 'Giá trị nên ổn định trong khoảng' },
   ];
 
   // Validation

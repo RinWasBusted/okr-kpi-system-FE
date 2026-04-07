@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Search, Plus, AlertCircle, BookOpen } from 'lucide-react';
 import { toast } from 'react-toastify';
-import { getKPIDictionaries } from '../../../services/kpi';
+import { getKPIDictionaries } from '../../../services/kpi-dictionaries';
 import { getUnits } from '../../../services/unit';
 import StatsCard from './components/StatsCard';
 import KPIDictionaryCard from './components/KPIDictionaryCard';
