@@ -256,7 +256,6 @@ const CyclePage = () => {
           onSuccess={() => {
             refetch();
           }}
-          cycles={cycles}
         />
       )}
     </div>
