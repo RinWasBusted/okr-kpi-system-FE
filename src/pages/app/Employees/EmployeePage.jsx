@@ -55,7 +55,7 @@ const AvatarUploadOverlay = ({ user, onUpload }) => {
         alt={user.full_name}
         className="w-10 h-10 rounded-full object-cover"
       />
-      {user.editable && isHovered && (
+      {(user.editable === true || user.editable === undefined) && isHovered && (
         <button
           onClick={handleClick}
           className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full cursor-pointer"
