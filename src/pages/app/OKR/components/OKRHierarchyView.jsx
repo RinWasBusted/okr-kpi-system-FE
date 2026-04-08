@@ -7,6 +7,8 @@ import ReactFlow, {
   MiniMap,
   useNodesState,
   useEdgesState,
+  Handle,
+  Position,
 } from 'reactflow';
 import { hierarchy, tree } from 'd3-hierarchy';
 import { Target, Eye, EyeOff, Globe, ChevronDown, ChevronUp, TrendingUp, Loader2 } from 'lucide-react';
@@ -234,7 +236,14 @@ const ObjectiveNode = ({ data }) => {
   };
 
   return (
-    <div className={`w-72 bg-background rounded-xl border-2 ${getBorderColor()} shadow-lg hover:shadow-xl transition-shadow`}>
+    <div className={`w-72 bg-background rounded-xl border-2 ${getBorderColor()} shadow-lg hover:shadow-xl transition-shadow relative`}>
+      {/* Target Handle - nhận edge từ node cha */}
+      <Handle
+        type="target"
+        position={Position.Top}
+        className="opacity-0 w-full h-2 top-0"
+      />
+
       {/* Header with icon, status and visibility */}
       <div className="p-3 pb-2">
         <div className="flex items-start gap-2">
@@ -294,6 +303,13 @@ const ObjectiveNode = ({ data }) => {
           )}
         </div>
       </div>
+
+      {/* Source Handle - xuất edge xuống node con */}
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        className="opacity-0 w-full h-2 bottom-0"
+      />
     </div>
   );
 };
@@ -359,7 +375,7 @@ const transformHierarchyToFlow = (objectives, expandedNodes, toggleExpand) => {
 
   // Use D3 hierarchy to calculate positions
   if (visibleObjectives.length === 0) {
-    return { nodes: [], edges: [] };
+    return { initialNodes: [], initialEdges: [] };
   }
 
   // Create a hierarchy structure for D3
@@ -482,18 +498,7 @@ const OKRHierarchyView = ({ objectives }) => {
     setEdges(initialEdges);
   }, [initialNodes, initialEdges, setNodes, setEdges]);
 
-  if (objectives.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-96 bg-background rounded-xl border border-secondary/20">
-        <div className="text-center">
-          <Target size={48} className="mx-auto mb-4 opacity-50 text-secondary" />
-          <p className="text-secondary">Chưa có Objective nào</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Use fitView only once when React Flow initializes
+    // Use fitView only once when React Flow initializes
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
   const [hasFitted, setHasFitted] = useState(false);
 
@@ -505,6 +510,17 @@ const OKRHierarchyView = ({ objectives }) => {
       }, 100);
     }
   }, [reactFlowInstance, nodes, hasFitted]);
+
+  if (objectives.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-96 bg-background rounded-xl border border-secondary/20">
+        <div className="text-center">
+          <Target size={48} className="mx-auto mb-4 opacity-50 text-secondary" />
+          <p className="text-secondary">Chưa có Objective nào</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-200 bg-gray-50 rounded-xl border border-secondary/20 overflow-hidden">
