@@ -31,6 +31,8 @@ const EmployeeUnitItem = ({
   // Check if this is user's unit
   const isUserUnit = unit.id === currentUserUnitId;
 
+  console.log('isUserUnit', isUserUnit, 'currentUserUnitId', currentUserUnitId, 'unit.id', unit.id);
+
   // Calculate indentation based on level
   const indentPadding = level * 24;
 

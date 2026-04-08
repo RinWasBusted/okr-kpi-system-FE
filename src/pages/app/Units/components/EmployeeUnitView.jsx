@@ -12,6 +12,7 @@ import EmployeeUnitMemberList from './EmployeeUnitMemberList';
  */
 const EmployeeUnitView = () => {
   const { user } = useAuthStore();
+  console.log('Current user in EmployeeUnitView', user);
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedUnits, setExpandedUnits] = useState(new Set());
   const [selectedUnit, setSelectedUnit] = useState(null);

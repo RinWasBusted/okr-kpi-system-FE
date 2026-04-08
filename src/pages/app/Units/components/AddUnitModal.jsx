@@ -22,6 +22,7 @@ const AddUnitModal = ({ onClose, onSuccess, units = [], isLoadingUnits = false }
     parent_id: '',
     manager_id: '',
   });
+  const [managerError, setManagerError] = useState('');
 
   // Fetch users for manager selection
   const { data: usersResponse, isLoading: isLoadingUsers } = useQuery({
@@ -86,6 +87,20 @@ const AddUnitModal = ({ onClose, onSuccess, units = [], isLoadingUnits = false }
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+    
+    // Validate manager assignment
+    if (field === 'manager_id') {
+      if (value) {
+        const selectedManager = users.find(u => String(u.id) === value);
+        if (selectedManager?.unit) {
+          setManagerError('Người quản lý này đã được phân công trong đơn vị khác');
+        } else {
+          setManagerError('');
+        }
+      } else {
+        setManagerError('');
+      }
+    }
   };
 
   return (
@@ -158,23 +173,34 @@ const AddUnitModal = ({ onClose, onSuccess, units = [], isLoadingUnits = false }
                 <div className="w-full h-10 bg-secondary/20 rounded-lg" />
               </div>
             ) : (
-              <select
-                value={formData.manager_id}
-                onChange={(e) => handleChange('manager_id', e.target.value)}
-                className="w-full px-3 py-2 border border-secondary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 text-text bg-background"
-                disabled={createMutation.isPending}
-              >
-                <option value="">-- Chưa chỉ định --</option>
-                {users.map((user) => (
-                  <option key={user.id} value={user.id}>
-                    {user.full_name} ({user.email})
-                  </option>
-                ))}
-              </select>
+              <>
+                <select
+                  value={formData.manager_id}
+                  onChange={(e) => handleChange('manager_id', e.target.value)}
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 text-text bg-background transition-colors ${
+                    managerError
+                      ? 'border-red-500 focus:ring-red-500/50'
+                      : 'border-secondary/20'
+                  }`}
+                  disabled={createMutation.isPending}
+                >
+                  <option value="">-- Chưa chỉ định --</option>
+                  {users.map((user) => (
+                    <option key={user.id} value={user.id}>
+                      {user.full_name} ({user.email})
+                    </option>
+                  ))}
+                </select>
+                {managerError && (
+                  <p className="text-xs text-red-500 mt-1">{managerError}</p>
+                )}
+                {!managerError && (
+                  <p className="text-xs text-secondary mt-1">
+                    Chọn người quản lý từ danh sách nhân viên chưa được phân công
+                  </p>
+                )}
+              </>
             )}
-            <p className="text-xs text-secondary mt-1">
-              Chọn người quản lý từ danh sách nhân viên
-            </p>
           </div>
 
           {/* Actions */}
@@ -189,7 +215,7 @@ const AddUnitModal = ({ onClose, onSuccess, units = [], isLoadingUnits = false }
             </button>
             <button
               type="submit"
-              disabled={createMutation.isPending || isLoadingUnits || isLoadingUsers}
+              disabled={createMutation.isPending || isLoadingUnits || isLoadingUsers || !!managerError}
               className="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
             >
               {createMutation.isPending && (
