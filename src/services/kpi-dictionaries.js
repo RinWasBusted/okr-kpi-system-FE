@@ -8,23 +8,30 @@ import axiosClient from '../utils/axios.js';
  * @function getKPIDictionaries
  * @param {Object} [params] - Query parameters (optional)
  * @param {number} [params.for_unit_id] - Filter KPI dictionaries accessible to a specific unit (optional)
- *   Returns: company-wide KPIs + unit's own KPIs + KPIs from ancestor units
+ *   Returns: company-wide KPIs + unit's own KPIs + KPIs from ancestor units + KPIs from descendant units
  * 
  * @returns {Promise<Object>} Response object (HTTP 200 OK)
  * @returns {boolean} response.success - Whether request was successful
  * @returns {string} response.message - Response message
  * @returns {Array<Object>} response.data - Array of KPI dictionary objects
  * @returns {number} response.data[].id - KPI Dictionary ID
- * @returns {string} response.data[].name - KPI name (1-255 characters)
+ * @returns {string} response.data[].name - KPI name
  * @returns {string} response.data[].unit - Unit of measurement (e.g., 'VNĐ', '%', 'Số lượng')
  * @returns {string} response.data[].evaluation_method - Evaluation method (Positive, Negative, Stabilizing)
- * @returns {string} [response.data[].description] - KPI description (max 1000 characters, nullable)
+ * @returns {string} [response.data[].description] - KPI description (nullable)
  * @returns {number} [response.data[].unit_id] - Unit ID if KPI is unit-specific, null if company-wide (nullable)
+ * @returns {Object} [response.data[].org_unit] - Organization unit object (nullable)
+ * @returns {number} response.data[].org_unit.id - Unit ID
+ * @returns {string} response.data[].org_unit.name - Unit name
  * 
  * @throws {Error} If request fails
  * 
  * @description Retrieve all KPI dictionaries accessible in the system (HTTP 200).
- * If for_unit_id is provided, returns KPIs accessible to that unit including company-wide, unit's own, and ancestor units' KPIs.
+ * If for_unit_id is provided, returns KPIs accessible to that unit including:
+ * - Company-wide KPIs
+ * - Unit's own KPIs
+ * - KPIs from ancestor units
+ * - KPIs from descendant units
  * 
  * @example
  * const dictionaries = await getKPIDictionaries();
@@ -32,6 +39,38 @@ import axiosClient from '../utils/axios.js';
  */
 export const getKPIDictionaries = async (params = {}) => {
   const response = await axiosClient.get('/kpi-dictionaries', { params });
+  return response.data;
+};
+
+/**
+ * Get KPI Dictionaries available for creating KPI Assignment in a specific unit
+ * @async
+ * @function getKPIDictionariesForAssignment
+ * @param {number} unitId - Unit ID (required)
+ * 
+ * @returns {Promise<Object>} Response object (HTTP 200 OK)
+ * @returns {boolean} response.success - Whether request was successful
+ * @returns {string} response.message - Response message
+ * @returns {Array<Object>} response.data - Array of available KPI dictionary objects for assignment
+ * @returns {number} response.data[].id - KPI Dictionary ID
+ * @returns {string} response.data[].name - KPI name
+ * @returns {string} response.data[].unit - Unit of measurement (e.g., 'VNĐ', '%', 'Số lượng')
+ * @returns {string} response.data[].evaluation_method - Evaluation method (Positive, Negative, Stabilizing)
+ * @returns {string} [response.data[].description] - KPI description (nullable)
+ * @returns {number} response.data[].unit_id - Unit ID
+ * @returns {Object} [response.data[].org_unit] - Organization unit object (nullable)
+ * 
+ * @throws {Error} If request fails:
+ *   - 400: Invalid unit ID
+ * 
+ * @description Get KPI Dictionaries that are available for creating KPI assignments in a specific unit.
+ * Returns HTTP 200 OK on success.
+ * 
+ * @example
+ * const availableKPIs = await getKPIDictionariesForAssignment(5);
+ */
+export const getKPIDictionariesForAssignment = async (unitId) => {
+  const response = await axiosClient.get(`/kpi-dictionaries/for-assignment/${unitId}`);
   return response.data;
 };
 

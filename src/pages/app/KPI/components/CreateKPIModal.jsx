@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { X, Eye, EyeOff, Lock, Loader } from 'lucide-react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
-import { createKPIAssignment, updateKPIAssignment, getKPIDictionaries, getAvailableParentKPIs } from '../../../../services/kpi.js';
+import { createKPIAssignment, updateKPIAssignment, getKPIDictionaries, getKPIDictionariesForAssignment, getAvailableParentKPIs } from '../../../../services/kpi.js';
 import { getUnits } from '../../../../services/unit.js';
 import { getCycles } from '../../../../services/cycle.js';
 import { getUsers } from '../../../../services/user.js';
@@ -58,10 +58,10 @@ const CreateKPIModal = ({ onClose, onSuccess, kpi = null }) => {
     queryFn: () => getCycles({ per_page: 100 }),
   });
 
-  // Fetch KPI dictionaries based on selected unit
+  // Fetch KPI dictionaries available for assignment based on selected unit
   const { data: dictionariesResponse, isLoading: isLoadingDictionaries } = useQuery({
-    queryKey: ['kpi-dictionaries', 'forUnit', formData.unit_id],
-    queryFn: () => getKPIDictionaries({ for_unit_id: formData.unit_id || undefined }),
+    queryKey: ['kpi-dictionaries', 'forAssignment', formData.unit_id],
+    queryFn: () => getKPIDictionariesForAssignment(formData.unit_id),
     enabled: !isEditMode && !!formData.unit_id, // Only fetch in create mode when unit is selected
   });
 

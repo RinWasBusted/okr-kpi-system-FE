@@ -12,7 +12,6 @@ import {
   X,
 } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
-import { getCurrentUser } from '../services/auth';
 import { useAuthStore } from '../hooks/useAuth';
 
 const Sidebar = () => {
@@ -47,29 +46,10 @@ const Sidebar = () => {
     }
   }, []);
 
-  // Fetch current user info on component mount
-  useEffect(() => {
-    const fetchCurrentUser = async () => {
-      try {
-        const response = await getCurrentUser();
-        if (response.data?.user) {
-          
-          (response.data.user);
-        }
-      } catch (error) {
-        console.error('Failed to fetch current user:', error);
-      }
-    };
-
-    if (!user) {
-      fetchCurrentUser();
-    }
-  }, [user, setUser]);
-
   // Navigation items configuration based on role
   const getNavItems = () => {
     // ADMIN_COMPANY: sử dụng path /:company_slug/app/
-    if (user?.role === 'ADMIN_COMPANY') {
+    if (user?.role === 'ADMIN_COMPANY' || user?.role === 'EMPLOYEE') {
       const companySlug = user?.company_slug || 'company';
       return [
         {

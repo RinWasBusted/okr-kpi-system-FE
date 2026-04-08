@@ -4,6 +4,7 @@ import { Search, Plus, Pencil, Trash2, Upload } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { getUsers, updateUserAvatar } from '../../../services/user';
 import { getUnits } from '../../../services/unit';
+import { User_avatar } from '../../../assets';
 import AddEmployeeModal from './components/AddEmployeeModal';
 import EditEmployeeModal from './components/EditEmployeeModal';
 import DeleteConfirmModal from './components/DeleteConfirmModal';
@@ -51,9 +52,9 @@ const AvatarUploadOverlay = ({ user, onUpload }) => {
       onMouseLeave={() => setIsHovered(false)}
     >
       <img
-        src={user.avatar_url || '/default-avatar.png'}
+        src={user.avatar_url || User_avatar}
         alt={user.full_name}
-        className="w-10 h-10 rounded-full object-cover"
+        className={`w-10 h-10 rounded-full object-cover ${!user.avatar_url ? 'border border-secondary/30' : ''}`}
       />
       {(user.editable === true || user.editable === undefined) && isHovered && (
         <button
@@ -274,7 +275,7 @@ const EmployeePage = () => {
                 <th className="px-4 py-3 text-left text-sm font-semibold text-text">Email</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-text">Đơn vị</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-text">Trạng thái</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-text">Hành động</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-text"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-secondary/10">

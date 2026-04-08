@@ -8,10 +8,10 @@ import {
   Settings,
   LogOut,
 } from 'lucide-react';
-import { getCurrentUser, refreshToken, logout } from '../services/auth';
+import { logout } from '../services/auth';
 import { useTheme } from '../hooks/useTheme';
 import { useAuthStore } from '../hooks/useAuth';
-import { useQuery } from '@tanstack/react-query';
+import { User_avatar } from '../assets';
 
 // Mock data cho notifications
 const MOCK_NOTIFICATIONS = [
@@ -42,25 +42,16 @@ const Header = () => {
   const navigate = useNavigate();
   const { company_slug } = useParams();
   const { theme, setTheme } = useTheme();
-  const { setUser, clearAuth } = useAuthStore();
+  const { user, clearAuth } = useAuthStore();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isNotiOpen, setIsNotiOpen] = useState(false);
   const userMenuRef = useRef(null);
   const notiMenuRef = useRef(null);
 
-
   // Lấy company_slug từ URL nếu có
   const getCompanySlug = () => {
     return company_slug || null;
   };
-
-  // Fetch current user với React Query - chỉ gọi 1 lần khi mount
-  const { data: userData, isLoading: isUserLoading } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: getCurrentUser,
-    retry: false,
-    staleTime: 5 * 60 * 1000, // Cache 5 phút
-  });
 
   // Đóng dropdown khi click ra ngoài
   useEffect(() => {
@@ -105,14 +96,6 @@ const Header = () => {
     }
     return name.charAt(0).toUpperCase();
   };
-
-  // Skeleton/Placeholder component cho user info
-  const UserInfoPlaceholder = () => (
-    <div className="px-4 py-3 border-b border-secondary/20">
-      <div className="h-4 bg-secondary/20 rounded w-3/4 mb-2 animate-pulse" />
-      <div className="h-3 bg-secondary/20 rounded w-1/2 animate-pulse" />
-    </div>
-  );
 
   return (
     <header className="h-16 bg-background border-b border-secondary/20 flex items-center justify-between px-4 md:px-6 sticky top-0 z-50">
@@ -177,39 +160,27 @@ const Header = () => {
           )}
         </div>
 
-        {/* User Avatar */}
-        <div className="relative" ref={userMenuRef}>
-          <button
-            onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-            className="flex items-center gap-2 p-1 rounded-lg hover:bg-secondary/10 transition-colors cursor-pointer"
-          >
-            {userData?.data?.user?.avatar_url || userData?.avatar_url ? (
+          {/* User Avatar */}
+          <div className="relative" ref={userMenuRef}>
+            <button
+              onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+              className="flex items-center gap-2 p-1 rounded-lg hover:bg-secondary/10 transition-colors cursor-pointer"
+            >
               <img
-                src={userData?.data?.user?.avatar_url || userData?.avatar_url}
+                src={user?.avatar_url || User_avatar}
                 alt="User Avatar"
                 className="w-9 h-9 md:w-10 md:h-10 rounded-full"
               />
-            ) : (
-              <div className="w-9 h-9 md:w-10 md:h-10 bg-primary rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                {isUserLoading ? (
-                  <div className="w-5 h-5 bg-white/30 rounded-full animate-pulse" />
-                ) : (
-                  getInitials(userData?.data?.user?.full_name || userData?.full_name)
-                )}
-              </div>
-            )}
-          </button>
+            </button>
 
           {/* User Dropdown */}
           {isUserMenuOpen && (
             <div className="absolute right-0 mt-2 w-64 bg-background border border-secondary/20 rounded-lg shadow-lg overflow-hidden">
               {/* User Info Header */}
-              {isUserLoading ? (
-                <UserInfoPlaceholder />
-              ) : userData ? (
+              {user ? (
                 <div className="px-4 py-3 border-b border-secondary/20">
-                  <p className="font-semibold text-text">{userData?.data?.user?.full_name || userData?.full_name}</p>
-                  <p className="text-sm text-secondary">{userData?.data?.user?.email || userData?.email}</p>
+                  <p className="font-semibold text-text">{user.full_name}</p>
+                  <p className="text-sm text-secondary">{user.email}</p>
                 </div>
               ) : (
                 <div className="px-4 py-3 border-b border-secondary/20">

@@ -16,13 +16,15 @@ import {
 import { getCycleById } from '../../../services/cycle';
 import { getObjectives } from '../../../services/okr';
 import { getKPIAssignments } from '../../../services/kpi-assignment';
+import { useAuthStore } from '../../../hooks/useAuth';
 import EditCycleModal from './components/EditCycleModal';
 import DeleteCycleConfirmModal from './components/DeleteCycleConfirmModal';
 import CopyOKRKPIModal from './components/CopyOKRKPIModal';
 
 const CycleDetailPage = () => {
-  const { cycleId } = useParams();
+  const { cycleId, company_slug } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuthStore();
   const [showMenu, setShowMenu] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -119,7 +121,7 @@ const CycleDetailPage = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
-            onClick={() => navigate('/cycles')}
+            onClick={() => navigate(`/${company_slug}/app/cycles`)}
             className="p-2 hover:bg-secondary/20 rounded-lg transition-colors cursor-pointer"
           >
             <ChevronLeft size={24} className="text-secondary" />
@@ -133,21 +135,22 @@ const CycleDetailPage = () => {
         </div>
 
         {/* Three-dot menu */}
-        <div className="relative">
-          <button
-            onClick={() => setShowMenu(!showMenu)}
-            className="p-2 hover:bg-secondary/20 rounded-lg transition-colors cursor-pointer"
-          >
-            <MoreVertical size={20} className="text-secondary" />
-          </button>
+        {user?.role === 'ADMIN_COMPANY' && (
+          <div className="relative">
+            <button
+              onClick={() => setShowMenu(!showMenu)}
+              className="p-2 hover:bg-secondary/20 rounded-lg transition-colors cursor-pointer"
+            >
+              <MoreVertical size={20} className="text-secondary" />
+            </button>
 
-          {showMenu && (
-            <>
-              <div
-                className="fixed inset-0 z-10"
-                onClick={() => setShowMenu(false)}
-              />
-              <div className="absolute right-0 top-full mt-2 w-56 bg-background rounded-xl shadow-lg border border-secondary/20 py-2 z-20">
+            {showMenu && (
+              <>
+                <div
+                  className="fixed inset-0 z-10"
+                  onClick={() => setShowMenu(false)}
+                />
+                <div className="absolute right-0 top-full mt-2 w-56 bg-background rounded-xl shadow-lg border border-secondary/20 py-2 z-20">
                 <button
                   onClick={() => {
                     setShowMenu(false);
@@ -180,9 +183,10 @@ const CycleDetailPage = () => {
                   <span>Sao chép OKR / KPI từ chu kỳ khác</span>
                 </button>
               </div>
-            </>
-          )}
-        </div>
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Cycle Info Card */}

@@ -1,4 +1,4 @@
-import { Trash2 } from 'lucide-react';
+import { Trash2, Edit } from 'lucide-react';
 
 /**
  * Evaluation method display configuration
@@ -34,10 +34,12 @@ const getEvaluationMethodConfig = (method) => {
  *
  * @param {Object} props
  * @param {Object} props.kpi - KPI dictionary data
+ * @param {Function} props.onEdit - Edit callback
  * @param {Function} props.onDelete - Delete callback
  */
-const KPIDictionaryCard = ({ kpi, onDelete }) => {
+const KPIDictionaryCard = ({ kpi, onEdit, onDelete }) => {
   const evaluationConfig = getEvaluationMethodConfig(kpi.evaluation_method);
+  const permission = kpi.permission || {};
 
   // Determine unit name display
   const getUnitName = () => {
@@ -72,13 +74,24 @@ const KPIDictionaryCard = ({ kpi, onDelete }) => {
 
         {/* Delete Button Only */}
         <div className="flex items-center gap-1 ml-2 shrink-0">
-          <button
-            onClick={() => onDelete?.(kpi)}
-            className="p-2 text-secondary hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-            title="Xóa"
-          >
-            <Trash2 size={18} />
-          </button>
+          {permission.editable && (
+            <button
+              onClick={() => onEdit?.(kpi)}
+              className="p-2 text-secondary hover:text-primary hover:bg-primary/10 rounded-lg transition-colors cursor-pointer"
+              title="Chỉnh sửa"
+            >
+              <Edit size={18} />
+            </button>
+          )}
+          {permission.deletable && (
+            <button
+              onClick={() => onDelete?.(kpi)}
+              className="p-2 text-secondary hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+              title="Xóa"
+            >
+              <Trash2 size={18} />
+            </button>
+          )}
         </div>
       </div>
 
@@ -114,7 +127,7 @@ const KPIDictionaryCard = ({ kpi, onDelete }) => {
         <div className="flex items-center justify-between text-sm">
           <span className="text-secondary">Phạm vi:</span>
           <span className="text-text font-medium">
-            {kpi.unit_id ? 'Đơn vị cụ thể' : 'Toàn công ty'}
+            {kpi.org_unit?.name || 'Toàn công ty'}
           </span>
         </div>
       </div>
