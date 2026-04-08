@@ -7,7 +7,7 @@ import CreateKeyResultModal from './CreateKeyResultModal.jsx';
 import EditKeyResultModal from './EditKeyResultModal.jsx';
 import CheckInModal from './CheckInModal.jsx';
 
-const KeyResultItem = ({ keyResult, onEdit, onDelete, onCheckIn }) => {
+const KeyResultItem = ({ keyResult, onEdit, onDelete, onCheckIn, objectiveStatus, isEditableStatus, canEditObjective, canDeleteObjective }) => {
   const progress = keyResult.progress_percentage || Math.round((keyResult.current_value / keyResult.target_value) * 100) || 0;
 
   const getProgressColor = (value) => {
@@ -38,7 +38,13 @@ const KeyResultItem = ({ keyResult, onEdit, onDelete, onCheckIn }) => {
   const canView = keyResult.permission?.view === true;
   const canEdit = keyResult.permission?.edit === true;
   const canDelete = keyResult.permission?.delete === true;
-  const canCheckIn = keyResult.permission?.checkin === true || keyResult.permission?.edit === true;
+
+  // Check-in is only available when objective is Active and user has edit permission
+  const canCheckIn = objectiveStatus === 'Active' && canEditObjective;
+
+  // Edit/Delete buttons on KR are only available when objective is in editable status
+  const canEditKR = isEditableStatus && canEditObjective;
+  const canDeleteKR = isEditableStatus && canDeleteObjective;
 
   return (
     <div className="border border-secondary/20 rounded-xl p-4 hover:shadow-md transition-shadow">
@@ -97,8 +103,8 @@ const KeyResultItem = ({ keyResult, onEdit, onDelete, onCheckIn }) => {
         <div className="flex items-center gap-1 shrink-0">
           <span className="text-2xl font-bold text-text mr-2">{progress}%</span>
 
-          {/* Edit Button */}
-          {canEdit && (
+          {/* Edit Button - Only show when objective is editable and user has edit permission */}
+          {canEditKR && (
             <button
               onClick={() => onEdit(keyResult)}
               className="p-2 text-secondary hover:text-primary hover:bg-orange-100 rounded-lg transition-colors cursor-pointer"
@@ -108,8 +114,8 @@ const KeyResultItem = ({ keyResult, onEdit, onDelete, onCheckIn }) => {
             </button>
           )}
 
-          {/* Delete Button */}
-          {canDelete && (
+          {/* Delete Button - Only show when objective is editable and user has delete permission */}
+          {canDeleteKR && (
             <button
               onClick={() => onDelete(keyResult)}
               className="p-2 text-secondary hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
@@ -155,7 +161,7 @@ const DeleteConfirmModal = ({ keyResult, onClose, onConfirm, isPending }) => {
   );
 };
 
-const KeyResultsSection = ({ objectiveId }) => {
+const KeyResultsSection = ({ objectiveId, objectiveStatus, isEditableStatus, canEdit, canDelete }) => {
   const queryClient = useQueryClient();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingKeyResult, setEditingKeyResult] = useState(null);
@@ -214,13 +220,16 @@ const KeyResultsSection = ({ objectiveId }) => {
             Tổng trọng số: <span className="font-semibold text-emerald-600">{totalWeight.toFixed(0)}%</span>
           </p>
         </div>
-        <button
-          onClick={() => setIsCreateModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors cursor-pointer"
-        >
-          <Plus size={18} />
-          Thêm Key Result
-        </button>
+        {/* Add Key Result button - Only show when objective is editable and user has edit permission */}
+        {isEditableStatus && canEdit && (
+          <button
+            onClick={() => setIsCreateModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors cursor-pointer"
+          >
+            <Plus size={18} />
+            Thêm Key Result
+          </button>
+        )}
       </div>
 
       <div className="space-y-4">
@@ -242,6 +251,10 @@ const KeyResultsSection = ({ objectiveId }) => {
               onEdit={handleEdit}
               onDelete={handleDelete}
               onCheckIn={handleCheckIn}
+              objectiveStatus={objectiveStatus}
+              isEditableStatus={isEditableStatus}
+              canEditObjective={canEdit}
+              canDeleteObjective={canDelete}
             />
           ))
         )}

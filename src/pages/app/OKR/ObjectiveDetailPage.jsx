@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Edit, Trash2, Send, RotateCcw, X, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, Send, X, AlertCircle } from 'lucide-react';
 import { toast } from 'react-toastify';
 import {
   getObjectiveById,
@@ -9,7 +9,6 @@ import {
   updateObjective,
   submitObjective,
   approveObjective,
-  revertObjectiveToDraft,
 } from '../../../services/okr.js';
 import ProgressSection from './components/ProgressSection';
 import KeyResultsSection from './components/KeyResultsSection';
@@ -61,46 +60,6 @@ const StatusBadge = ({ status, progressStatus }) => {
   );
 };
 
-// Revert to Draft Confirmation Modal
-const RevertToDraftModal = ({ objective, onClose, onConfirm, isPending }) => {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
-            <AlertCircle size={20} className="text-amber-600" />
-          </div>
-          <div>
-            <h2 className="text-lg font-semibold text-text">Chuyển về bản nháp?</h2>
-          </div>
-        </div>
-        <p className="text-secondary mb-4">
-          Objective <strong>"{objective.title}"</strong> đang ở trạng thái hoạt động. Để chỉnh sửa, bạn cần chuyển nó về trạng thái <strong>Bản nháp</strong>.
-        </p>
-        <p className="text-sm text-secondary mb-6">
-          Sau khi chuyển về bản nháp, bạn có thể chỉnh sửa và submit lại để phê duyệt.
-        </p>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={onClose}
-            className="flex-1 px-4 py-2 border border-secondary/20 rounded-lg text-text hover:bg-secondary/10 transition-colors cursor-pointer"
-          >
-            Hủy
-          </button>
-          <button
-            onClick={onConfirm}
-            disabled={isPending}
-            className="flex-1 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
-          >
-            <RotateCcw size={16} />
-            {isPending ? 'Đang chuyển...' : 'Chuyển về bản nháp'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 const ObjectiveDetailPage = () => {
   const { company_slug, objectiveId } = useParams();
@@ -109,7 +68,6 @@ const ObjectiveDetailPage = () => {
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [isRevertModalOpen, setIsRevertModalOpen] = useState(false);
 
   // Helper: Find objective in cache (from OKRPage tree data)
   const findObjectiveInCache = () => {
@@ -160,7 +118,17 @@ const ObjectiveDetailPage = () => {
   const canDelete = objective.permission?.delete === true;
   const canSubmit = objective.permission?.submit === true;
   const canApprove = objective.permission?.approve === true;
-  const canReject = objective.permission?.reject === true;
+
+  // Redirect if no view permission
+  useEffect(() => {
+    if (!isLoading && objective.id && !canView) {
+      toast.error('Bạn không có quyền xem Objective này');
+      navigate(`/${company_slug}/app/okr`);
+    }
+  }, [isLoading, objective.id, canView, company_slug, navigate]);
+
+  // Determine if objective is in editable state (Draft or Rejected)
+  const isEditableStatus = status === 'Draft' || status === 'Rejected';
 
   // Delete mutation
   const deleteMutation = useMutation({
@@ -205,36 +173,9 @@ const ObjectiveDetailPage = () => {
     },
   });
 
-  // Revert to Draft mutation (using revertObjectiveToDraft service)
-  const revertToDraftMutation = useMutation({
-    mutationFn: () => revertObjectiveToDraft(objectiveId),
-    onSuccess: async () => {
-      toast.success('Đã chuyển Objective về trạng thái bản nháp!');
-      // Refresh objective data to update status and permissions
-      const updatedData = await getObjectiveById(objectiveId);
-      queryClient.setQueryData(['objective', objectiveId], updatedData);
-      queryClient.invalidateQueries({ queryKey: ['objectives'] });
-      setIsRevertModalOpen(false);
-      // Open edit modal after reverting
-      setIsEditModalOpen(true);
-    },
-    onError: (err) => {
-      toast.error(err.response?.data?.message || 'Có lỗi xảy ra khi chuyển về bản nháp');
-    },
-  });
-
   const handleEditClick = () => {
-    if (status === 'Active') {
-      // For Active objectives, show revert to draft confirmation first
-      setIsRevertModalOpen(true);
-    } else {
-      // For Draft, Rejected, or other statuses, open edit directly
-      setIsEditModalOpen(true);
-    }
-  };
-
-  const handleRevertConfirm = () => {
-    revertToDraftMutation.mutate();
+    // Edit button is only shown for Draft and Rejected statuses
+    setIsEditModalOpen(true);
   };
 
   const handleSubmit = () => {
@@ -315,8 +256,8 @@ const ObjectiveDetailPage = () => {
             </button>
           )}
 
-          {/* Edit Button - For Draft, Rejected, Active (with revert) */}
-          {canEdit && (
+          {/* Edit Button - Only for Draft or Rejected status with edit permission */}
+          {isEditableStatus && canEdit && (
             <button
               onClick={handleEditClick}
               className="flex items-center gap-2 px-4 py-2 border border-secondary/20 rounded-lg text-text hover:bg-secondary/10 transition-colors cursor-pointer"
@@ -326,8 +267,8 @@ const ObjectiveDetailPage = () => {
             </button>
           )}
 
-          {/* Delete Button */}
-          {canDelete && (
+          {/* Delete Button - Only for Draft or Rejected status with delete permission */}
+          {isEditableStatus && canDelete && (
             <button
               onClick={() => setIsDeleteModalOpen(true)}
               className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors cursor-pointer"
@@ -367,7 +308,13 @@ const ObjectiveDetailPage = () => {
       <ProgressSection objective={objective} />
 
       {/* Key Results Section */}
-      <KeyResultsSection objectiveId={objectiveId} />
+      <KeyResultsSection
+        objectiveId={objectiveId}
+        objectiveStatus={status}
+        isEditableStatus={isEditableStatus}
+        canEdit={canEdit}
+        canDelete={canDelete}
+      />
 
       {/* Child Objectives Section */}
       <ChildObjectivesSection childObjectives={objective.sub_objectives} />
@@ -423,15 +370,6 @@ const ObjectiveDetailPage = () => {
         </div>
       )}
 
-      {/* Revert to Draft Modal */}
-      {isRevertModalOpen && (
-        <RevertToDraftModal
-          objective={objective}
-          onClose={() => setIsRevertModalOpen(false)}
-          onConfirm={handleRevertConfirm}
-          isPending={revertToDraftMutation.isPending}
-        />
-      )}
     </div>
   );
 };
