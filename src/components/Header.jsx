@@ -116,13 +116,6 @@ const Header = () => {
 
   return (
     <header className="h-16 bg-background border-b border-secondary/20 flex items-center justify-between px-4 md:px-6 sticky top-0 z-50">
-      {/* Logo - chỉ hiển thị trên mobile, hoặc khi cần */}
-      {/* <div className="flex items-center gap-2 md:hidden">
-        <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-          <span className="text-white font-bold text-sm">O</span>
-        </div>
-        <span className="font-bold text-text text-sm">OKR Platform</span>
-      </div> */}
 
       {/* Spacer cho desktop - để căn phải các icon */}
       <div className="flex flex-1" />

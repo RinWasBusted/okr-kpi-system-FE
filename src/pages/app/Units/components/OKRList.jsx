@@ -94,7 +94,7 @@ const OKRList = ({ unitId }) => {
   // Fetch objectives for this unit independently
   const { data: okrData, isLoading: isLoadingOKRs } = useQuery({
     queryKey: ['objectives', { unit_id: unitId }],
-    queryFn: () => getObjectives({ unit_id: unitId, per_page: 100 }),
+    queryFn: () => getObjectives({ unit_id: unitId, per_page: 100 , mode:'list'}),
     enabled: !!unitId,
   });
 

@@ -5,8 +5,22 @@ import { getUnits } from '../../../services/unit';
 import UnitItem from './components/UnitItem';
 import UnitItemSkeleton from './components/UnitItemSkeleton';
 import AddUnitModal from './components/AddUnitModal';
+import { useAuthStore } from '../../../hooks/useAuth';
+import EmployeeUnitView from './components/EmployeeUnitView';
 
 const UnitPage = () => {
+  const { user } = useAuthStore();
+  const userRole = user?.role;
+
+  // Check if user is ADMIN_COMPANY
+  const isAdmin = userRole === 'ADMIN_COMPANY';
+
+  // Render Employee view for non-admin users
+  if (!isAdmin) {
+    return <EmployeeUnitView />;
+  }
+
+  // Admin view continues below
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedUnits, setExpandedUnits] = useState(new Set());
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);

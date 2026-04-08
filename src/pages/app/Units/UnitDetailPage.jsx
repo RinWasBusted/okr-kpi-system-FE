@@ -125,14 +125,23 @@ const UnitDetailPage = () => {
             {/* OKR Stats */}
             <div className="bg-background rounded-lg border border-secondary/20 p-4">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-medium text-secondary">OKR</span>
+                <span className="text-sm font-medium text-secondary">OKR Progress</span>
                 <Target size={20} className="text-orange-500" />
               </div>
               {unitLoading ? (
-                <div className="h-2 bg-secondary/20 rounded-full animate-pulse" />
+                <div className="space-y-2">
+                  <div className="h-2 bg-secondary/20 rounded-full animate-pulse" />
+                  <div className="h-4 w-12 bg-secondary/20 rounded animate-pulse" />
+                </div>
               ) : (
-                <div className="h-2 bg-secondary/15 rounded-full overflow-hidden">
-                  <div className="h-full bg-orange-500/30 rounded-full animate-pulse" />
+                <div className="space-y-2">
+                  <div className="h-2 bg-secondary/15 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-orange-500 rounded-full transition-all duration-300"
+                      style={{ width: `${Math.min(unit?.okr_progress || 0, 100)}%` }}
+                    />
+                  </div>
+                  <p className="text-lg font-bold text-text">{unit?.okr_progress || 0}%</p>
                 </div>
               )}
             </div>
@@ -140,14 +149,23 @@ const UnitDetailPage = () => {
             {/* KPI Stats */}
             <div className="bg-background rounded-lg border border-secondary/20 p-4">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-medium text-secondary">KPI</span>
+                <span className="text-sm font-medium text-secondary">KPI Health</span>
                 <TrendingUp size={20} className="text-green-500" />
               </div>
               {unitLoading ? (
-                <div className="h-2 bg-secondary/20 rounded-full animate-pulse" />
+                <div className="space-y-2">
+                  <div className="h-2 bg-secondary/20 rounded-full animate-pulse" />
+                  <div className="h-4 w-12 bg-secondary/20 rounded animate-pulse" />
+                </div>
               ) : (
-                <div className="h-2 bg-secondary/15 rounded-full overflow-hidden">
-                  <div className="h-full bg-green-500/30 rounded-full animate-pulse" />
+                <div className="space-y-2">
+                  <div className="h-2 bg-secondary/15 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-green-500 rounded-full transition-all duration-300"
+                      style={{ width: `${Math.min(unit?.kpi_health || 0, 100)}%` }}
+                    />
+                  </div>
+                  <p className="text-lg font-bold text-text">{unit?.kpi_health || 0}%</p>
                 </div>
               )}
             </div>

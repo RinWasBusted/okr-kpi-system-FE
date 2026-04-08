@@ -3,22 +3,16 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
   Building2,
-  Shield,
-  Moon,
-  Settings,
-  ChevronDown,
-  LogOut,
   Users,
   Calendar,
   Target,
   BarChart3,
-  FileText,
   BookOpen,
   Menu,
   X,
 } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
-import { logout, getCurrentUser } from '../services/auth';
+import { getCurrentUser } from '../services/auth';
 import { useAuthStore } from '../hooks/useAuth';
 
 const Sidebar = () => {
@@ -26,8 +20,6 @@ const Sidebar = () => {
   const location = useLocation();
   const { theme, setTheme } = useTheme();
   const { user, setUser } = useAuthStore();
-  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -61,7 +53,8 @@ const Sidebar = () => {
       try {
         const response = await getCurrentUser();
         if (response.data?.user) {
-          setUser(response.data.user);
+          
+          (response.data.user);
         }
       } catch (error) {
         console.error('Failed to fetch current user:', error);
@@ -120,13 +113,7 @@ const Sidebar = () => {
           title: 'Mẫu KPI',
           icon: BookOpen,
           path: `/${companySlug}/app/kpi-dictionaries`,
-        },
-        {
-          id: 8,
-          title: 'Báo cáo',
-          icon: FileText,
-          path: `/${companySlug}/app/reports`,
-        },
+        }
       ];
     }
 
@@ -183,12 +170,10 @@ const Sidebar = () => {
       )}
 
       {/* Overlay for mobile */}
-      {isMobile && isMobileMenuOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+          className={`fixed duration-100 inset-0 bg-black/50 ${isMobileMenuOpen ? 'z-30 opacity-100' : 'z-0 opacity-0'} lg:hidden`}
           onClick={closeMobileMenu}
         />
-      )}
 
       {/* Sidebar */}
       <aside
