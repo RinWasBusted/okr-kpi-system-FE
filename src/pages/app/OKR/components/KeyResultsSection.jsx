@@ -8,7 +8,7 @@ import EditKeyResultModal from './EditKeyResultModal.jsx';
 import CheckInModal from './CheckInModal.jsx';
 
 const KeyResultItem = ({ keyResult, onEdit, onDelete, onCheckIn, objectiveStatus, isEditableStatus, canEditObjective, canDeleteObjective }) => {
-  const progress = keyResult.progress_percentage || Math.round((keyResult.current_value / keyResult.target_value) * 100) || 0;
+  const progress = keyResult.progress_percentage || 0;
 
   const getProgressColor = (value) => {
     if (value >= 80) return 'bg-emerald-500';

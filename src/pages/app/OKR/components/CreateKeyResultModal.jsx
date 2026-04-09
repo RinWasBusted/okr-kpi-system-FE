@@ -7,6 +7,14 @@ import { createKeyResult, getKeyResults } from '../../../../services/okr.js';
 
 const CreateKeyResultModal = ({ objectiveId, onClose, onSuccess }) => {
   const queryClient = useQueryClient();
+
+  // Evaluation method options
+  const evaluationMethods = [
+    { value: 'MAXIMIZE', label: 'Tối đa hóa (MAXIMIZE)', description: 'Giá trị cao hơn là tốt hơn' },
+    { value: 'MINIMIZE', label: 'Tối thiểu hóa (MINIMIZE)', description: 'Giá trị thấp hơn là tốt hơn' },
+    { value: 'TARGET', label: 'Mục tiêu (TARGET)', description: 'Giá trị nên ổn định trong khoảng' },
+  ];
+
   const [formData, setFormData] = useState({
     title: '',
     current_value: 0,
@@ -14,6 +22,7 @@ const CreateKeyResultModal = ({ objectiveId, onClose, onSuccess }) => {
     unit: '',
     weight: 0,
     due_date: null,
+    evaluation_method: 'MAXIMIZE',
   });
   const [weightError, setWeightError] = useState('');
 
@@ -103,6 +112,7 @@ const CreateKeyResultModal = ({ objectiveId, onClose, onSuccess }) => {
       target_value: targetValue,
       unit: formData.unit.trim(),
       weight: weight,
+      evaluation_method: formData.evaluation_method,
       ...(formData.due_date && {
         due_date: formData.due_date.toISOString(),
       }),
@@ -124,7 +134,7 @@ const CreateKeyResultModal = ({ objectiveId, onClose, onSuccess }) => {
       />
 
       {/* Modal */}
-      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 overflow-hidden">
+      <div className="relative bg-background rounded-2xl shadow-xl w-full max-w-lg mx-4 overflow-hidden border border-secondary/20">
         {/* Header */}
         <div className="px-6 py-4 border-b border-secondary/20 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-text">Thêm Key Result mới</h2>
@@ -141,7 +151,7 @@ const CreateKeyResultModal = ({ objectiveId, onClose, onSuccess }) => {
           {/* Title */}
           <div>
             <label className="block text-sm font-medium text-text mb-1">
-              Tiêu đề <span className="text-red-500">*</span>
+              Tiêu đề <span className="text-red-400">*</span>
               <span className="text-secondary text-xs ml-1">(tối đa 255 ký tự)</span>
             </label>
             <input
@@ -162,7 +172,7 @@ const CreateKeyResultModal = ({ objectiveId, onClose, onSuccess }) => {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-text mb-1">
-                Giá trị hiện tại <span className="text-red-500">*</span>
+                Giá trị hiện tại <span className="text-red-400">*</span>
               </label>
               <input
                 type="number"
@@ -177,7 +187,7 @@ const CreateKeyResultModal = ({ objectiveId, onClose, onSuccess }) => {
             </div>
             <div>
               <label className="block text-sm font-medium text-text mb-1">
-                Giá trị mục tiêu <span className="text-red-500">*</span>
+                Giá trị mục tiêu <span className="text-red-400">*</span>
               </label>
               <input
                 type="number"
@@ -213,7 +223,7 @@ const CreateKeyResultModal = ({ objectiveId, onClose, onSuccess }) => {
             </div>
             <div>
               <label className="block text-sm font-medium text-text mb-1">
-                Trọng số (%) <span className="text-red-500">*</span>
+                Trọng số (%) <span className="text-red-400">*</span>
               </label>
               <input
                 type="number"
@@ -224,14 +234,36 @@ const CreateKeyResultModal = ({ objectiveId, onClose, onSuccess }) => {
                 value={formData.weight}
                 onChange={(e) => handleChange('weight', e.target.value)}
                 className={`w-full px-4 py-2 rounded-lg border bg-background text-text placeholder:text-secondary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${
-                  weightError ? 'border-red-300 focus:border-red-500 focus:ring-red-200' : 'border-secondary/20'
+                  weightError ? 'border-red-400 focus:border-red-400 focus:ring-red-400/20' : 'border-secondary/20'
                 }`}
                 required
               />
               <div className="text-xs text-secondary mt-1">
-                Còn lại: <span className="font-medium text-emerald-600">{remainingWeight.toFixed(2)}%</span>
+                Còn lại: <span className="font-medium text-emerald-400">{remainingWeight.toFixed(2)}%</span>
               </div>
             </div>
+          </div>
+
+          {/* Evaluation Method */}
+          <div>
+            <label className="block text-sm font-medium text-text mb-1">
+              Phương thức đánh giá <span className="text-red-400">*</span>
+            </label>
+            <select
+              value={formData.evaluation_method}
+              onChange={(e) => handleChange('evaluation_method', e.target.value)}
+              disabled={createMutation.isPending}
+              className="w-full px-4 py-2 rounded-lg border border-secondary/20 bg-background text-text focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer"
+            >
+              {evaluationMethods.map((method) => (
+                <option key={method.value} value={method.value}>
+                  {method.label}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-secondary mt-1">
+              {evaluationMethods.find(m => m.value === formData.evaluation_method)?.description}
+            </p>
           </div>
 
           {/* Due Date */}
@@ -256,8 +288,8 @@ const CreateKeyResultModal = ({ objectiveId, onClose, onSuccess }) => {
 
           {/* Weight Error Message */}
           {weightError && (
-            <div className="p-3 rounded-lg bg-red-50 border border-red-200">
-              <p className="text-sm text-red-700">
+            <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30">
+              <p className="text-sm text-red-400">
                 <span className="font-medium">Lỗi: </span>
                 {weightError}
               </p>
@@ -265,15 +297,15 @@ const CreateKeyResultModal = ({ objectiveId, onClose, onSuccess }) => {
           )}
 
           {/* Weight Info */}
-          <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
-            <p className="text-sm text-blue-700">
+          <div className="p-3 rounded-lg bg-primary/10 border border-primary/30">
+            <p className="text-sm text-primary">
               <span className="font-medium">Thông tin: </span>
               Trọng số hiện tại của Objective:{' '}
               <span className="font-semibold">{totalExistingWeight.toFixed(2)}%</span>
               {remainingWeight > 0 ? (
                 <span>. Bạn có thể thêm tối đa <span className="font-semibold">{remainingWeight.toFixed(2)}%</span>.</span>
               ) : (
-                <span className="text-red-600">. Đã đạt tối đa 100%!</span>
+                <span className="text-red-400">. Đã đạt tối đa 100%!</span>
               )}
             </p>
           </div>

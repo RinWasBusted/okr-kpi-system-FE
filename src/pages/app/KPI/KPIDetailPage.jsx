@@ -122,23 +122,6 @@ const ProgressBar = ({ percentage, color = 'bg-blue-500' }) => (
   </div>
 );
 
-// Calculate progress percentage based on target and current value
-const calculateProgress = (current, target, evaluationMethod = 'Positive') => {
-  if (!target || target === 0) return 0;
-  const progress = (current / target) * 100;
-
-  switch (evaluationMethod) {
-    case 'Positive':
-      return Math.min(progress, 100);
-    case 'Negative':
-      return Math.max(0, 100 - progress);
-    case 'Stabilizing':
-      return 100 - Math.abs(progress - 100);
-    default:
-      return Math.min(progress, 100);
-  }
-};
-
 const KPIDetailPage = () => {
   const { company_slug, kpiId } = useParams();
   const navigate = useNavigate();
@@ -208,11 +191,19 @@ const KPIDetailPage = () => {
   const canDelete = kpi.permission?.deletable === true;
 
   const evaluationMethod = kpi.kpi_dictionary?.evaluation_method || 'Positive';
-  const progressPercentage = calculateProgress(
-    kpi.current_value || 0,
-    kpi.target_value || 0,
-    evaluationMethod
-  );
+
+  // Calculate progress: if KPI has sub-assignments, use average of children's progress
+  // Otherwise use the backend-provided progress_percentage
+  const progressPercentage = (() => {
+    const subAssignments = kpi.sub_assignments || kpi.children || [];
+    if (subAssignments.length > 0) {
+      const totalProgress = subAssignments.reduce((sum, child) => {
+        return sum + (child.progress_percentage || 0);
+      }, 0);
+      return totalProgress / subAssignments.length;
+    }
+    return kpi.progress_percentage || 0;
+  })();
 
   const getProgressColor = (value) => {
     if (value >= 80) return 'bg-blue-500';

@@ -38,26 +38,6 @@ const ProgressBar = ({ percentage, color = 'bg-blue-500' }) => (
   </div>
 );
 
-// Calculate progress percentage based on target and current value
-const calculateProgress = (current, target, evaluationMethod = 'Positive') => {
-  if (!target || target === 0) return 0;
-  const progress = (current / target) * 100;
-
-  switch (evaluationMethod) {
-    case 'Positive':
-      // Higher is better
-      return Math.min(progress, 100);
-    case 'Negative':
-      // Lower is better
-      return Math.max(0, 100 - progress);
-    case 'Stabilizing':
-      // Closer to target is better
-      return 100 - Math.abs(progress - 100);
-    default:
-      return Math.min(progress, 100);
-  }
-};
-
 // Cycle tooltip component
 const CycleTooltip = ({ cycle }) => {
   const [showTooltip, setShowTooltip] = useState(false);
@@ -107,11 +87,7 @@ const KPIItem = ({ kpi, level = 0, expandedKPIs, toggleExpand, isSearchMode = fa
   const hasActions = canEdit || canDelete || canViewDetail;
 
   const evaluationMethod = kpi.kpi_dictionary?.evaluation_method || 'Positive';
-  const progressPercentage = calculateProgress(
-    kpi.current_value || 0,
-    kpi.target_value || 0,
-    evaluationMethod
-  );
+  const progressPercentage = kpi.progress_percentage || 0;
 
   const getProgressColor = (value) => {
     if (value >= 80) return 'bg-blue-500';
