@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -192,6 +192,14 @@ const KPIDetailPage = () => {
     queryFn: () => getKPIRecords(kpiId, { per_page: 50 }),
     enabled: !!kpiId,
   });
+
+  // Handle KPI fetch error
+  useEffect(() => {
+    if (kpiError) {
+      toast.error(kpiError.response?.data?.error?.message || 'Không thể tải dữ liệu KPI');
+      navigate(`/${company_slug}/app/kpi`);
+    }
+  }, [kpiError, company_slug, navigate]);
 
   const kpi = kpiResponse?.data?.kpi_assignment || {};
   const records = recordsResponse?.data || [];

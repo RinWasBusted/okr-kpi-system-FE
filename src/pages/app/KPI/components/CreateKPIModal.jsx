@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { X, Eye, EyeOff, Lock, Loader } from 'lucide-react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
-import { createKPIAssignment, updateKPIAssignment, getKPIDictionaries, getKPIDictionariesForAssignment, getAvailableParentKPIs } from '../../../../services/kpi.js';
+import { createKPIAssignment, updateKPIAssignment, getKPIDictionariesForAssignment, getAvailableParentKPIs } from '../../../../services/kpi.js';
 import { getUnits } from '../../../../services/unit.js';
 import { getCycles } from '../../../../services/cycle.js';
 import { getUsers } from '../../../../services/user.js';
@@ -165,7 +165,7 @@ const CreateKPIModal = ({ onClose, onSuccess, kpi = null }) => {
       onClose();
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi tạo KPI');
+      toast.error(error.response?.data?.error?.message || 'Có lỗi xảy ra khi tạo KPI');
     },
   });
 
@@ -179,7 +179,7 @@ const CreateKPIModal = ({ onClose, onSuccess, kpi = null }) => {
       onClose();
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi cập nhật KPI');
+      toast.error(error.response?.data?.error?.message || 'Có lỗi xảy ra khi cập nhật KPI');
     },
   });
 

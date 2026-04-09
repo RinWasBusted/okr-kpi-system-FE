@@ -16,7 +16,6 @@ import { deleteKPIAssignment } from '../../../../services/kpi.js';
  */
 const DeleteConfirmModal = ({ onClose, onSuccess, kpi, cascade = false }) => {
   const queryClient = useQueryClient();
-  const [confirmText, setConfirmText] = useState('');
 
   const deleteMutation = useMutation({
     mutationFn: () => deleteKPIAssignment(kpi.id, cascade),
@@ -27,15 +26,11 @@ const DeleteConfirmModal = ({ onClose, onSuccess, kpi, cascade = false }) => {
       onClose();
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi xóa KPI');
+      toast.error(error.response?.data?.error?.message || 'Có lỗi xảy ra khi xóa KPI');
     },
   });
 
   const handleDelete = () => {
-    if (confirmText !== 'DELETE') {
-      toast.error('Vui lòng nhập "DELETE" để xác nhận');
-      return;
-    }
     deleteMutation.mutate();
   };
 
@@ -84,20 +79,6 @@ const DeleteConfirmModal = ({ onClose, onSuccess, kpi, cascade = false }) => {
             </div>
           )}
 
-          <div className="p-4 rounded-lg bg-secondary/5 border border-secondary/20">
-            <p className="text-sm text-secondary mb-2">
-              Hành động này không thể hoàn tác. Để xác nhận, vui lòng nhập <strong className="text-text">"DELETE"</strong> vào ô bên dưới:
-            </p>
-            <input
-              type="text"
-              value={confirmText}
-              onChange={(e) => setConfirmText(e.target.value)}
-              placeholder="Nhập DELETE"
-              disabled={deleteMutation.isPending}
-              className="w-full px-4 py-2 rounded-lg border border-secondary/20 bg-background text-text placeholder:text-secondary/50 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all disabled:opacity-50"
-            />
-          </div>
-
           {/* Footer */}
           <div className="flex items-center gap-3 pt-2">
             <button
@@ -111,7 +92,7 @@ const DeleteConfirmModal = ({ onClose, onSuccess, kpi, cascade = false }) => {
             <button
               type="button"
               onClick={handleDelete}
-              disabled={confirmText !== 'DELETE' || deleteMutation.isPending}
+              disabled={deleteMutation.isPending}
               className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
             >
               {deleteMutation.isPending && <Loader size={16} className="animate-spin" />}

@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { X, Save, Loader } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { updateUser } from '../../../../services/user';
+import { User_avatar } from '../../../../assets';
 
 /**
  * TreeSelect Component - Hierarchical unit selector
@@ -68,6 +69,7 @@ const EditEmployeeModal = ({ user, onClose, units, isLoadingUnits }) => {
     password: '',
     confirm_password: '',
     unit_id: null,
+    job_title: '',
     is_active: true,
   });
   const [errors, setErrors] = useState({});
@@ -81,6 +83,7 @@ const EditEmployeeModal = ({ user, onClose, units, isLoadingUnits }) => {
         password: '',
         confirm_password: '',
         unit_id: user.unit?.id || null,
+        job_title: user.job_title || '',
         is_active: user.is_active ?? true,
       });
     }
@@ -111,6 +114,10 @@ const EditEmployeeModal = ({ user, onClose, units, isLoadingUnits }) => {
       newErrors.email = 'Vui lòng nhập email';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'Email không hợp lệ';
+    }
+
+    if (formData.job_title && formData.job_title.length > 100) {
+      newErrors.job_title = 'Chức vụ không được vượt quá 100 ký tự';
     }
 
     // Password validation - only if user wants to change password
@@ -148,6 +155,11 @@ const EditEmployeeModal = ({ user, onClose, units, isLoadingUnits }) => {
       submitData.unit_id = formData.unit_id;
     }
 
+    // Include job_title (allow empty string to remove)
+    if (formData.job_title !== undefined) {
+      submitData.job_title = formData.job_title.trim() || null;
+    }
+
     updateMutation.mutate({ id: user.id, data: submitData });
   };
 
@@ -177,9 +189,9 @@ const EditEmployeeModal = ({ user, onClose, units, isLoadingUnits }) => {
           {/* User Info Display */}
           <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
             <img
-              src={user.avatar_url || '/default-avatar.png'}
+              src={user.avatar_url || User_avatar}
               alt={user.full_name}
-              className="w-12 h-12 rounded-full object-cover"
+              className={`w-12 h-12 rounded-full object-cover ${!user.avatar_url ? 'border border-secondary/30' : ''}`}
             />
             <div>
               <p className="font-medium text-gray-900">{user.full_name}</p>
@@ -210,6 +222,32 @@ const EditEmployeeModal = ({ user, onClose, units, isLoadingUnits }) => {
             )}
             <p className="mt-1 text-xs text-gray-400">
               {formData.full_name.length}/255 ký tự
+            </p>
+          </div>
+
+          {/* Job Title */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Chức vụ
+            </label>
+            <input
+              type="text"
+              value={formData.job_title}
+              onChange={(e) => handleChange('job_title', e.target.value)}
+              maxLength={100}
+              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 text-gray-900 bg-white ${
+                errors.job_title
+                  ? 'border-red-500 focus:ring-red-500/50'
+                  : 'border-gray-200 focus:ring-orange-500/50'
+              }`}
+              placeholder="Nhập chức vụ (không bắt buộc)"
+              disabled={updateMutation.isPending}
+            />
+            {errors.job_title && (
+              <p className="mt-1 text-sm text-red-500">{errors.job_title}</p>
+            )}
+            <p className="mt-1 text-xs text-gray-400">
+              {formData.job_title.length}/100 ký tự
             </p>
           </div>
 

@@ -160,13 +160,14 @@ const KeyResultsSection = ({ objectiveId }) => {
   const keyResults = keyResultsData?.data || [];
 
   return (
-    <div className="mt-4 pt-4 border-t border-secondary/10" onMouseEnter={handleMouseEnter}>
+    <div className="mt-4 pt-4 border-t border-secondary/10" >
       <button
         onClick={(e) => {
           e.stopPropagation();
           setIsExpanded(!isExpanded);
         }}
         className="flex items-center gap-2 text-sm font-medium text-text hover:text-primary transition-colors cursor-pointer"
+        onMouseEnter={handleMouseEnter}
       >
         <TrendingUp size={16} className="text-primary" />
         <span>Các Key Results</span>

@@ -194,7 +194,7 @@ const Header = () => {
                 <button
                   onClick={() => {
                     setIsUserMenuOpen(false);
-                    // Navigate to profile
+                    navigate(user.role === 'ADMIN' ? `/admin/profile` : `/${getCompanySlug()}/app/profile`);
                   }}
                   className="w-full flex items-center gap-3 px-4 py-2.5 text-text hover:bg-secondary/10 transition-colors text-left cursor-pointer"
                 >

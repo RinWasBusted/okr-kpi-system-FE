@@ -20,6 +20,7 @@ import KPIDictionariesPage from "../pages/app/KPIDictionaries/KPIDictionariesPag
 import KPIPage from "../pages/app/KPI/KPIPage.jsx";
 import KPIDetailPage from "../pages/app/KPI/KPIDetailPage.jsx";
 import EmployeePage from "../pages/app/Employees/EmployeePage.jsx";
+import ProfilePage from "../pages/app/Profile/ProfilePage.jsx";
 
 const router = createBrowserRouter([
     {
@@ -112,6 +113,10 @@ const router = createBrowserRouter([
                 path: "kpi-dictionaries",
                 element: <KPIDictionariesPage />
             },
+            {
+                path: "profile",
+                element: <ProfilePage />
+            }
         ]
     },
     {

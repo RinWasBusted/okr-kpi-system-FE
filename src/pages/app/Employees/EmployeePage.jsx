@@ -5,6 +5,7 @@ import { toast } from 'react-toastify';
 import { getUsers, updateUserAvatar } from '../../../services/user';
 import { getUnits } from '../../../services/unit';
 import { User_avatar } from '../../../assets';
+import { useAuthStore } from '../../../hooks/useAuth';
 import AddEmployeeModal from './components/AddEmployeeModal';
 import EditEmployeeModal from './components/EditEmployeeModal';
 import DeleteConfirmModal from './components/DeleteConfirmModal';
@@ -30,7 +31,7 @@ const StatusBadge = ({ isActive }) => {
 /**
  * AvatarUploadOverlay Component - Show upload button on hover
  */
-const AvatarUploadOverlay = ({ user, onUpload }) => {
+const AvatarUploadOverlay = ({ user, onUpload, isAdminCompany }) => {
   const [isHovered, setIsHovered] = useState(false);
   const fileInputRef = useRef(null);
 
@@ -47,7 +48,7 @@ const AvatarUploadOverlay = ({ user, onUpload }) => {
 
   return (
     <div
-      className="relative"
+      className="relative shrink-0"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -56,7 +57,7 @@ const AvatarUploadOverlay = ({ user, onUpload }) => {
         alt={user.full_name}
         className={`w-10 h-10 rounded-full object-cover ${!user.avatar_url ? 'border border-secondary/30' : ''}`}
       />
-      {(user.editable === true || user.editable === undefined) && isHovered && (
+      {isAdminCompany && isHovered && (
         <button
           onClick={handleClick}
           className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full cursor-pointer"
@@ -81,6 +82,7 @@ const AvatarUploadOverlay = ({ user, onUpload }) => {
  */
 const EmployeePage = () => {
   const queryClient = useQueryClient();
+  const { user: currentUser } = useAuthStore();
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');
@@ -195,13 +197,15 @@ const EmployeePage = () => {
           <h1 className="text-2xl font-bold text-text">Quản lý Nhân sự</h1>
           <p className="text-secondary text-sm mt-1">Manage employees and their information</p>
         </div>
-        <button
-          onClick={() => setIsAddModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors cursor-pointer"
-        >
-          <Plus size={18} />
-          Thêm nhân viên
-        </button>
+        {currentUser?.role === 'ADMIN_COMPANY' && (
+          <button
+            onClick={() => setIsAddModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors cursor-pointer"
+          >
+            <Plus size={18} />
+            Thêm nhân viên
+          </button>
+        )}
       </div>
 
       {/* Filters */}
@@ -298,6 +302,7 @@ const EmployeePage = () => {
                         <AvatarUploadOverlay
                           user={user}
                           onUpload={handleAvatarUpload}
+                          isAdminCompany={currentUser?.role === 'ADMIN_COMPANY'}
                         />
                         <span className="font-medium text-text">{user.full_name}</span>
                       </div>
@@ -310,7 +315,7 @@ const EmployeePage = () => {
                     </td>
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-2">
-                        {(user.editable === true || user.editable === undefined) && (
+                        {currentUser?.role === 'ADMIN_COMPANY' && (
                           <button
                             onClick={() => setEditingUser(user)}
                             className="p-1.5 text-primary hover:bg-primary/10 rounded-lg transition-colors cursor-pointer"
@@ -319,7 +324,7 @@ const EmployeePage = () => {
                             <Pencil size={16} />
                           </button>
                         )}
-                        {(user.deletable === true || user.deletable === undefined) && (
+                        {currentUser?.role === 'ADMIN_COMPANY' && (
                           <button
                             onClick={() => setDeletingUser(user)}
                             className="p-1.5 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer"
