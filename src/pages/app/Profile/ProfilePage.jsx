@@ -53,8 +53,8 @@ const ProfilePage = () => {
 
   if (isLoading) {
     return (
-      <div className="p-6 flex items-center justify-center min-h-[400px]">
-        <div className="flex items-center gap-3 text-gray-500">
+      <div className="p-6 flex items-center justify-center min-h-100">
+        <div className="flex items-center gap-3 text-secondary">
           <Loader size={24} className="animate-spin" />
           <span>Đang tải...</span>
         </div>
@@ -69,7 +69,7 @@ const ProfilePage = () => {
           <p className="text-red-600">Không thể tải thông tin. Vui lòng thử lại sau.</p>
           <button
             onClick={() => queryClient.invalidateQueries({ queryKey: ['currentUser'] })}
-            className="mt-4 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors cursor-pointer"
+            className="mt-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors cursor-pointer"
           >
             Thử lại
           </button>
@@ -82,8 +82,8 @@ const ProfilePage = () => {
     <div className="p-6 max-w-4xl mx-auto">
       {/* Page Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Trang cá nhân</h1>
-        <p className="text-gray-500">Quản lý thông tin tài khoản và bảo mật của bạn</p>
+        <h1 className="text-2xl font-bold text-text">Trang cá nhân</h1>
+        <p className="text-secondary">Quản lý thông tin tài khoản và bảo mật của bạn</p>
       </div>
 
       {/* Content Sections */}

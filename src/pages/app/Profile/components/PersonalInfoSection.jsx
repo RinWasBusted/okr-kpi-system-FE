@@ -79,24 +79,24 @@ const PersonalInfoSection = ({ user, onUserUpdate }) => {
   const canEdit = !updateMutation.isPending;
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm p-6">
+    <div className="bg-background rounded-2xl shadow-sm p-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-bold text-gray-900">Thông tin cá nhân</h3>
+        <h3 className="text-lg font-bold text-text">Thông tin cá nhân</h3>
         <div className="flex items-center gap-3">
           {isEditing ? (
             <>
               <button
                 onClick={handleCancel}
                 disabled={updateMutation.isPending}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 cursor-pointer"
+                className="px-4 py-2 text-sm font-medium bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 cursor-pointer"
               >
                 Hủy
               </button>
               <button
                 onClick={handleSave}
                 disabled={updateMutation.isPending}
-                className="px-4 py-2 text-sm font-medium text-white bg-orange-500 rounded-lg hover:bg-orange-600 transition-colors flex items-center gap-2 disabled:opacity-50 cursor-pointer shadow-lg shadow-orange-500/30"
+                className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2 disabled:opacity-50 cursor-pointer shadow-lg shadow-primary/30"
               >
                 {updateMutation.isPending ? (
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -109,7 +109,7 @@ const PersonalInfoSection = ({ user, onUserUpdate }) => {
           ) : (
             <button
               onClick={() => setIsEditing(true)}
-              className="px-4 py-2 text-sm font-medium text-orange-600 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors cursor-pointer"
+              className="px-4 py-2 text-sm font-medium text-accent bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors cursor-pointer"
             >
               Chỉnh sửa
             </button>
@@ -121,7 +121,7 @@ const PersonalInfoSection = ({ user, onUserUpdate }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Full Name - Editable field */}
         <div>
-          <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+          <label className="flex items-center gap-2 text-sm font-medium text-secondary mb-2">
             <User size={16} />
             Họ và tên
           </label>
@@ -132,10 +132,10 @@ const PersonalInfoSection = ({ user, onUserUpdate }) => {
                 value={formData.full_name}
                 onChange={(e) => handleChange(e.target.value)}
                 disabled={!canEdit}
-                className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 text-gray-900 bg-white ${
+                className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 text-text bg-background ${
                   errors.full_name
-                    ? 'border-red-500 focus:ring-red-500/50'
-                    : 'border-gray-200 focus:ring-orange-500/50'
+                    ? 'border-secondary focus:ring-primary/50'
+                    : 'border-secondary/20 focus:ring-primary/50'
                 }`}
                 placeholder="Nhập họ và tên"
               />
@@ -144,7 +144,7 @@ const PersonalInfoSection = ({ user, onUserUpdate }) => {
               )}
             </div>
           ) : (
-            <div className="px-4 py-2.5 bg-gray-50 rounded-lg text-gray-900">
+            <div className="px-4 py-2.5 bg-background border border-secondary rounded-lg text-text">
               {user?.full_name}
             </div>
           )}
@@ -153,11 +153,11 @@ const PersonalInfoSection = ({ user, onUserUpdate }) => {
         {/* Display-only fields */}
         {displayFields.map((field) => (
           <div key={field.key}>
-            <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+            <label className="flex items-center gap-2 text-sm font-medium text-secondary mb-2">
               {field.icon && <field.icon size={16} />}
               {field.label}
             </label>
-            <div className="px-4 py-2.5 bg-gray-50 rounded-lg text-gray-900">
+            <div className="px-4 py-2.5 bg-background border-secondary border rounded-lg text-text">
               {field.value || '-'}
             </div>
           </div>

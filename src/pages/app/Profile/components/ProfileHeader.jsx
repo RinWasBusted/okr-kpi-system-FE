@@ -84,7 +84,7 @@ const ProfileHeader = ({ user, onAvatarUpdate }) => {
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm p-6 flex items-center gap-6">
+    <div className="bg-background rounded-2xl shadow-sm p-6 flex items-center gap-6">
       {/* Avatar */}
       <div className="relative">
         <div className="w-20 h-20 rounded-full overflow-hidden bg-orange-50 border-2 border-orange-100">
@@ -103,12 +103,12 @@ const ProfileHeader = ({ user, onAvatarUpdate }) => {
 
       {/* User Info */}
       <div className="flex-1">
-        <h2 className="text-xl font-bold text-gray-900">{user.full_name}</h2>
-        <p className="text-gray-500">{user.email}</p>
+        <h2 className="text-xl font-bold text-text">{user.full_name}</h2>
+        <p className="text-secondary">{user.email}</p>
         <button
           onClick={handleChangePicture}
           disabled={isUploading || uploadMutation.isPending}
-          className="mt-3 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 cursor-pointer"
+          className="mt-3 px-4 py-2 text-sm font-medium bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 cursor-pointer"
         >
           Thay đổi ảnh đại diện
         </button>
