@@ -151,13 +151,13 @@ const Sidebar = () => {
 
       {/* Overlay for mobile */}
         <div
-          className={`fixed duration-100 inset-0 bg-black/50 ${isMobileMenuOpen ? 'z-30 opacity-100' : 'z-0 opacity-0'} lg:hidden`}
+          className={`fixed duration-100 inset-0 bg-black/50 ${isMobileMenuOpen ? 'z-30 opacity-100' : 'hidden z-0 opacity-0'} lg:hidden`}
           onClick={closeMobileMenu}
         />
 
       {/* Sidebar */}
       <aside
-        className={`fixed lg:static inset-y-0 left-0 w-60 h-screen bg-background flex flex-col border-r border-secondary/20 z-40 transition-transform duration-300 ease-in-out lg:translate-x-0 ${
+        className={`fixed lg:static inset-y-0 left-0 w-60 h-screen bg-background z-50 flex flex-col border-r border-secondary/20  transition-transform duration-300 ease-in-out lg:translate-x-0 ${
           isMobile && !isMobileMenuOpen ? '-translate-x-full' : 'translate-x-0'
         }`}
         style={{

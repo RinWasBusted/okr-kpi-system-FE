@@ -383,7 +383,7 @@ const ObjectiveDetailPage = () => {
       <ChildObjectivesSection childObjectives={objective.sub_objectives} />
 
       {/* Feedback Section */}
-      <FeedbackSection objectiveId={objectiveId} />
+      <FeedbackSection objectiveId={objectiveId} canEdit={canEdit} />
 
       {/* Edit Modal */}
       {isEditModalOpen && (

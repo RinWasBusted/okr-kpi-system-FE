@@ -210,7 +210,7 @@ const EmployeePage = () => {
 
       {/* Filters */}
       <div className="bg-background rounded-xl border border-secondary/20 p-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Search */}
           <div className="relative">
             <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary/50" />
@@ -221,16 +221,6 @@ const EmployeePage = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-secondary/20 bg-background text-text placeholder:text-secondary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
             />
-          </div>
-
-          {/* Job Title Filter - Placeholder (Chức vụ not available in API) */}
-          <div>
-            <select
-              disabled
-              className="w-full px-3 py-2.5 rounded-lg border border-secondary/20 bg-secondary/5 text-secondary/50 cursor-not-allowed"
-            >
-              <option>Tất cả chức vụ</option>
-            </select>
           </div>
 
           {/* Unit Filter */}

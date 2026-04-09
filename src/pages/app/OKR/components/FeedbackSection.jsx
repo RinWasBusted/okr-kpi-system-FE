@@ -14,14 +14,14 @@ const formatDate = (dateStr) => {
 // Get badge config based on type
 const getFeedbackBadge = (type) => {
   const configs = {
-    'PRAISE': { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Praise' },
-    'CONCERN': { bg: 'bg-amber-100', text: 'text-amber-700', label: 'Concern' },
-    'SUGGESTION': { bg: 'bg-sky-100', text: 'text-sky-700', label: 'Suggestion' },
-    'QUESTION': { bg: 'bg-purple-100', text: 'text-purple-700', label: 'Question' },
-    'BLOCKER': { bg: 'bg-red-100', text: 'text-red-700', label: 'Blocker' },
-    'RESOLVED': { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Resolved' },
-    'APPROVED': { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Approved' },
-    'UNAPPROVED': { bg: 'bg-red-100', text: 'text-red-700', label: 'Unapproved' },
+    'PRAISE': { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Khen ngợi' },
+    'CONCERN': { bg: 'bg-amber-100', text: 'text-amber-700', label: 'Lo ngại' },
+    'SUGGESTION': { bg: 'bg-sky-100', text: 'text-sky-700', label: 'Đề xuất' },
+    'QUESTION': { bg: 'bg-purple-100', text: 'text-purple-700', label: 'Câu hỏi' },
+    'BLOCKER': { bg: 'bg-red-100', text: 'text-red-700', label: 'Chặn' },
+    'RESOLVED': { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Đã giải quyết' },
+    'APPROVED': { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Đã duyệt' },
+    'UNAPPROVED': { bg: 'bg-red-100', text: 'text-red-700', label: 'Chưa duyệt' },
   };
   return configs[type] || configs['CONCERN'];
 };
@@ -66,7 +66,7 @@ const ReplyItem = ({ reply, onDelete, currentUserId }) => {
 };
 
 // Feedback Item Component
-const FeedbackItem = ({ feedback, objectiveId, onDelete, currentUserId }) => {
+const FeedbackItem = ({ feedback, objectiveId, onDelete, currentUserId, canEdit }) => {
   const [showReply, setShowReply] = useState(false);
   const [replyContent, setReplyContent] = useState('');
   const [replies, setReplies] = useState([]);
@@ -117,9 +117,6 @@ const FeedbackItem = ({ feedback, objectiveId, onDelete, currentUserId }) => {
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
             <span className="font-medium text-text">{feedback.user?.full_name || 'Unknown'}</span>
-            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-sky-100 text-sky-700">
-              {feedback.user?.role || 'Employee'}
-            </span>
             <span className="text-xs text-secondary">• {formatDate(feedback.created_at)}</span>
             <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${badgeConfig.bg} ${badgeConfig.text}`}>
               {badgeConfig.label}
@@ -128,13 +125,15 @@ const FeedbackItem = ({ feedback, objectiveId, onDelete, currentUserId }) => {
           <p className="text-text">{feedback.content}</p>
 
           <div className="flex items-center gap-2 mt-2">
-            <button
-              onClick={() => setShowReply(!showReply)}
-              className="text-xs text-secondary hover:text-primary flex items-center gap-1 cursor-pointer"
-            >
-              <MessageCircle size={14} />
-              Reply
-            </button>
+            {canEdit && (
+              <button
+                onClick={() => setShowReply(!showReply)}
+                className="text-xs text-secondary hover:text-primary flex items-center gap-1 cursor-pointer"
+              >
+                <MessageCircle size={14} />
+                Reply
+              </button>
+            )}
             {isAuthor && (
               <>
                 <button
@@ -196,7 +195,7 @@ const FeedbackItem = ({ feedback, objectiveId, onDelete, currentUserId }) => {
 };
 
 // Main Feedback Section
-const FeedbackSection = ({ objectiveId }) => {
+const FeedbackSection = ({ objectiveId, canEdit }) => {
   const queryClient = useQueryClient();
   const [newComment, setNewComment] = useState('');
   const [selectedType, setSelectedType] = useState('CONCERN');
@@ -338,6 +337,7 @@ const FeedbackSection = ({ objectiveId }) => {
               objectiveId={objectiveId}
               onDelete={(id) => deleteMutation.mutate(id)}
               currentUserId={currentUserId}
+              canEdit={canEdit}
             />
           ))
         )}

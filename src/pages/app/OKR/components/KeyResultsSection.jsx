@@ -40,7 +40,7 @@ const KeyResultItem = ({ keyResult, onEdit, onDelete, onCheckIn, objectiveStatus
   const canDelete = keyResult.permission?.delete === true;
 
   // Check-in is only available when objective is Active and user has edit permission
-  const canCheckIn = objectiveStatus === 'Active' && canEditObjective;
+  const canCheckIn = !["Draft", "Reject", "Pending_Approval"].includes(objectiveStatus) && canEditObjective;
 
   // Edit/Delete buttons on KR are only available when objective is in editable status
   const canEditKR = isEditableStatus && canEditObjective;
