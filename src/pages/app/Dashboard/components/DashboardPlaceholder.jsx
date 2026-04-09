@@ -26,11 +26,23 @@ const DashboardPlaceholder = () => {
         <div className="h-5 bg-secondary/10 rounded w-28 animate-pulse"></div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-        {[...Array(4)].map((_, index) => (
-          <StatCardSkeleton key={index} />
-        ))}
+      {/* Stats Cards and Timeline */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 md:gap-6">
+        {/* Stats Cards */}
+        <div className="xl:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+          {[...Array(3)].map((_, index) => (
+            <StatCardSkeleton key={index} />
+          ))}
+        </div>
+        {/* Timeline Placeholder */}
+        <div className="xl:col-span-1 bg-background border border-secondary/20 rounded-lg p-4">
+          <div className="h-5 bg-secondary/20 rounded w-32 mb-4 animate-pulse"></div>
+          <div className="space-y-2">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="h-10 bg-secondary/10 rounded animate-pulse"></div>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Chart Placeholders */}

@@ -2,15 +2,15 @@ import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
-  Users,
-  Activity,
+  Heart,
   Target,
-  TrendingUp,
+  Zap,
 } from 'lucide-react';
-import { getMyCompany } from '../../../services/company';
-import { getKPIAssignments } from '../../../services/kpi';
+import { getMyCompanyStats } from '../../../services/company';
+import { getCycles } from '../../../services/cycle';
 import { toast } from 'react-toastify';
 import StatsSection from './components/StatsSection';
+import CycleTimeline from './components/CycleTimeline';
 import TabNavigation from './components/TabNavigation';
 import DashboardPlaceholder from './components/DashboardPlaceholder';
 
@@ -19,72 +19,75 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('overall');
 
   // Fetch company stats
-  const { data: companyData, isLoading: isCompanyLoading, error: companyError } = useQuery({
-    queryKey: ['company', company_slug],
+  const { data: statsData, isLoading: isStatsLoading, error: statsError } = useQuery({
+    queryKey: ['company-stats', company_slug],
     queryFn: async () => {
       try {
-        const response = await getMyCompany();
+        const response = await getMyCompanyStats();
         return response.data;
       } catch (error) {
-        toast.error(error.response?.data?.message || 'Failed to load company data');
+        toast.error(error.response?.data?.message || 'Failed to load dashboard data');
         throw error;
       }
     },
   });
 
-  // Fetch KPIs count
-  const { data: kpisData, isLoading: isKPIsLoading } = useQuery({
-    queryKey: ['kpis', company_slug, { per_page: 1 }],
+  // Fetch cycles for timeline
+  const { data: cyclesData, isLoading: isCyclesLoading } = useQuery({
+    queryKey: ['cycles', company_slug],
     queryFn: async () => {
       try {
-        const response = await getKPIAssignments({ per_page: 1 });
+        const response = await getCycles({ per_page: 100 });
         return response.data;
       } catch (error) {
-        // Silent error for KPI count - not critical
-        return { meta: { total: 0 } };
+        // Silently fail for timeline, don't block dashboard
+        console.error('Failed to load cycles:', error);
+        return [];
       }
     },
+    retry: false,
   });
-
-  const isLoading = isCompanyLoading || isKPIsLoading;
 
   // Prepare stats data
   const stats = [
     {
-      title: 'Total Users',
-      value: (companyData?.admin_count || 0) + (companyData?.employee_count || 0),
-      icon: Users,
-      color: 'orange',
-      breakdown: `${companyData?.admin_count || 0} Admin | ${companyData?.employee_count || 0} Nhân sự`,
+      title: 'Sức khỏe KPI',
+      value: statsData?.kpi_health?.toFixed(1) || 0,
+      icon: Heart,
+      color: 'green',
+      breakdown: `${statsData?.total_kpi || 0} KPI`,
+      suffix: '%',
     },
     {
-      title: 'Cycles',
-      value: companyData?.active_cycles || 0,
-      icon: Activity,
-      color: 'blue',
-      trend: null,
-    },
-    {
-      title: 'Active OKRs',
-      value: companyData?.total_objectives || 0,
+      title: 'Tiến độ OKR',
+      value: statsData?.okr_progress?.toFixed(1) || 0,
       icon: Target,
       color: 'primary',
-      trend: null,
+      breakdown: `${statsData?.total_okr || 0} Objective`,
+      suffix: '%',
     },
     {
-      title: 'KPIs Assigned',
-      value: kpisData?.meta?.total || 0,
-      icon: TrendingUp,
-      color: 'green',
-      trend: null,
+      title: 'Chi phí phát sinh',
+      value: statsData?.credit_cost?.toFixed(2) || 0,
+      icon: Zap,
+      color: 'orange',
+      breakdown: `${statsData?.token_usage || 0} / ${statsData?.usage_limit || 0} Token`,
+      details: statsData?.ai_plan || 'FREE',
+      suffix: '',
     },
   ];
 
-  if (isLoading) {
+  console.log("cycleData", cyclesData);
+
+  const cycles = cyclesData? cyclesData : [];
+
+  console.log("cycles", cycles);
+
+  if (isStatsLoading) {
     return <DashboardPlaceholder />;
   }
 
-  if (companyError && !companyData) {
+  if (statsError && !statsData) {
     return (
       <div className="p-6">
         <p className="text-red-500">Failed to load dashboard data. Please try again.</p>
@@ -106,7 +109,18 @@ const Dashboard = () => {
       {/* Stats Section */}
       {activeTab === 'overall' && (
         <div className="space-y-6">
-          <StatsSection stats={stats} />
+          {/* Stats and Timeline Row - Responsive Layout */}
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 md:gap-6">
+            {/* Stats Cards - Take up 2/3 on large screens */}
+            <div className="xl:col-span-2">
+              <StatsSection stats={stats} />
+            </div>
+
+            {/* Timeline - Take up 1/3 on large screens */}
+            <div className="xl:col-span-1" style={{ minHeight: '280px' }}>
+              <CycleTimeline cycles={cycles} isLoading={isCyclesLoading} />
+            </div>
+          </div>
 
           {/* Placeholder for future charts */}
           <div className="bg-background border border-secondary/20 rounded-lg p-6">

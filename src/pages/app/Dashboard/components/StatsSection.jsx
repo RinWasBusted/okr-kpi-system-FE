@@ -12,6 +12,7 @@ const StatsSection = ({ stats }) => {
           color={stat.color}
           trend={stat.trend}
           breakdown={stat.breakdown}
+          details={stat.details}
         />
       ))}
     </div>
