@@ -9,6 +9,8 @@ import {
   updateObjective,
   submitObjective,
   approveObjective,
+  rejectObjective,
+  revertObjectiveToDraft,
 } from '../../../services/okr.js';
 import ProgressSection from './components/ProgressSection';
 import KeyResultsSection from './components/KeyResultsSection';
@@ -68,6 +70,8 @@ const ObjectiveDetailPage = () => {
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+  const [rejectionComment, setRejectionComment] = useState('');
 
   // Helper: Find objective in cache (from OKRPage tree data)
   const findObjectiveInCache = () => {
@@ -118,6 +122,7 @@ const ObjectiveDetailPage = () => {
   const canDelete = objective.permission?.delete === true;
   const canSubmit = objective.permission?.submit === true;
   const canApprove = objective.permission?.approve === true;
+  const canReject = objective.permission?.reject === true;
 
   // Redirect if no view permission
   useEffect(() => {
@@ -170,6 +175,38 @@ const ObjectiveDetailPage = () => {
     },
     onError: (err) => {
       toast.error(err.response?.data?.message || 'Có lỗi xảy ra khi phê duyệt Objective');
+    },
+  });
+
+  // Reject mutation
+  const rejectMutation = useMutation({
+    mutationFn: () => rejectObjective(objectiveId, { comment: rejectionComment }),
+    onSuccess: async () => {
+      toast.success('Từ chối Objective thành công!');
+      setRejectionComment('');
+      setIsRejectModalOpen(false);
+      // Refresh objective data to update status and permissions
+      const updatedData = await getObjectiveById(objectiveId);
+      queryClient.setQueryData(['objective', objectiveId], updatedData);
+      queryClient.invalidateQueries({ queryKey: ['objectives'] });
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.message || 'Có lỗi xảy ra khi từ chối Objective');
+    },
+  });
+
+  // Revert to draft mutation
+  const revertMutation = useMutation({
+    mutationFn: () => revertObjectiveToDraft(objectiveId),
+    onSuccess: async () => {
+      toast.success('Trở lại bản nháp thành công!');
+      // Refresh objective data to update status and permissions
+      const updatedData = await getObjectiveById(objectiveId);
+      queryClient.setQueryData(['objective', objectiveId], updatedData);
+      queryClient.invalidateQueries({ queryKey: ['objectives'] });
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.message || 'Có lỗi xảy ra khi trở lại bản nháp');
     },
   });
 
@@ -241,6 +278,32 @@ const ObjectiveDetailPage = () => {
             >
               <Send size={18} />
               {approveMutation.isPending ? 'Đang phê duyệt...' : 'Phê duyệt'}
+            </button>
+          )}
+
+          {/* Reject Button - Only for Pending_Approval status with reject permission */}
+          {status === 'Pending_Approval' && canReject && (
+            <button
+              onClick={() => setIsRejectModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors cursor-pointer"
+            >
+              <X size={18} />
+              Từ chối
+            </button>
+          )}
+
+          {/* Revert to Draft Button - Only for non-Draft/Rejected status with edit permission */}
+          {status !== 'Draft' && status !== 'Rejected' && canEdit && (
+            <button
+              onClick={() => {
+                if (window.confirm(`Bạn có chắc chắn muốn trở lại bản nháp cho Objective "${objective.title}"?`)) {
+                  revertMutation.mutate();
+                }
+              }}
+              disabled={revertMutation.isPending}
+              className="flex items-center gap-2 px-4 py-2 border border-secondary/20 rounded-lg text-text hover:bg-secondary/10 transition-colors disabled:opacity-50 cursor-pointer"
+            >
+              {revertMutation.isPending ? 'Đang trở lại...' : 'Trở lại bản nháp'}
             </button>
           )}
 
@@ -332,6 +395,50 @@ const ObjectiveDetailPage = () => {
             queryClient.invalidateQueries({ queryKey: ['objectives'] });
           }}
         />
+      )}
+
+      {/* Reject Confirmation Modal */}
+      {isRejectModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setIsRejectModalOpen(false)} />
+          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-text">Từ chối Objective</h2>
+              <button
+                onClick={() => setIsRejectModalOpen(false)}
+                className="p-2 hover:bg-secondary/20 rounded-lg transition-colors cursor-pointer"
+              >
+                <X size={20} className="text-secondary" />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <p className="text-secondary">
+                Vui lòng nhập lý do từ chối cho Objective &quot;<strong>{objective.title}</strong>&quot;
+              </p>
+              <textarea
+                value={rejectionComment}
+                onChange={(e) => setRejectionComment(e.target.value)}
+                placeholder="Nhập lý do từ chối..."
+                className="w-full px-4 py-2 rounded-lg border border-secondary/20 bg-background text-text placeholder:text-secondary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none h-32"
+              />
+            </div>
+            <div className="flex items-center gap-3 mt-6">
+              <button
+                onClick={() => setIsRejectModalOpen(false)}
+                className="flex-1 px-4 py-2 border border-secondary/20 rounded-lg text-text hover:bg-secondary/10 transition-colors"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={() => rejectMutation.mutate()}
+                disabled={rejectMutation.isPending || !rejectionComment.trim()}
+                className="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50 cursor-pointer"
+              >
+                {rejectMutation.isPending ? 'Đang từ chối...' : 'Từ chối'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Delete Confirmation Modal */}

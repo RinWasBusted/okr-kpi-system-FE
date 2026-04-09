@@ -278,24 +278,34 @@ export const approveObjective = async (id, data = {}) => {
 };
 
 /**
- * Reject objective with optional reason
+ * Reject objective with reason
  * @async
  * @function rejectObjective
  * @param {number} id - Objective ID (required)
  * @param {Object} [data] - Rejection data
- * @param {string} [data.comment] - Reason for rejection (max 1000 characters)
+ * @param {string} [data.comment] - Reason for rejection (optional, max 1000 characters)
  * 
  * @returns {Promise<Object>} Response object
  * @returns {boolean} response.success - Whether request was successful
- * @returns {string} response.message - Response message
+ * @returns {string} response.message - Response message (e.g., "Objective rejected successfully")
  * @returns {Object} response.data - Rejected objective object
+ * @returns {number} response.data.id - Objective ID
  * @returns {string} response.data.status - Updated status (Rejected)
  * @returns {string} [response.data.rejection_comment] - Rejection reason if provided
+ * @returns {string} [response.data.title] - Objective title
+ * @returns {string} [response.data.description] - Objective description
+ * @returns {string} [response.data.visibility] - Visibility level
+ * @returns {number} [response.data.progress_percentage] - Progress percentage
+ * @returns {string} [response.data.progress_status] - Progress status
  * 
- * @throws {Error} If rejection fails
+ * @throws {Error} If rejection fails:
+ *   - 400: Objective not pending approval
+ *   - 403: No permission to reject this objective
+ *   - 404: Objective not found
  * 
- * @description Changes objective status from Pending_Approval to Rejected.
- * Objective can be resubmitted after rejection.
+ * @description Reject an objective that is in Pending_Approval status.
+ * Changes objective status from Pending_Approval to Rejected.
+ * Objective can be resubmitted after rejection by reverting to Draft.
  * 
  * @example
  * const rejected = await rejectObjective(1, {

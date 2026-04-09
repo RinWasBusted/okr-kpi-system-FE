@@ -214,6 +214,10 @@ const ObjectiveItem = ({ objective, level = 0, onUpdate }) => {
   const canSubmit = objective.permission?.submit === true;
   const canApprove = objective.permission?.approve === true;
   const canReject = objective.permission?.reject === true;
+  
+  // Check if status is editable (Draft or Rejected)
+  const isEditableStatus = objective.status === 'Draft' || objective.status === 'Rejected';
+  
   const hasActions = canEdit || canDelete || canView;
 
   const getProgressColor = (value) => {
@@ -323,7 +327,7 @@ const ObjectiveItem = ({ objective, level = 0, onUpdate }) => {
                       Chi tiết
                       <ArrowUpRight size={14} />
                     </button>
-                    {canEdit && (
+                    {canEdit && isEditableStatus && (
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -335,7 +339,7 @@ const ObjectiveItem = ({ objective, level = 0, onUpdate }) => {
                         <Edit size={18} />
                       </button>
                     )}
-                    {canDelete && (
+                    {canDelete && isEditableStatus && (
                       <button
                         onClick={(e) => {
                           e.stopPropagation();

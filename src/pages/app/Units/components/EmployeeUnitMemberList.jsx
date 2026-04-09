@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Users, Loader2 } from 'lucide-react';
 import { getUsers } from '../../../../services/user';
+import { User_avatar } from '../../../../assets';
 
 /**
  * EmployeeUnitMemberList - Component hiển thị danh sách members của unit cho Employee view
@@ -23,7 +24,7 @@ const EmployeeUnitMemberList = ({ unit }) => {
         <div className="p-4 border-b border-secondary/20">
           <div className="flex items-center gap-2 text-text">
             <Users size={18} className="text-primary" />
-            <span className="font-semibold">Employee List</span>
+            <span className="font-semibold">Danh sách nhân viên</span>
             <span className="text-secondary text-sm">(Loading...)</span>
           </div>
         </div>
@@ -47,7 +48,7 @@ const EmployeeUnitMemberList = ({ unit }) => {
       <div className="p-4 border-b border-secondary/20">
         <div className="flex items-center gap-2 text-text">
           <Users size={18} className="text-primary" />
-          <span className="font-semibold">Employee List</span>
+          <span className="font-semibold">Danh sách nhân viên</span>
           {unit && (
             <span className="text-secondary text-sm">({unit.name})</span>
           )}
@@ -58,7 +59,7 @@ const EmployeeUnitMemberList = ({ unit }) => {
         {members.length === 0 ? (
           <div className="text-center py-8 text-secondary">
             <Users size={32} className="mx-auto mb-2 opacity-50" />
-            <p className="text-sm">No employees in this unit</p>
+            <p className="text-sm">Chưa có nhân viên nào trong đơn vị này</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -68,7 +69,9 @@ const EmployeeUnitMemberList = ({ unit }) => {
                 className="flex items-center gap-3 p-2 rounded-lg hover:bg-secondary/5 transition-colors"
               >
                 {/* Avatar */}
-                <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center shrink-0 overflow-hidden">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 overflow-hidden ${
+                  member.avatar_url ? 'bg-orange-100' : 'border border-secondary/30'
+                }`}>
                   {member.avatar_url ? (
                     <img
                       src={member.avatar_url}
@@ -76,9 +79,11 @@ const EmployeeUnitMemberList = ({ unit }) => {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <span className="text-sm font-medium text-primary">
-                      {member.full_name?.charAt(0).toUpperCase() || '?'}
-                    </span>
+                    <img
+                      src={User_avatar}
+                      alt="Default avatar"
+                      className="w-full h-full object-cover"
+                    />
                   )}
                 </div>
 
@@ -88,7 +93,7 @@ const EmployeeUnitMemberList = ({ unit }) => {
                     {member.full_name}
                   </p>
                   <p className="text-sm text-secondary truncate">
-                    {member.job_title || 'No job title'}
+                    {member.job_title || ''}
                   </p>
                 </div>
               </div>

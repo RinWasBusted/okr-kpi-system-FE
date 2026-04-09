@@ -135,8 +135,8 @@ const EmployeeUnitView = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-text mb-1">Units</h1>
-          <p className="text-secondary text-sm">View company structure and employee list</p>
+          <h1 className="text-2xl font-bold text-text mb-1">Quản lý Đơn vị</h1>
+          <p className="text-secondary text-sm">Xem cấu trúc công ty và danh sách nhân viên</p>
         </div>
       </div>
 
@@ -146,7 +146,7 @@ const EmployeeUnitView = () => {
           <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary" />
           <input
             type="text"
-            placeholder="Search units..."
+            placeholder="Tìm kiếm đơn vị..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2 rounded-lg border border-secondary/20 bg-background text-text placeholder:text-secondary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
@@ -162,7 +162,7 @@ const EmployeeUnitView = () => {
             <div className="p-4 border-b border-secondary/20">
               <div className="flex items-center gap-2 text-text">
                 <Building2 size={18} className="text-primary" />
-                <span className="font-semibold">Organization Structure</span>
+                <span className="font-semibold">Cấu trúc tổ chức</span>
               </div>
             </div>
 
@@ -183,7 +183,7 @@ const EmployeeUnitView = () => {
               ) : filteredUnits.length === 0 ? (
                 <div className="text-center py-12 text-secondary">
                   <Building2 size={48} className="mx-auto mb-4 opacity-50" />
-                  <p>{isSearchActive ? 'No units found' : 'No units available'}</p>
+                  <p>{isSearchActive ? 'Không tìm thấy đơn vị nào' : 'Chưa có đơn vị nào'}</p>
                 </div>
               ) : (
                 <div className="space-y-1">
@@ -206,12 +206,12 @@ const EmployeeUnitView = () => {
                           <div className="flex-1">
                             <h3 className="font-semibold text-text">{unit.name}</h3>
                             <p className="text-sm text-secondary">
-                              {unit.manager?.full_name || 'No manager'}
+                              {unit.manager?.full_name || 'Chưa có người quản lý'}
                               {unit.manager?.job_title && ` (${unit.manager.job_title})`}
                             </p>
                           </div>
                           <div className="text-sm text-secondary">
-                            {unit.member_count || 0} members
+                            {unit.member_count || 0} nhân viên
                           </div>
                         </div>
                       </div>

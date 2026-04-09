@@ -9,34 +9,11 @@ import {
   LogOut,
 } from 'lucide-react';
 import { logout } from '../services/auth';
+import { getUnreadCount } from '../services/notification';
 import { useTheme } from '../hooks/useTheme';
 import { useAuthStore } from '../hooks/useAuth';
 import { User_avatar } from '../assets';
-
-// Mock data cho notifications
-const MOCK_NOTIFICATIONS = [
-  {
-    id: 1,
-    title: 'Reminder: Weekly Check-in due (Overdue 2 days)',
-    time: '2 hours ago',
-    read: false,
-    type: 'reminder',
-  },
-  {
-    id: 2,
-    title: 'Your OKR "Q1 Revenue" has been approved',
-    time: '5 hours ago',
-    read: true,
-    type: 'success',
-  },
-  {
-    id: 3,
-    title: 'New KPI metric assigned to you',
-    time: '1 day ago',
-    read: true,
-    type: 'info',
-  },
-];
+import NotificationBoard from './NotificationBoard';
 
 const Header = () => {
   const navigate = useNavigate();
@@ -45,13 +22,39 @@ const Header = () => {
   const { user, clearAuth } = useAuthStore();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isNotiOpen, setIsNotiOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const userMenuRef = useRef(null);
   const notiMenuRef = useRef(null);
+  const notificationBoardRef = useRef(null);
 
   // Lấy company_slug từ URL nếu có
   const getCompanySlug = () => {
     return company_slug || null;
   };
+
+  // Fetch unread count
+  const fetchUnreadCount = async () => {
+    try {
+      const response = await getUnreadCount();
+      setUnreadCount(response.data?.unread_count || 0);
+    } catch {
+      // Silent error
+    }
+  };
+
+  // Fetch unread count on mount và interval
+  useEffect(() => {
+    fetchUnreadCount();
+    const interval = setInterval(fetchUnreadCount, 30000); // 30s refresh
+    return () => clearInterval(interval);
+  }, []);
+
+  // Refresh khi đóng/mở notification
+  useEffect(() => {
+    if (isNotiOpen) {
+      fetchUnreadCount();
+    }
+  }, [isNotiOpen]);
 
   // Đóng dropdown khi click ra ngoài
   useEffect(() => {
@@ -87,16 +90,6 @@ const Header = () => {
     }
   };
 
-  // Lấy initials từ full_name
-  const getInitials = (name) => {
-    if (!name) return 'U';
-    const parts = name.split(' ');
-    if (parts.length >= 2) {
-      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-    }
-    return name.charAt(0).toUpperCase();
-  };
-
   return (
     <header className="h-16 bg-background border-b border-secondary/20 flex items-center justify-between px-4 md:px-6 sticky top-0 z-50">
 
@@ -122,56 +115,41 @@ const Header = () => {
         <div className="relative" ref={notiMenuRef}>
           <button
             onClick={() => setIsNotiOpen(!isNotiOpen)}
+            onMouseEnter={() => notificationBoardRef.current?.preload()}
             className="p-2 rounded-lg text-text hover:bg-secondary/10 transition-colors relative cursor-pointer"
             aria-label="Notifications"
           >
             <Bell className="w-5 h-5" />
-            {/* Red dot indicator */}
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
+            {/* Badge số lượng chưa đọc */}
+            {unreadCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 min-w-4.5 h-4.5 px-1.5 bg-red-500 text-white text-xs font-medium rounded-full flex items-center justify-center">
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </span>
+            )}
           </button>
 
           {/* Notification Dropdown */}
-          {isNotiOpen && (
-            <div className="absolute right-0 mt-2 w-80 bg-background border border-secondary/20 rounded-lg shadow-lg overflow-hidden">
-              <div className="px-4 py-3 border-b border-secondary/20">
-                <h3 className="font-semibold text-text">Notifications</h3>
-              </div>
-              <div className="max-h-96 overflow-y-auto">
-                {MOCK_NOTIFICATIONS.map((noti) => (
-                  <div
-                    key={noti.id}
-                    className="px-4 py-3 hover:bg-secondary/5 border-b border-secondary/10 last:border-0 cursor-pointer"
-                  >
-                    <div className="flex items-start gap-3">
-                      <div
-                        className={`w-2 h-2 rounded-full mt-2 shrink-0 ${
-                          noti.read ? 'bg-secondary/30' : 'bg-primary'
-                        }`}
-                      />
-                      <div className="flex-1">
-                        <p className="text-sm text-text">{noti.title}</p>
-                        <p className="text-xs text-secondary mt-1">{noti.time}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          <div
+            className={`absolute right-0 mt-2 bg-background border border-secondary/20 rounded-lg shadow-lg overflow-hidden z-50 ${
+              !isNotiOpen && 'hidden'
+            }`}
+          >
+            <NotificationBoard ref={notificationBoardRef} onUnreadCountChange={fetchUnreadCount} />
+          </div>
         </div>
 
-          {/* User Avatar */}
-          <div className="relative" ref={userMenuRef}>
-            <button
-              onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-              className="flex items-center gap-2 p-1 rounded-lg hover:bg-secondary/10 transition-colors cursor-pointer"
-            >
-              <img
-                src={user?.avatar_url || User_avatar}
-                alt="User Avatar"
-                className="w-9 h-9 md:w-10 md:h-10 rounded-full"
-              />
-            </button>
+        {/* User Avatar */}
+        <div className="relative" ref={userMenuRef}>
+          <button
+            onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+            className="flex items-center gap-2 p-1 rounded-lg hover:bg-secondary/10 transition-colors cursor-pointer"
+          >
+            <img
+              src={user?.avatar_url || User_avatar}
+              alt="User Avatar"
+              className="w-9 h-9 md:w-10 md:h-10 rounded-full"
+            />
+          </button>
 
           {/* User Dropdown */}
           {isUserMenuOpen && (
