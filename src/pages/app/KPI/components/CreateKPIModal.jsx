@@ -264,7 +264,7 @@ const CreateKPIModal = ({ onClose, onSuccess, kpi = null }) => {
       />
 
       {/* Modal */}
-      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-xl mx-4 overflow-hidden max-h-[90vh] flex flex-col">
+      <div className="relative bg-background rounded-2xl shadow-xl w-full max-w-xl mx-4 overflow-hidden max-h-[90vh] flex flex-col border border-secondary/20">
         {/* Header */}
         <div className="px-6 py-4 border-b border-secondary/20 flex items-center justify-between shrink-0">
           <h2 className="text-lg font-semibold text-text">
@@ -383,7 +383,7 @@ const CreateKPIModal = ({ onClose, onSuccess, kpi = null }) => {
                 </p>
               )}
               {formData.parent_assignment_id && (
-                <p className="text-xs text-amber-600 mt-1">
+                <p className="text-xs text-amber-400 mt-1">
                   Mẫu KPI đã được tự động chọn theo KPI cha
                 </p>
               )}
@@ -514,8 +514,8 @@ const CreateKPIModal = ({ onClose, onSuccess, kpi = null }) => {
             </div>
             {/* Visibility Warning */}
             {formData.visibility !== 'PUBLIC' && (
-              <div className="mt-3 p-3 rounded-lg bg-amber-50 border border-amber-200">
-                <p className="text-sm text-amber-800">
+              <div className="mt-3 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
+                <p className="text-sm text-amber-400">
                   <span className="font-medium">Lưu ý: </span>
                   {visibilityOptions.find((opt) => opt.value === formData.visibility)?.warning}
                 </p>
