@@ -173,7 +173,7 @@ const AtRiskKPIs = () => {
           <p className="text-xs text-secondary/70 mt-1">Tất cả KPIs đều đang on track</p>
         </div>
       ) : (
-        <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
+        <div className="space-y-2 max-h-100 overflow-y-auto pr-1">
           {criticalKPIs.map((kpi) => (
             <KPIItem key={`critical-${kpi.id}`} kpi={kpi} companySlug={company_slug} />
           ))}

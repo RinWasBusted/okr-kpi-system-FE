@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
 import { useAuthStore } from '../hooks/useAuth';
+import WebLogo from '../assets/Weblogo.webp';
 
 const Sidebar = () => {
   const navigate = useNavigate();
@@ -169,9 +170,7 @@ const Sidebar = () => {
       <div className="px-6 flex flex-col justify-center border-b border-secondary/20 h-16 relative">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">O</span>
-            </div>
+            <img src={WebLogo} alt="OKR KPI Logo" className="w-10 h-10 rounded-lg object-cover" />
             <div>
               <h1 className="text-sm font-bold text-text">OKR KPI</h1>
               <p className="text-xs text-text">Management</p>
