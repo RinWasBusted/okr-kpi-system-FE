@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { getMyCompanyStats } from '../../../services/company';
 import { getCycles } from '../../../services/cycle';
+import { getObjectives } from '../../../services/objective';
 import { toast } from 'react-toastify';
 import StatsSection from './components/StatsSection';
 import CycleTimeline from './components/CycleTimeline';
@@ -15,6 +16,7 @@ import TabNavigation from './components/TabNavigation';
 import DashboardPlaceholder from './components/DashboardPlaceholder';
 import AtRiskObjectives from './components/AtRiskObjectives';
 import AtRiskKPIs from './components/AtRiskKPIs';
+import OKRHierarchyView from '../OKR/components/OKRHierarchyView';
 
 const Dashboard = () => {
   const { company_slug } = useParams();
@@ -44,6 +46,25 @@ const Dashboard = () => {
       } catch (error) {
         // Silently fail for timeline, don't block dashboard
         console.error('Failed to load cycles:', error);
+        return [];
+      }
+    },
+    retry: false,
+  });
+
+  // Fetch objectives for tree view
+  const { data: treeResponse, isLoading: isLoadingTree } = useQuery({
+    queryKey: ['objectives', 'tree', company_slug],
+    queryFn: async () => {
+      try {
+        const response = await getObjectives({
+          mode: 'tree',
+          include_key_results: false,
+          per_page: 100,
+        });
+        return response.data;
+      } catch (error) {
+        console.error('Failed to load objectives:', error);
         return [];
       }
     },
@@ -80,6 +101,7 @@ const Dashboard = () => {
   ];
 
   const cycles = cyclesData || [];
+  const treeObjectives = treeResponse || [];
 
   if (isStatsLoading) {
     return <DashboardPlaceholder />;
@@ -130,8 +152,19 @@ const Dashboard = () => {
 
       {/* Objective Tree Tab */}
       {activeTab === 'tree' && (
-        <div className="bg-background border border-secondary/20 rounded-lg p-6">
-          <p className="text-secondary">Objective tree view will be added here</p>
+        <div>
+          {isLoadingTree ? (
+            <div className="flex items-center justify-center h-96 bg-background rounded-xl border border-secondary/20">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
+            </div>
+          ) : treeObjectives.length === 0 ? (
+            <div className="bg-background rounded-xl border border-secondary/20 p-12 text-center">
+              <Target size={48} className="mx-auto mb-4 opacity-50 text-secondary" />
+              <p className="text-secondary">Chưa có Objective nào</p>
+            </div>
+          ) : (
+            <OKRHierarchyView objectives={treeObjectives} />
+          )}
         </div>
       )}
     </div>
