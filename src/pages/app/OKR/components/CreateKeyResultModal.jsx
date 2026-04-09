@@ -7,6 +7,14 @@ import { createKeyResult, getKeyResults } from '../../../../services/okr.js';
 
 const CreateKeyResultModal = ({ objectiveId, onClose, onSuccess }) => {
   const queryClient = useQueryClient();
+
+  // Evaluation method options
+  const evaluationMethods = [
+    { value: 'MAXIMIZE', label: 'Tối đa hóa (MAXIMIZE)', description: 'Giá trị cao hơn là tốt hơn' },
+    { value: 'MINIMIZE', label: 'Tối thiểu hóa (MINIMIZE)', description: 'Giá trị thấp hơn là tốt hơn' },
+    { value: 'TARGET', label: 'Mục tiêu (TARGET)', description: 'Giá trị nên ổn định trong khoảng' },
+  ];
+
   const [formData, setFormData] = useState({
     title: '',
     current_value: 0,
@@ -14,6 +22,7 @@ const CreateKeyResultModal = ({ objectiveId, onClose, onSuccess }) => {
     unit: '',
     weight: 0,
     due_date: null,
+    evaluation_method: 'MAXIMIZE',
   });
   const [weightError, setWeightError] = useState('');
 
@@ -103,6 +112,7 @@ const CreateKeyResultModal = ({ objectiveId, onClose, onSuccess }) => {
       target_value: targetValue,
       unit: formData.unit.trim(),
       weight: weight,
+      evaluation_method: formData.evaluation_method,
       ...(formData.due_date && {
         due_date: formData.due_date.toISOString(),
       }),
@@ -232,6 +242,28 @@ const CreateKeyResultModal = ({ objectiveId, onClose, onSuccess }) => {
                 Còn lại: <span className="font-medium text-emerald-400">{remainingWeight.toFixed(2)}%</span>
               </div>
             </div>
+          </div>
+
+          {/* Evaluation Method */}
+          <div>
+            <label className="block text-sm font-medium text-text mb-1">
+              Phương thức đánh giá <span className="text-red-400">*</span>
+            </label>
+            <select
+              value={formData.evaluation_method}
+              onChange={(e) => handleChange('evaluation_method', e.target.value)}
+              disabled={createMutation.isPending}
+              className="w-full px-4 py-2 rounded-lg border border-secondary/20 bg-background text-text focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer"
+            >
+              {evaluationMethods.map((method) => (
+                <option key={method.value} value={method.value}>
+                  {method.label}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-secondary mt-1">
+              {evaluationMethods.find(m => m.value === formData.evaluation_method)?.description}
+            </p>
           </div>
 
           {/* Due Date */}
