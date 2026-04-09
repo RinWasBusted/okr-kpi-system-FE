@@ -265,7 +265,7 @@ const ObjectiveDetailPage = () => {
             <StatusBadge status={status} progressStatus={objective.progress_status} />
           </div>
           <p className="text-secondary">
-            {objective.unit?.name} • {objective.owner?.full_name} • {objective.cycle?.name}
+            {objective.unit?.name}  {objective.owner?.full_name ? `• ${objective.owner.full_name}` : ''} • {objective.cycle?.name}
           </p>
         </div>
         <div className="flex items-center gap-2">

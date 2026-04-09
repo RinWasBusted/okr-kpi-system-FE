@@ -1,4 +1,4 @@
-import { Trash2, Edit } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 
 /**
  * Evaluation method display configuration
@@ -30,14 +30,13 @@ const getEvaluationMethodConfig = (method) => {
 
 /**
  * KPIDictionaryCard Component
- * Displays a KPI dictionary card with details
+ * Displays a KPI dictionary card with details (read-only, only delete action available)
  *
  * @param {Object} props
  * @param {Object} props.kpi - KPI dictionary data
- * @param {Function} props.onEdit - Edit callback
  * @param {Function} props.onDelete - Delete callback
  */
-const KPIDictionaryCard = ({ kpi, onEdit, onDelete }) => {
+const KPIDictionaryCard = ({ kpi, onDelete }) => {
   const evaluationConfig = getEvaluationMethodConfig(kpi.evaluation_method);
   const permission = kpi.permission || {};
 
@@ -74,15 +73,6 @@ const KPIDictionaryCard = ({ kpi, onEdit, onDelete }) => {
 
         {/* Delete Button Only */}
         <div className="flex items-center gap-1 ml-2 shrink-0">
-          {permission.editable && (
-            <button
-              onClick={() => onEdit?.(kpi)}
-              className="p-2 text-secondary hover:text-primary hover:bg-primary/10 rounded-lg transition-colors cursor-pointer"
-              title="Chỉnh sửa"
-            >
-              <Edit size={18} />
-            </button>
-          )}
           {permission.deletable && (
             <button
               onClick={() => onDelete?.(kpi)}
