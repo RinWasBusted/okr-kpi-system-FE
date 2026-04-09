@@ -13,6 +13,8 @@ import StatsSection from './components/StatsSection';
 import CycleTimeline from './components/CycleTimeline';
 import TabNavigation from './components/TabNavigation';
 import DashboardPlaceholder from './components/DashboardPlaceholder';
+import AtRiskObjectives from './components/AtRiskObjectives';
+import AtRiskKPIs from './components/AtRiskKPIs';
 
 const Dashboard = () => {
   const { company_slug } = useParams();
@@ -77,11 +79,7 @@ const Dashboard = () => {
     },
   ];
 
-  console.log("cycleData", cyclesData);
-
-  const cycles = cyclesData? cyclesData : [];
-
-  console.log("cycles", cycles);
+  const cycles = cyclesData || [];
 
   if (isStatsLoading) {
     return <DashboardPlaceholder />;
@@ -110,31 +108,22 @@ const Dashboard = () => {
       {activeTab === 'overall' && (
         <div className="space-y-6">
           {/* Stats and Timeline Row - Responsive Layout */}
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 md:gap-6">
-            {/* Stats Cards - Take up 2/3 on large screens */}
-            <div className="xl:col-span-2">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6">
+            {/* Stats Cards */}
+            <div>
               <StatsSection stats={stats} />
             </div>
 
-            {/* Timeline - Take up 1/3 on large screens */}
-            <div className="xl:col-span-1" style={{ minHeight: '280px' }}>
+            {/* Timeline - Generous width on large screens */}
+            <div style={{ minHeight: '280px' }}>
               <CycleTimeline cycles={cycles} isLoading={isCyclesLoading} />
             </div>
           </div>
 
-          {/* Placeholder for future charts */}
-          <div className="bg-background border border-secondary/20 rounded-lg p-6">
-            <h2 className="text-lg font-semibold text-text mb-4">OKR Progress Over Time</h2>
-            <div className="h-64 flex items-center justify-center bg-secondary/5 rounded-lg">
-              <p className="text-secondary">Chart will be added here</p>
-            </div>
-          </div>
-
-          <div className="bg-background border border-secondary/20 rounded-lg p-6">
-            <h2 className="text-lg font-semibold text-text mb-4">Company KPI Trends</h2>
-            <div className="h-64 flex items-center justify-center bg-secondary/5 rounded-lg">
-              <p className="text-secondary">Chart will be added here</p>
-            </div>
+          {/* At Risk Lists */}
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6">
+            <AtRiskObjectives />
+            <AtRiskKPIs />
           </div>
         </div>
       )}
