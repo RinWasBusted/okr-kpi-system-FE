@@ -314,7 +314,7 @@ const NotificationBoard = forwardRef(({ onUnreadCountChange }, ref) => {
       </div>
 
       {/* Notification list với scroll */}
-      <div className="max-h-[400px] overflow-y-auto">
+      <div className="max-h-100 overflow-y-auto">
         {isLoading ? (
           // Loading skeletons
           <>
