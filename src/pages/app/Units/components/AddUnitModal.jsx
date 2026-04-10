@@ -64,7 +64,7 @@ const AddUnitModal = ({ onClose, onSuccess, units = [], isLoadingUnits = false }
       onClose();
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Không thể tạo đơn vị');
+      toast.error(error.response?.data?.error?.message || 'Không thể tạo đơn vị');
     },
   });
 

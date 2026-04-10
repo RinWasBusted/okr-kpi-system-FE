@@ -23,7 +23,7 @@ const ProfileHeader = ({ user, onAvatarUpdate }) => {
       }
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Không thể cập nhật ảnh đại diện');
+      toast.error(error.response?.data?.error?.message || 'Không thể cập nhật ảnh đại diện');
     },
   });
 
@@ -37,7 +37,7 @@ const ProfileHeader = ({ user, onAvatarUpdate }) => {
       }
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Không thể xóa ảnh đại diện');
+      toast.error(error.response?.data?.error?.message || 'Không thể xóa ảnh đại diện');
     },
   });
 

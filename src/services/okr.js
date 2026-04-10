@@ -36,6 +36,7 @@ export {
 export {
   getKeyResults,
   createKeyResult,
+  createBatchKeyResults,
   updateKeyResult,
   deleteKeyResult,
 } from './key-result.js';

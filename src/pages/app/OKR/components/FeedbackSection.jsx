@@ -95,7 +95,7 @@ const FeedbackItem = ({ feedback, objectiveId, onDelete, currentUserId, canEdit 
       queryClient.invalidateQueries({ queryKey: ['feedbackReplies', feedback.id] });
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Có lỗi xảy ra');
+      toast.error(error.response?.data?.error?.message || 'Có lỗi xảy ra');
     },
   });
 
@@ -220,7 +220,7 @@ const FeedbackSection = ({ objectiveId, canEdit }) => {
       queryClient.invalidateQueries({ queryKey: ['feedbacks', objectiveId] });
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Có lỗi xảy ra');
+      toast.error(error.response?.data?.error?.message || 'Có lỗi xảy ra');
     },
   });
 
@@ -232,7 +232,7 @@ const FeedbackSection = ({ objectiveId, canEdit }) => {
       queryClient.invalidateQueries({ queryKey: ['feedbacks', objectiveId] });
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Có lỗi xảy ra');
+      toast.error(error.response?.data?.error?.message || 'Có lỗi xảy ra');
     },
   });
 

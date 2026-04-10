@@ -45,7 +45,7 @@ const PasswordSecuritySection = ({ userEmail }) => {
       setActiveMode(null);
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Không thể đổi mật khẩu');
+      toast.error(error.response?.data?.error?.message || 'Không thể đổi mật khẩu');
     },
   });
 

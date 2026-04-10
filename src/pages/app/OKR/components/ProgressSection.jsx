@@ -74,18 +74,12 @@ const ProgressSection = ({ objective }) => {
         <span className="text-3xl font-bold text-text">{objective?.progress_percentage || 0}%</span>
       </div>
 
-      {/* Multi-color progress bar */}
-      <div className="h-4 bg-gray-100 rounded-full overflow-hidden flex mb-4">
-        {segments.map((segment, index) => (
-          <div
-            key={segment.id}
-            className={`h-full ${segment.color} ${index === 0 ? 'rounded-l-full' : ''} ${index === segments.length - 1 ? 'rounded-r-full' : ''}`}
-            style={{ width: `${segment.weight}%` }}
-          />
-        ))}
-        {segments.length === 0 && (
-          <div className="h-full bg-gray-200 rounded-full w-full" />
-        )}
+      {/* Overall progress bar - shows actual progress percentage */}
+      <div className="h-4 bg-gray-100 rounded-full overflow-hidden mb-4">
+        <div
+          className="h-full bg-primary rounded-full transition-all duration-300"
+          style={{ width: `${objective?.progress_percentage || 0}%` }}
+        />
       </div>
 
       {/* Legend */}

@@ -1,11 +1,17 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Edit, Trash2, CheckCircle } from 'lucide-react';
+import { Plus, Edit, Trash2, CheckCircle, Sparkles } from 'lucide-react';
 import { toast } from 'react-toastify';
-import { getKeyResults, deleteKeyResult } from '../../../../services/okr.js';
+import {
+  getKeyResults,
+  deleteKeyResult,
+  createBatchKeyResults
+} from '../../../../services/key-result.js';
 import CreateKeyResultModal from './CreateKeyResultModal.jsx';
 import EditKeyResultModal from './EditKeyResultModal.jsx';
 import CheckInModal from './CheckInModal.jsx';
+import AIGenerateKRModal from './AIGenerateKRModal.jsx';
+import AIConfirmCreateModal from './AIConfirmCreateModal.jsx';
 
 const KeyResultItem = ({ keyResult, onEdit, onDelete, onCheckIn, objectiveStatus, isEditableStatus, canEditObjective, canDeleteObjective }) => {
   const progress = keyResult.progress_percentage || 0;
@@ -161,12 +167,17 @@ const DeleteConfirmModal = ({ keyResult, onClose, onConfirm, isPending }) => {
   );
 };
 
-const KeyResultsSection = ({ objectiveId, objectiveStatus, isEditableStatus, canEdit, canDelete }) => {
+const KeyResultsSection = ({ objectiveId, objectiveStatus, isEditableStatus, canEdit, canDelete, objectiveTitle }) => {
   const queryClient = useQueryClient();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingKeyResult, setEditingKeyResult] = useState(null);
   const [deletingKeyResult, setDeletingKeyResult] = useState(null);
   const [checkInKeyResult, setCheckInKeyResult] = useState(null);
+
+  // AI Generate states
+  const [isAIGenerateModalOpen, setIsAIGenerateModalOpen] = useState(false);
+  const [isAIConfirmModalOpen, setIsAIConfirmModalOpen] = useState(false);
+  const [selectedAIKeyResults, setSelectedAIKeyResults] = useState([]);
 
   // Fetch key results
   const { data: keyResultsResponse, isLoading } = useQuery({
@@ -189,7 +200,7 @@ const KeyResultsSection = ({ objectiveId, objectiveStatus, isEditableStatus, can
       setDeletingKeyResult(null);
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi xóa Key Result');
+      toast.error(error.response?.data?.error?.message || 'Có lỗi xảy ra khi xóa Key Result');
     },
   });
 
@@ -211,6 +222,39 @@ const KeyResultsSection = ({ objectiveId, objectiveStatus, isEditableStatus, can
     setCheckInKeyResult(keyResult);
   };
 
+  // AI Batch Create Mutation
+  const batchCreateMutation = useMutation({
+    mutationFn: (keyResults) => createBatchKeyResults(objectiveId, { key_results: keyResults }),
+    onSuccess: () => {
+      toast.success('Tạo Key Results từ AI thành công!');
+      queryClient.invalidateQueries({ queryKey: ['keyResults', objectiveId] });
+      queryClient.invalidateQueries({ queryKey: ['objective', objectiveId] });
+      setIsAIConfirmModalOpen(false);
+      setIsAIGenerateModalOpen(false);
+      setSelectedAIKeyResults([]);
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.error?.message || 'Có lỗi xảy ra khi tạo Key Results');
+    }
+  });
+
+  const handleAIConfirmCreate = (keyResults) => {
+    setSelectedAIKeyResults(keyResults);
+    setIsAIGenerateModalOpen(false);
+    setIsAIConfirmModalOpen(true);
+  };
+
+  const handleAIFinalConfirm = () => {
+    if (selectedAIKeyResults.length > 0) {
+      batchCreateMutation.mutate(selectedAIKeyResults);
+    }
+  };
+
+  const handleAICancelConfirm = () => {
+    setIsAIConfirmModalOpen(false);
+    setIsAIGenerateModalOpen(true);
+  };
+
   return (
     <div className="bg-background rounded-xl border border-secondary/20 p-6">
       <div className="flex items-center justify-between mb-6">
@@ -220,16 +264,29 @@ const KeyResultsSection = ({ objectiveId, objectiveStatus, isEditableStatus, can
             Tổng trọng số: <span className="font-semibold text-emerald-600">{totalWeight.toFixed(0)}%</span>
           </p>
         </div>
-        {/* Add Key Result button - Only show when objective is editable and user has edit permission */}
-        {isEditableStatus && canEdit && (
-          <button
-            onClick={() => setIsCreateModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors cursor-pointer"
-          >
-            <Plus size={18} />
-            Thêm Key Result
-          </button>
-        )}
+        <div className="flex items-center gap-3">
+          {/* AI Generate button - Only show when objective is editable and user has edit permission */}
+          {isEditableStatus && canEdit && (
+            <button
+              onClick={() => setIsAIGenerateModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-violet-500 to-purple-600 text-white rounded-lg hover:from-violet-600 hover:to-purple-700 transition-colors cursor-pointer"
+            >
+              <Sparkles size={18} />
+              AI gợi ý KR
+            </button>
+          )}
+
+          {/* Add Key Result button - Only show when objective is editable and user has edit permission */}
+          {isEditableStatus && canEdit && (
+            <button
+              onClick={() => setIsCreateModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors cursor-pointer"
+            >
+              <Plus size={18} />
+              Thêm Key Result
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="space-y-4">
@@ -305,6 +362,29 @@ const KeyResultsSection = ({ objectiveId, objectiveStatus, isEditableStatus, can
             queryClient.invalidateQueries({ queryKey: ['keyResults', objectiveId] });
             queryClient.invalidateQueries({ queryKey: ['objective', objectiveId] });
           }}
+        />
+      )}
+
+      {/* AI Generate Modal */}
+      {isAIGenerateModalOpen && (
+        <AIGenerateKRModal
+          objectiveId={objectiveId}
+          objectiveTitle={objectiveTitle}
+          onClose={() => {
+            setIsAIGenerateModalOpen(false);
+            setSelectedAIKeyResults([]);
+          }}
+          onConfirmCreate={handleAIConfirmCreate}
+        />
+      )}
+
+      {/* AI Confirm Create Modal */}
+      {isAIConfirmModalOpen && (
+        <AIConfirmCreateModal
+          keyResults={selectedAIKeyResults}
+          onClose={handleAICancelConfirm}
+          onConfirm={handleAIFinalConfirm}
+          isPending={batchCreateMutation.isPending}
         />
       )}
     </div>

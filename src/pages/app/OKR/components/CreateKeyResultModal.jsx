@@ -60,7 +60,7 @@ const CreateKeyResultModal = ({ objectiveId, onClose, onSuccess }) => {
       onClose();
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi tạo Key Result');
+      toast.error(error.response?.data?.error?.message || 'Có lỗi xảy ra khi tạo Key Result');
     },
   });
 

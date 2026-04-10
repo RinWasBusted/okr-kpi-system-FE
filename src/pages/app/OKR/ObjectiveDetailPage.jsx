@@ -377,6 +377,7 @@ const ObjectiveDetailPage = () => {
         isEditableStatus={isEditableStatus}
         canEdit={canEdit}
         canDelete={canDelete}
+        objectiveTitle={objective.title}
       />
 
       {/* Child Objectives Section */}

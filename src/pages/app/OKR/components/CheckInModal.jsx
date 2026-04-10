@@ -22,7 +22,7 @@ const CheckInModal = ({ keyResult, objectiveId, onClose, onSuccess }) => {
       onClose();
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi check-in');
+      toast.error(error.response?.data?.error?.message || 'Có lỗi xảy ra khi check-in');
     },
   });
 

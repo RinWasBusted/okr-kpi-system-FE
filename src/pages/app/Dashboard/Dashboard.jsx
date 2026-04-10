@@ -30,7 +30,7 @@ const Dashboard = () => {
         const response = await getMyCompanyStats();
         return response.data;
       } catch (error) {
-        toast.error(error.response?.data?.message || 'Failed to load dashboard data');
+        toast.error(error.response?.data?.error?.message || 'Failed to load dashboard data');
         throw error;
       }
     },

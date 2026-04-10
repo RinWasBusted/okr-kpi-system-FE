@@ -32,11 +32,12 @@ const EditUnitModal = ({ onClose, onSuccess, unit }) => {
 
   const units = unitsResponse?.data || [];
 
-  // Fetch users for manager selection
+  // Fetch users for manager selection - only users belonging to this unit
   const { data: usersResponse, isLoading: isLoadingUsers } = useQuery({
-    queryKey: ['users', 'forUnitModal'],
-    queryFn: () => getUsers({ per_page: 100 }),
+    queryKey: ['users', 'forUnitModal', unit?.id],
+    queryFn: () => getUsers({ unit_id: unit?.id, per_page: 100 }),
     staleTime: 5 * 60 * 1000,
+    enabled: !!unit?.id,
   });
 
   const users = usersResponse?.data || [];
@@ -86,7 +87,7 @@ const EditUnitModal = ({ onClose, onSuccess, unit }) => {
       onClose();
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Không thể cập nhật đơn vị');
+      toast.error(error.response?.data?.error?.message || 'Không thể cập nhật đơn vị');
     },
   });
 
@@ -110,19 +111,9 @@ const EditUnitModal = ({ onClose, onSuccess, unit }) => {
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     
-    // Validate manager assignment
+    // Clear any validation errors when changing manager
     if (field === 'manager_id') {
-      if (value) {
-        const selectedManager = users.find(u => String(u.id) === value);
-        // Manager must either have no unit assignment (unit_id = null) or be current manager of this unit
-        if (selectedManager?.unit && selectedManager.unit.id !== unit?.id) {
-          setManagerError('Người quản lý này đã được phân công trong đơn vị khác');
-        } else {
-          setManagerError('');
-        }
-      } else {
-        setManagerError('');
-      }
+      setManagerError('');
     }
   };
 

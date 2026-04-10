@@ -132,7 +132,7 @@ const EmployeePage = () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Không thể cập nhật avatar');
+      toast.error(error.response?.data?.error?.message || 'Không thể cập nhật avatar');
     },
   });
 

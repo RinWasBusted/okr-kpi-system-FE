@@ -112,7 +112,7 @@ const AtRiskObjectives = () => {
         });
         return response.data || [];
       } catch (error) {
-        toast.error(error.response?.data?.message || 'Failed to load at-risk objectives');
+        toast.error(error.response?.data?.error?.message || 'Failed to load at-risk objectives');
         return [];
       }
     },
@@ -131,7 +131,7 @@ const AtRiskObjectives = () => {
         });
         return response.data || [];
       } catch (error) {
-        toast.error(error.response?.data?.message || 'Failed to load critical objectives');
+        toast.error(error.response?.data?.error?.message || 'Failed to load critical objectives');
         return [];
       }
     },

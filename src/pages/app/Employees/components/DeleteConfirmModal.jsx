@@ -22,7 +22,7 @@ const DeleteConfirmModal = ({ onClose, user }) => {
       onClose();
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Không thể xóa nhân viên');
+      toast.error(error.response?.data?.error?.message || 'Không thể xóa nhân viên');
     },
   });
 

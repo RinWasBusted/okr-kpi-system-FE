@@ -153,7 +153,7 @@ const DeleteObjectiveConfirmModal = ({ objective, onClose, onSuccess }) => {
       onClose();
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi xóa Objective');
+      toast.error(error.response?.data?.error?.message || 'Có lỗi xảy ra khi xóa Objective');
     },
   });
 

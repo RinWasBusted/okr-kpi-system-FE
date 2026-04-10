@@ -15,6 +15,12 @@ import axiosClient from '../utils/axios.js';
  * @param {Object} [params.constraints] - Optional constraints for generation
  * @param {string} [params.constraints.due_date] - Due date in YYYY-MM-DD format (optional)
  * @param {string} [params.constraints.unit] - Unit of measurement (optional, e.g., '%', 'users', 'revenue')
+ * @param {string} [params.constraints.evaluation_method] - Preferred evaluation method (optional)
+ *   - 'MAXIMIZE' - Maximize the metric value
+ *   - 'MINIMIZE' - Minimize the metric value
+ *   - 'TARGET' - Reach a specific target value
+ * @param {string} [params.constraints.context] - Additional context to help AI understand requirements (max 1000 chars)
+ *   - e.g., "This is for a fintech startup focusing on mobile payments. Team has 3 engineers."
  * 
  * @returns {Promise<Object>} Response object
  * @returns {boolean} response.success - Whether request was successful
@@ -26,14 +32,23 @@ import axiosClient from '../utils/axios.js';
  * @returns {Array<Object>} response.data.suggestions - Array of suggested key results
  * @returns {string} response.data.suggestions[].title - Key result title suggestion
  * @returns {number} response.data.suggestions[].target_value - Suggested target value
- * @returns {string} response.data.suggestions[].unit - Suggested unit of measurement (e.g., '%', 'users')
- * @returns {number} response.data.suggestions[].weight - Suggested weight percentage for KR (0-1 or 0-100)
- * @returns {string} [response.data.suggestions[].due_date] - Suggested due date in YYYY-MM-DD format (nullable)
+ * @returns {number} response.data.suggestions[].start_value - Starting baseline value for the KR
+ * @returns {string} response.data.suggestions[].unit - Suggested unit of measurement (e.g., '%', 'users', 'revenue')
+ * @returns {number} response.data.suggestions[].weight - Suggested weight for KR distribution (0-1)
+ * @returns {string} response.data.suggestions[].due_date - Due date in YYYY-MM-DD format
+ * @returns {string} response.data.suggestions[].evaluation_method - Evaluation method for the KR
+ *   - 'MAXIMIZE' - Maximize the metric value
+ *   - 'MINIMIZE' - Minimize the metric value
+ *   - 'TARGET' - Reach a specific target value
  * @returns {Object} response.data.suggestions[].evaluation - AI evaluation of the suggestion
  * @returns {number} response.data.suggestions[].evaluation.fit_score - Fit score for objective (0-100, 100 = perfect fit)
  * @returns {string} response.data.suggestions[].evaluation.fit_reason - Explanation of how this KR supports the objective
- * @returns {Array<string>} response.data.suggestions[].evaluation.issues - Array of potential issues or improvements (empty array if none)
- * @returns {string} response.data.overall_feedback - Overall feedback about the generated key results set
+ * @returns {Array<string>} response.data.suggestions[].evaluation.issues - Array of potential issues or improvements
+ * @returns {Object} response.data.overall_feedback - Overall feedback about the generated key results set
+ * @returns {string} response.data.overall_feedback.summary - Summary of the suggestions
+ * @returns {string} response.data.overall_feedback.alignment_analysis - Analysis of alignment with objective
+ * @returns {Array<string>} response.data.overall_feedback.risks - Identified risks or challenges
+ * @returns {Array<string>} response.data.overall_feedback.recommendations - Recommendations for improvement
  * 
  * @throws {Error} If generation fails:
  *   - 400: Invalid objectiveId or invalid payload (count out of range, invalid language)
@@ -46,10 +61,12 @@ import axiosClient from '../utils/axios.js';
  * Uses AI to create smart suggestions based on the objective title and description.
  * Each suggestion includes:
  * - A measurable title with specific targets
- * - Target value and unit of measurement
+ * - Target value, start value, and unit of measurement
  * - Suggested weight distribution
+ * - Evaluation method (MAXIMIZE, MINIMIZE, or TARGET)
  * - AI evaluation with fit score and reasoning
  * - Potential issues or improvement suggestions
+ * - Overall feedback with summary, alignment analysis, risks, and recommendations
  * 
  * The fit_score indicates how well the suggested KR supports the objective (0-100).
  * Higher scores mean better alignment with the objective.
@@ -61,7 +78,9 @@ import axiosClient from '../utils/axios.js';
  *   language: 'vi',
  *   constraints: {
  *     due_date: '2026-12-31',
- *     unit: '%'
+ *     unit: '%',
+ *     evaluation_method: 'MAXIMIZE',
+ *     context: 'Fintech startup with 3 engineers'
  *   }
  * });
  * 
@@ -78,9 +97,11 @@ import axiosClient from '../utils/axios.js';
  * //       {
  * //         title: 'Increase 90-day retention rate to 75%',
  * //         target_value: 75,
+ * //         start_value: 45,
  * //         unit: '%',
  * //         weight: 0.25,
  * //         due_date: '2026-12-31',
+ * //         evaluation_method: 'MAXIMIZE',
  * //         evaluation: {
  * //           fit_score: 92,
  * //           fit_reason: 'Directly supports objective with measurable outcome.',
@@ -89,7 +110,12 @@ import axiosClient from '../utils/axios.js';
  * //       },
  * //       ... (4 more suggestions)
  * //     ],
- * //     overall_feedback: 'Suggested KRs are balanced and measurable.'
+ * //     overall_feedback: {
+ * //       summary: 'Suggested KRs are balanced and measurable.',
+ * //       alignment_analysis: 'All KRs directly support the objective with clear metrics.',
+ * //       risks: ['High target may be challenging'],
+ * //       recommendations: ['Consider breaking KR 3 into smaller milestones']
+ * //     }
  * //   }
  * // }
  * 
@@ -104,7 +130,10 @@ export const generateKeyResultsForObjective = async (objectiveId, params) => {
   try {
     const response = await axiosClient.post(
       `/objectives/${objectiveId}/key-results/generate`,
-      params
+      params,
+      {
+        timeout: 60000 // 60 seconds - AI generation can take a while
+      }
     );
     return response.data;
   } catch (error) {

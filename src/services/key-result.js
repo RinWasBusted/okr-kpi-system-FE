@@ -99,6 +99,89 @@ export const createKeyResult = async (objective_id, data) => {
 };
 
 /**
+ * Create multiple key results for an objective (batch operation)
+ * @async
+ * @function createBatchKeyResults
+ * @param {number} objective_id - The objective ID (required, in path)
+ * @param {Object} data - Batch creation data
+ * @param {Array<Object>} data.key_results - Array of key results to create (required, 1-50 items)
+ * @param {string} data.key_results[].title - Key result title (required, 1-255 characters)
+ * @param {number} data.key_results[].target_value - Target value to achieve (required, must be > 0)
+ * @param {string} data.key_results[].unit - Unit of measurement (required, 1-50 characters, e.g., '%', 'users', 'revenue')
+ * @param {number} data.key_results[].weight - Weight percentage (required, 0-100)
+ * @param {number} [data.key_results[].current_value] - Current value progress (optional, default: 0, must be >= 0)
+ * @param {string} [data.key_results[].due_date] - Due date in YYYY-MM-DD format (optional)
+ * @param {string} [data.key_results[].evaluation_method] - Evaluation method (optional, default: MAXIMIZE)
+ *   - 'MAXIMIZE' - Maximize the metric value
+ *   - 'MINIMIZE' - Minimize the metric value
+ *   - 'TARGET' - Reach a specific target value
+ * 
+ * @returns {Promise<Object>} Response object
+ * @returns {boolean} response.success - Whether request was successful
+ * @returns {string} response.message - Response message (e.g., "Key results created successfully")
+ * @returns {Object} response.data - Created key results object
+ * @returns {Array<Object>} response.data.key_results - Array of created key result objects
+ * @returns {number} response.data.key_results[].id - Key result ID
+ * @returns {string} response.data.key_results[].title - Key result title
+ * @returns {number} response.data.key_results[].target_value - Target value
+ * @returns {number} response.data.key_results[].current_value - Current value
+ * @returns {string} response.data.key_results[].unit - Unit of measurement
+ * @returns {number} response.data.key_results[].weight - Weight percentage
+ * @returns {string} [response.data.key_results[].due_date] - Due date (nullable)
+ * @returns {string} response.data.key_results[].evaluation_method - Evaluation method used
+ * @returns {number} response.data.key_results[].progress_percentage - Progress percentage (0-100)
+ * @returns {number} response.data.key_results[].objective_id - Associated objective ID
+ * 
+ * @throws {Error} If creation fails:
+ *   - 400: Invalid objective ID or no key results provided
+ *   - 403: No permission to edit this objective
+ *   - 404: Objective not found
+ *   - 422: Validation error (total weight exceeds 100, invalid field values, or other constraints)
+ * 
+ * @description Create multiple key results for an objective in a single batch operation.
+ * This is more efficient than creating key results individually when adding multiple items.
+ * Note: Total weight of all key results should not exceed 100%.
+ * 
+ * @example
+ * const newKRs = await createBatchKeyResults(1, {
+ *   key_results: [
+ *     {
+ *       title: 'Increase user engagement to 100 DAU',
+ *       target_value: 100,
+ *       current_value: 0,
+ *       unit: 'users',
+ *       weight: 40,
+ *       due_date: '2026-06-30',
+ *       evaluation_method: 'MAXIMIZE'
+ *     },
+ *     {
+ *       title: 'Reduce bounce rate to 20%',
+ *       target_value: 20,
+ *       current_value: 45,
+ *       unit: '%',
+ *       weight: 35,
+ *       due_date: '2026-06-30',
+ *       evaluation_method: 'MINIMIZE'
+ *     },
+ *     {
+ *       title: 'Achieve 95% uptime',
+ *       target_value: 95,
+ *       unit: '%',
+ *       weight: 25,
+ *       evaluation_method: 'TARGET'
+ *     }
+ *   ]
+ * });
+ */
+export const createBatchKeyResults = async (objective_id, data) => {
+  const response = await axiosClient.post(
+    `/objectives/${objective_id}/key-results/batch`,
+    data
+  );
+  return response.data;
+};
+
+/**
  * Update a key result
  * @async
  * @function updateKeyResult

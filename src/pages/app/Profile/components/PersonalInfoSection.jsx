@@ -35,7 +35,7 @@ const PersonalInfoSection = ({ user, onUserUpdate }) => {
       setIsEditing(false);
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Không thể cập nhật thông tin');
+      toast.error(error.response?.data?.error?.message || 'Không thể cập nhật thông tin');
     },
   });
 

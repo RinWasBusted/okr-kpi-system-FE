@@ -97,7 +97,7 @@ const EditEmployeeModal = ({ user, onClose, units, isLoadingUnits }) => {
       onClose();
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Không thể cập nhật nhân viên');
+      toast.error(error.response?.data?.error?.message || 'Không thể cập nhật nhân viên');
     },
   });
 

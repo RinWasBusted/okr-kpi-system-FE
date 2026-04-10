@@ -117,7 +117,7 @@ const AtRiskKPIs = () => {
         });
         return response.data || [];
       } catch (error) {
-        toast.error(error.response?.data?.message || 'Failed to load at-risk KPIs');
+        toast.error(error.response?.data?.error?.message || 'Failed to load at-risk KPIs');
         return [];
       }
     },
@@ -136,7 +136,7 @@ const AtRiskKPIs = () => {
         });
         return response.data || [];
       } catch (error) {
-        toast.error(error.response?.data?.message || 'Failed to load critical KPIs');
+        toast.error(error.response?.data?.error?.message || 'Failed to load critical KPIs');
         return [];
       }
     },
