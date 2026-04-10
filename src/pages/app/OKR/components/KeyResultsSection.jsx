@@ -269,7 +269,7 @@ const KeyResultsSection = ({ objectiveId, objectiveStatus, isEditableStatus, can
           {isEditableStatus && canEdit && (
             <button
               onClick={() => setIsAIGenerateModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-violet-500 to-purple-600 text-white rounded-lg hover:from-violet-600 hover:to-purple-700 transition-colors cursor-pointer"
+              className="flex items-center gap-2 px-4 py-2 bg-linear-to-r from-violet-500 to-purple-600 text-white rounded-lg hover:from-violet-600 hover:to-purple-700 transition-colors cursor-pointer"
             >
               <Sparkles size={18} />
               AI gợi ý KR

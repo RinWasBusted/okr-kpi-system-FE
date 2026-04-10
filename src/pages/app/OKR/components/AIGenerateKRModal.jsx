@@ -129,7 +129,7 @@ const AIGenerateKRModal = ({ objectiveId, objectiveTitle, onClose, onConfirmCrea
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-secondary/20">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-gradient-to-br from-violet-500 to-purple-600 rounded-lg">
+            <div className="p-2 bg-linear-to-br from-violet-500 to-purple-600 rounded-lg">
               <Sparkles className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -270,7 +270,7 @@ const AIGenerateKRModal = ({ objectiveId, objectiveTitle, onClose, onConfirmCrea
             <div className="space-y-6">
               {/* Thông tin tổng quan */}
               {generatedData.overall_feedback && (
-                <div className="bg-gradient-to-r from-violet-50 to-purple-50 border border-violet-200 rounded-xl p-4">
+                <div className="bg-linear-to-r from-violet-50 to-purple-50 border border-violet-200 rounded-xl p-4">
                   <h3 className="font-medium text-violet-800 mb-2 flex items-center gap-2">
                     <Info size={16} />
                     Đánh giá tổng quan
@@ -504,7 +504,7 @@ const AIGenerateKRModal = ({ objectiveId, objectiveTitle, onClose, onConfirmCrea
               <button
                 onClick={handleGenerate}
                 disabled={generateMutation.isPending || parseInt(formData.count) > 5 || formData.context.length > 1000}
-                className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-violet-500 to-purple-600 text-white rounded-lg hover:from-violet-600 hover:to-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                className="flex items-center gap-2 px-6 py-2 bg-linear-to-r from-violet-500 to-purple-600 text-white rounded-lg hover:from-violet-600 hover:to-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 {generateMutation.isPending ? (
                   <>

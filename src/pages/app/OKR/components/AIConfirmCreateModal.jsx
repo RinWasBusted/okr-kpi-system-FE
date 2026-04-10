@@ -22,7 +22,7 @@ const AIConfirmCreateModal = ({ keyResults, onClose, onConfirm, isPending }) => 
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center">
+    <div className="fixed inset-0 z-60 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/50" onClick={!isPending ? onClose : undefined} />
       <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-2xl mx-4 flex flex-col max-h-[85vh]">
         {/* Header */}

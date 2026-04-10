@@ -59,6 +59,10 @@ const router = createBrowserRouter([
                 path: "setting",
                 element: <AdminSettingPage />
             },
+            {
+                path: "profile",
+                element: <ProfilePage />
+            }
         ]
     },
     {

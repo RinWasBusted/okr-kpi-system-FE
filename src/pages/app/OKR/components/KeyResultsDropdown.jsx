@@ -96,7 +96,7 @@ const KeyResultsDropdown = ({ objectiveId, compact = false }) => {
         <div
           className={`bg-background rounded-lg border border-secondary/20 shadow-2xl max-h-64 overflow-y-auto ${
             compact
-              ? 'fixed z-[9999] left-auto top-auto mt-1 w-64'
+              ? 'fixed z-9999 left-auto top-auto mt-1 w-64'
               : 'absolute left-0 right-0 top-full mt-2'
           }`}
           style={{ minWidth: compact ? '16rem' : '100%' }}

@@ -3,63 +3,82 @@ import axiosClient from '../utils/axios.js';
 // ==================== OBJECTIVE FEEDBACKS ====================
 
 /**
- * Get list of feedbacks for an objective
+ * Get list of feedbacks for an objective with tree structure
  * @async
  * @function listFeedbacks
  * @param {number} objectiveId - The objective ID (required)
  * @param {Object} [params] - Query parameters
- * @param {string} [params.type] - Filter by feedback type
- *   - PRAISE: Positive feedback about progress
- *   - CONCERN: Issues or risks identified
- *   - SUGGESTION: Recommendations for improvement
- *   - QUESTION: Questions or clarifications needed
- *   - BLOCKER: Critical blockers preventing progress
- * @param {string} [params.sentiment] - Filter by sentiment
+ * @param {string} [params.sentiment] - Filter by sentiment (optional)
  *   - POSITIVE: Positive tone
  *   - NEUTRAL: Neutral tone
  *   - NEGATIVE: Negative tone
  *   - MIXED: Mixed sentiment
  *   - UNKNOWN: Could not determine sentiment
- * @param {string} [params.status] - Filter by status
- *   - ACTIVE: Actively being discussed
+ * @param {string} [params.status] - Filter by feedback status (optional)
+ *   - PRAISE: Positive feedback about progress
+ *   - CONCERN: Issues or risks identified
+ *   - SUGGESTION: Recommendations for improvement
+ *   - QUESTION: Questions or clarifications needed
+ *   - BLOCKER: Critical blockers preventing progress
  *   - RESOLVED: Issue has been resolved
  *   - FLAGGED: Flagged for attention
- * @param {number} [params.kr_tag_id] - Filter by specific key result tag (optional)
- * @param {number} [params.page=1] - Current page number
- * @param {number} [params.per_page=20] - Records per page (default: 20)
+ * @param {number} [params.kr_tag_id] - Filter by specific key result ID (optional)
+ * @param {number} [params.page=1] - Current page number (optional, default: 1)
+ * @param {number} [params.per_page=20] - Records per page (optional, default: 20)
  * 
  * @returns {Promise<Object>} Response object
  * @returns {boolean} response.success - Whether request was successful
  * @returns {string} response.message - Response message
- * @returns {Array<Object>} response.data - Array of top-level feedback objects
+ * @returns {number} response.total - Total number of root-level feedbacks
+ * @returns {number} response.last_page - Last page number
+ * @returns {Array<Object>} response.data - Array of root-level feedback objects with nested replies
+ * 
  * @returns {number} response.data[].id - Feedback ID
  * @returns {number} response.data[].objective_id - Associated objective ID
- * @returns {number} response.data[].user_id - User who posted feedback
+ * @returns {number|null} response.data[].parent_id - Parent feedback ID (null for root-level feedbacks)
  * @returns {string} response.data[].content - Feedback content
- * @returns {string} response.data[].type - Feedback type (PRAISE, CONCERN, SUGGESTION, QUESTION, BLOCKER)
  * @returns {string} response.data[].sentiment - Sentiment (POSITIVE, NEUTRAL, NEGATIVE, MIXED, UNKNOWN)
- * @returns {string} response.data[].status - Status (ACTIVE, RESOLVED, FLAGGED)
- * @returns {number} [response.data[].kr_tag_id] - Associated key result ID (nullable)
- * @returns {number} [response.data[].parent_feedback_id] - Parent feedback ID (nullable, always null for top-level)
+ * @returns {string} response.data[].status - Feedback status (PRAISE, CONCERN, SUGGESTION, QUESTION, BLOCKER, RESOLVED, FLAGGED)
+ * @returns {Object|null} response.data[].key_result - Associated key result (nullable)
+ * @returns {number} response.data[].key_result.id - Key result ID
+ * @returns {string} response.data[].key_result.title - Key result title
  * @returns {string} response.data[].created_at - Creation timestamp (ISO 8601)
  * @returns {string} response.data[].updated_at - Last update timestamp (ISO 8601)
- * @returns {Object} response.meta - Pagination metadata
- * @returns {number} response.meta.total - Total number of feedbacks
- * @returns {number} response.meta.page - Current page number
- * @returns {number} response.meta.per_page - Records per page
- * @returns {number} response.meta.last_page - Last page number
+ * @returns {Object} response.data[].user - User who posted feedback
+ * @returns {number} response.data[].user.id - User ID
+ * @returns {string} response.data[].user.full_name - User's full name
+ * @returns {string|null} response.data[].user.avatar_url - User's avatar URL (nullable)
+ * @returns {string|null} response.data[].user.job_title - User's job title (nullable)
+ * @returns {Array<Object>} response.data[].replies - Nested replies to this feedback (max depth 1)
+ * @returns {number} response.data[].replies[].id - Reply ID
+ * @returns {number} response.data[].replies[].objective_id - Associated objective ID
+ * @returns {number} response.data[].replies[].parent_id - Parent feedback ID
+ * @returns {string} response.data[].replies[].content - Reply content
+ * @returns {string} response.data[].replies[].sentiment - Reply sentiment
+ * @returns {string} response.data[].replies[].status - Reply status
+ * @returns {Object|null} response.data[].replies[].key_result - Associated key result (nullable)
+ * @returns {number} response.data[].replies[].key_result.id - Key result ID
+ * @returns {string} response.data[].replies[].key_result.title - Key result title
+ * @returns {string} response.data[].replies[].created_at - Creation timestamp (ISO 8601)
+ * @returns {string} response.data[].replies[].updated_at - Last update timestamp (ISO 8601)
+ * @returns {Object} response.data[].replies[].user - User who posted reply
+ * @returns {number} response.data[].replies[].user.id - User ID
+ * @returns {string} response.data[].replies[].user.full_name - User's full name
+ * @returns {string|null} response.data[].replies[].user.avatar_url - User's avatar URL (nullable)
+ * @returns {string|null} response.data[].replies[].user.job_title - User's job title (nullable)
  * 
  * @throws {Error} If request fails:
  *   - 403: No permission to view this objective
  *   - 404: Objective not found
  * 
- * @description Retrieve top-level feedbacks only (replies are accessed separately).
- * Results are paginated and support filtering by type, sentiment, and status.
+ * @description Retrieve root-level feedbacks with nested replies as tree structure.
+ * Replies are included within each root feedback (max nesting depth = 1).
+ * Results are paginated and support filtering by sentiment, status, and key result tag.
  * 
  * @example
  * const feedbacks = await listFeedbacks(1, {
- *   type: 'CONCERN',
- *   status: 'ACTIVE',
+ *   sentiment: 'NEGATIVE',
+ *   status: 'CONCERN',
  *   page: 1,
  *   per_page: 20
  * });

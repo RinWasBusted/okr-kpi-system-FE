@@ -44,6 +44,7 @@ const Header = () => {
 
   // Fetch unread count on mount và interval
   useEffect(() => {
+    if(user.role === 'ADMIN') return; // Admin không cần notification
     fetchUnreadCount();
     const interval = setInterval(fetchUnreadCount, 30000); // 30s refresh
     return () => clearInterval(interval);
@@ -111,32 +112,34 @@ const Header = () => {
           )}
         </button>
 
-        {/* Notifications */}
-        <div className="relative" ref={notiMenuRef}>
-          <button
-            onClick={() => setIsNotiOpen(!isNotiOpen)}
-            onMouseEnter={() => notificationBoardRef.current?.preload()}
-            className="p-2 rounded-lg text-text hover:bg-secondary/10 transition-colors relative cursor-pointer"
-            aria-label="Notifications"
-          >
-            <Bell className="w-5 h-5" />
-            {/* Badge số lượng chưa đọc */}
-            {unreadCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 min-w-4.5 h-4.5 px-1.5 bg-red-500 text-white text-xs font-medium rounded-full flex items-center justify-center">
-                {unreadCount > 99 ? '99+' : unreadCount}
-              </span>
-            )}
-          </button>
+        {/* Notifications - Only show if user is not ADMIN */}
+        {user?.role !== 'ADMIN' && (
+          <div className="relative" ref={notiMenuRef}>
+            <button
+              onClick={() => setIsNotiOpen(!isNotiOpen)}
+              onMouseEnter={() => notificationBoardRef.current?.preload()}
+              className="p-2 rounded-lg text-text hover:bg-secondary/10 transition-colors relative cursor-pointer"
+              aria-label="Notifications"
+            >
+              <Bell className="w-5 h-5" />
+              {/* Badge số lượng chưa đọc */}
+              {unreadCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-4.5 h-4.5 px-1.5 bg-red-500 text-white text-xs font-medium rounded-full flex items-center justify-center">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
+            </button>
 
-          {/* Notification Dropdown */}
-          <div
-            className={`absolute right-0 mt-2 bg-background border border-secondary/20 rounded-lg shadow-lg overflow-hidden z-50 ${
-              !isNotiOpen && 'hidden'
-            }`}
-          >
-            <NotificationBoard ref={notificationBoardRef} onUnreadCountChange={fetchUnreadCount} />
+            {/* Notification Dropdown */}
+            <div
+              className={`absolute right-0 mt-2 bg-background border border-secondary/20 rounded-lg shadow-lg overflow-hidden z-50 ${
+                !isNotiOpen && 'hidden'
+              }`}
+            >
+              <NotificationBoard ref={notificationBoardRef} onUnreadCountChange={fetchUnreadCount} />
+            </div>
           </div>
-        </div>
+        )}
 
         {/* User Avatar */}
         <div className="relative" ref={userMenuRef}>
@@ -179,7 +182,7 @@ const Header = () => {
                   <User className="w-4 h-4" />
                   <span className="text-sm">Profile</span>
                 </button>
-                <button
+                {/* <button
                   onClick={() => {
                     setIsUserMenuOpen(false);
                     // Navigate to settings
@@ -188,7 +191,7 @@ const Header = () => {
                 >
                   <Settings className="w-4 h-4" />
                   <span className="text-sm">Settings</span>
-                </button>
+                </button> */}
                 <div className="border-t border-secondary/20 my-1" />
                 <button
                   onClick={handleLogout}

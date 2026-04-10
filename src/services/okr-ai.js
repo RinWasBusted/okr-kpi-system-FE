@@ -132,7 +132,7 @@ export const generateKeyResultsForObjective = async (objectiveId, params) => {
       `/objectives/${objectiveId}/key-results/generate`,
       params,
       {
-        timeout: 60000 // 60 seconds - AI generation can take a while
+        timeout: 180000 // 180 seconds - AI generation can take a while
       }
     );
     return response.data;
