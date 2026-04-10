@@ -167,6 +167,32 @@ export const lockCycle = async (id) => {
 };
 
 /**
+ * Unlock a cycle to allow modifications
+ * @async
+ * @function unlockCycle
+ * @param {number} id - Cycle ID to unlock
+ * 
+ * @returns {Promise<Object>} Response object
+ * @returns {boolean} response.success - Whether cycle was unlocked successfully
+ * @returns {string} response.message - Response message
+ * @returns {Object} response.data - Updated cycle object with is_locked: false
+ * 
+ * @throws {Error} If cycle not found, already unlocked, or user lacks ADMIN_COMPANY role
+ * 
+ * @example
+ * const unlocked = await unlockCycle(1);
+ * console.log(unlocked.data.is_locked); // false
+ */
+export const unlockCycle = async (id) => {
+    try {
+        const response = await axiosClient.patch(`/cycles/${id}/unlock`);
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+};
+
+/**
  * Clone a cycle into a brand new cycle with the same info and structure
  * @async
  * @function cloneCycle

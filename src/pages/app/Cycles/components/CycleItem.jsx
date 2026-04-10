@@ -3,7 +3,7 @@ import { Target, TrendingUp, Calendar, Lock, LockOpen, Edit, Trash2 } from 'luci
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
-import { lockCycle } from '../../../../services/cycle';
+import { lockCycle, unlockCycle } from '../../../../services/cycle';
 import { useAuthStore } from '../../../../hooks/useAuth';
 import EditCycleModal from './EditCycleModal';
 import DeleteCycleConfirmModal from './DeleteCycleConfirmModal';
@@ -76,7 +76,9 @@ const CycleItem = ({ cycle, onRefetch }) => {
 
   // Lock/Unlock mutation
   const lockMutation = useMutation({
-    mutationFn: () => lockCycle(cycle.id),
+    mutationFn: () => {
+      return cycle.is_locked ? unlockCycle(cycle.id) : lockCycle(cycle.id);
+    },
     onSuccess: () => {
       toast.success(cycle.is_locked ? 'Đã mở khóa chu kỳ' : 'Đã khóa chu kỳ');
       onRefetch();
