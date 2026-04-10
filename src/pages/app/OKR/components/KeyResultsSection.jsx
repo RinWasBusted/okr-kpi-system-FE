@@ -179,6 +179,10 @@ const KeyResultsSection = ({ objectiveId, objectiveStatus, isEditableStatus, can
   const [isAIConfirmModalOpen, setIsAIConfirmModalOpen] = useState(false);
   const [selectedAIKeyResults, setSelectedAIKeyResults] = useState([]);
 
+  // State to preserve AI modal data when navigating back and forth
+  const [aiModalPreserveState, setAiModalPreserveState] = useState(null);
+  const [aiModalInitialStep, setAiModalInitialStep] = useState('input');
+
   // Fetch key results
   const { data: keyResultsResponse, isLoading } = useQuery({
     queryKey: ['keyResults', objectiveId],
@@ -232,14 +236,18 @@ const KeyResultsSection = ({ objectiveId, objectiveStatus, isEditableStatus, can
       setIsAIConfirmModalOpen(false);
       setIsAIGenerateModalOpen(false);
       setSelectedAIKeyResults([]);
+      setAiModalPreserveState(null); // Reset preserve state sau khi tạo thành công
+      setAiModalInitialStep('input');
     },
     onError: (error) => {
       toast.error(error.response?.data?.error?.message || 'Có lỗi xảy ra khi tạo Key Results');
     }
   });
 
-  const handleAIConfirmCreate = (keyResults) => {
+  const handleAIConfirmCreate = (keyResults, preserveState) => {
     setSelectedAIKeyResults(keyResults);
+    setAiModalPreserveState(preserveState); // Lưu state để có thể resume lại sau
+    setAiModalInitialStep('results'); // Khi quay lại sẽ mở ở step results
     setIsAIGenerateModalOpen(false);
     setIsAIConfirmModalOpen(true);
   };
@@ -253,6 +261,14 @@ const KeyResultsSection = ({ objectiveId, objectiveStatus, isEditableStatus, can
   const handleAICancelConfirm = () => {
     setIsAIConfirmModalOpen(false);
     setIsAIGenerateModalOpen(true);
+    // Không xóa aiModalPreserveState để AIGenerateKRModal có thể resume
+  };
+
+  const handleAIGenerateModalClose = () => {
+    setIsAIGenerateModalOpen(false);
+    setAiModalPreserveState(null); // Xóa preserve state khi đóng hoàn toàn
+    setAiModalInitialStep('input');
+    setSelectedAIKeyResults([]);
   };
 
   return (
@@ -370,10 +386,9 @@ const KeyResultsSection = ({ objectiveId, objectiveStatus, isEditableStatus, can
         <AIGenerateKRModal
           objectiveId={objectiveId}
           objectiveTitle={objectiveTitle}
-          onClose={() => {
-            setIsAIGenerateModalOpen(false);
-            setSelectedAIKeyResults([]);
-          }}
+          initialStep={aiModalInitialStep}
+          preservedState={aiModalPreserveState}
+          onClose={handleAIGenerateModalClose}
           onConfirmCreate={handleAIConfirmCreate}
         />
       )}
@@ -385,6 +400,7 @@ const KeyResultsSection = ({ objectiveId, objectiveStatus, isEditableStatus, can
           onClose={handleAICancelConfirm}
           onConfirm={handleAIFinalConfirm}
           isPending={batchCreateMutation.isPending}
+          onEdit={(editedKeyResults) => setSelectedAIKeyResults(editedKeyResults)}
         />
       )}
     </div>

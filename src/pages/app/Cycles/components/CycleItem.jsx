@@ -57,8 +57,8 @@ const CycleItem = ({ cycle, onRefetch }) => {
       };
     }
     return {
-      text: 'Đang mở',
-      className: 'bg-green-100 text-green-600',
+      text: `Đang mở - Vượt quá ${Math.abs(daysRemaining)} ngày`,
+      className: 'bg-yellow-100 text-yellow-600',
     };
   };
 

@@ -10,19 +10,33 @@ const evaluationMethodLabels = {
   TARGET: 'Đạt mục tiêu'
 };
 
-const AIGenerateKRModal = ({ objectiveId, objectiveTitle, onClose, onConfirmCreate }) => {
-  const [step, setStep] = useState('input'); // 'input' | 'results'
-  const [formData, setFormData] = useState({
-    count: 5,
-    language: 'vi',
-    due_date: '',
-    unit: '',
-    evaluation_method: '',
-    context: ''
-  });
-  const [generatedData, setGeneratedData] = useState(null);
-  const [selectedSuggestions, setSelectedSuggestions] = useState(new Set());
-  const [editedSuggestions, setEditedSuggestions] = useState({});
+const AIGenerateKRModal = ({
+  objectiveId,
+  objectiveTitle,
+  onClose,
+  onConfirmCreate,
+  initialStep = 'input',
+  preservedState = null
+}) => {
+  // Khôi phục state từ preservedState nếu có (khi quay lại từ confirm modal)
+  const [step, setStep] = useState(preservedState?.step || initialStep);
+  const [formData, setFormData] = useState(
+    preservedState?.formData || {
+      count: 5,
+      language: 'vi',
+      due_date: '',
+      unit: '',
+      evaluation_method: '',
+      context: ''
+    }
+  );
+  const [generatedData, setGeneratedData] = useState(preservedState?.generatedData || null);
+  const [selectedSuggestions, setSelectedSuggestions] = useState(
+    preservedState?.selectedSuggestions || new Set()
+  );
+  const [editedSuggestions, setEditedSuggestions] = useState(
+    preservedState?.editedSuggestions || {}
+  );
   const [expandedEvaluations, setExpandedEvaluations] = useState(new Set());
 
   const generateMutation = useMutation({
@@ -104,19 +118,40 @@ const AIGenerateKRModal = ({ objectiveId, objectiveTitle, onClose, onConfirmCrea
     // Chuẩn bị dữ liệu để truyền sang modal xác nhận
     const selectedKeyResults = Array.from(selectedSuggestions).map(index => {
       const edited = editedSuggestions[index];
-      return {
+      const krData = {
         title: edited.title,
         target_value: parseFloat(edited.target_value) || 0,
         start_value: parseFloat(edited.start_value) || 0,
         current_value: parseFloat(edited.start_value) || 0,
         unit: edited.unit,
         weight: parseFloat(edited.weight) || 0,
-        due_date: edited.due_date,
         evaluation_method: edited.evaluation_method
       };
+
+      // Chuẩn hóa due_date: chuyển từ YYYY-MM-DD sang ISO datetime cho Zod .datetime()
+      // Backend dùng Zod .datetime() yêu cầu format ISO 8601: YYYY-MM-DDTHH:mm:ss.sssZ
+      if (edited.due_date && edited.due_date.trim()) {
+        const dateObj = new Date(edited.due_date);
+        if (!isNaN(dateObj.getTime())) {
+          // Set time về 00:00:00 UTC và chuyển sang ISO string
+          dateObj.setUTCHours(0, 0, 0, 0);
+          krData.due_date = dateObj.toISOString(); // YYYY-MM-DDTHH:mm:ss.sssZ
+        }
+      }
+
+      return krData;
     });
 
-    onConfirmCreate(selectedKeyResults);
+    // Lưu state hiện tại để có thể resume khi quay lại từ confirm modal
+    const stateToPreserve = {
+      step: 'results',
+      formData,
+      generatedData,
+      selectedSuggestions,
+      editedSuggestions
+    };
+
+    onConfirmCreate(selectedKeyResults, stateToPreserve);
   };
 
   const isInputStep = step === 'input';
@@ -399,8 +434,8 @@ const AIGenerateKRModal = ({ objectiveId, objectiveTitle, onClose, onConfirmCrea
                                 type="number"
                                 min="0"
                                 max="100"
-                                value={Math.round(edited.weight * 100)}
-                                onChange={(e) => handleEditSuggestion(index, 'weight', parseFloat(e.target.value) / 100)}
+                                value={edited.weight}
+                                onChange={(e) => handleEditSuggestion(index, 'weight', parseFloat(e.target.value))}
                                 className="w-full px-3 py-2 rounded-lg border border-secondary/20 bg-background text-text focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                               />
                             </div>

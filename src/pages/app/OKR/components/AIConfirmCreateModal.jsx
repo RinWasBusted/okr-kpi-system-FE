@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, AlertTriangle, ListTodo, Target, Calendar, Weight } from 'lucide-react';
 
 const evaluationMethodLabels = {
@@ -7,18 +7,36 @@ const evaluationMethodLabels = {
   TARGET: 'Đạt mục tiêu'
 };
 
-const AIConfirmCreateModal = ({ keyResults, onClose, onConfirm, isPending }) => {
-  const [isHovered, setIsHovered] = useState(false);
+const AIConfirmCreateModal = ({ keyResults, onClose, onConfirm, isPending, onEdit }) => {
+  // Local state để có thể chỉnh sửa weight inline
+  const [editableKeyResults, setEditableKeyResults] = useState(keyResults);
+
+  // Cập nhật khi keyResults prop thay đổi
+  useEffect(() => {
+    setEditableKeyResults(keyResults);
+  }, [keyResults]);
 
   // Tính tổng trọng số
-  const totalWeight = keyResults.reduce((sum, kr) => sum + (kr.weight || 0), 0);
+  const totalWeight = editableKeyResults.reduce((sum, kr) => sum + (kr.weight || 0), 0);
   const isWeightValid = totalWeight <= 100;
 
   const handleConfirm = () => {
     if (!isWeightValid) {
       return;
     }
+    // Truyền dữ liệu đã chỉnh sửa nếu có onEdit, ngược lại chỉ confirm
+    if (onEdit) {
+      onEdit(editableKeyResults);
+    }
     onConfirm();
+  };
+
+  const handleWeightChange = (index, newWeight) => {
+    setEditableKeyResults(prev =>
+      prev.map((kr, i) =>
+        i === index ? { ...kr, weight: parseFloat(newWeight) || 0 } : kr
+      )
+    );
   };
 
   return (
@@ -78,7 +96,7 @@ const AIConfirmCreateModal = ({ keyResults, onClose, onConfirm, isPending }) => 
           {/* Danh sách KR trong box scroll */}
           <div className="flex-1 overflow-y-auto p-6">
             <div className="space-y-3">
-              {keyResults.map((kr, index) => (
+              {editableKeyResults.map((kr, index) => (
                 <div
                   key={index}
                   className="border border-secondary/20 rounded-xl p-4 bg-background hover:border-primary/30 transition-colors"
@@ -104,9 +122,18 @@ const AIConfirmCreateModal = ({ keyResults, onClose, onConfirm, isPending }) => 
                     <div className="flex items-center gap-2 text-sm">
                       <Weight size={14} className="text-secondary" />
                       <span className="text-secondary">Trọng số:</span>
-                      <span className="font-medium text-primary">
-                        {Math.round(kr.weight * 100)}%
-                      </span>
+                      {!isPending ? (
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={kr.weight}
+                          onChange={(e) => handleWeightChange(index, e.target.value)}
+                          className="w-16 px-2 py-1 text-sm border border-secondary/20 rounded focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                        />
+                      ) : (
+                        <span className="font-medium text-primary">{Math.round(kr.weight)}%</span>
+                      )}
                     </div>
 
                     <div className="flex items-center gap-2 text-sm">
