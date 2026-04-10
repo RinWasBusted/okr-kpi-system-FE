@@ -197,3 +197,30 @@ export const cloneCycle = async (id) => {
         throw error;
     }
 };
+
+/**
+ * Delete a cycle
+ * @async
+ * @function deleteCycle
+ * @param {number} id - Cycle ID to delete
+ * 
+ * @returns {Promise<Object>} Response object
+ * @returns {boolean} response.success - Whether cycle was deleted successfully
+ * @returns {string} response.message - Response message
+ * @returns {Object} response.data - Deleted cycle ID
+ * @returns {number} response.data.id - The ID of deleted cycle
+ * 
+ * @throws {Error} If cycle not found or user lacks ADMIN_COMPANY role
+ * 
+ * @example
+ * const deleted = await deleteCycle(1);
+ * console.log(deleted.data.id); // Deleted cycle ID
+ */
+export const deleteCycle = async (id) => {
+    try {
+        const response = await axiosClient.delete(`/cycles/${id}`);
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+};
