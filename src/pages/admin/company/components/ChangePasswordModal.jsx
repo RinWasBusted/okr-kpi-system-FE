@@ -15,7 +15,7 @@ const ChangePasswordModal = ({ admin, companyId, onClose }) => {
       onClose();
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Failed to change password');
+      toast.error(error.response?.data?.error?.message || 'Failed to change password');
     },
   });
 

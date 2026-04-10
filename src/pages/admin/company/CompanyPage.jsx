@@ -45,7 +45,7 @@ const CompanyPage = () => {
         const response = await getCompanies({ per_page: 1000 });
         return response;
       } catch (error) {
-        toast.error(error.response?.data?.message || 'Failed to load companies');
+        toast.error(error.response?.data?.error?.message || 'Failed to load companies');
         throw error;
       }
     },

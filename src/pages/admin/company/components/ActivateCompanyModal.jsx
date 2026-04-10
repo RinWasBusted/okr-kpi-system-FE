@@ -14,7 +14,7 @@ const ActivateCompanyModal = ({ company, onClose, onSuccess }) => {
       onSuccess();
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Failed to activate company');
+      toast.error(error.response?.data?.error?.message || 'Failed to activate company');
     },
   });
 

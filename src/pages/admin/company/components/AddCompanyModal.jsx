@@ -31,7 +31,7 @@ const AddCompanyModal = ({ onClose, onSuccess }) => {
       onSuccess();
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Failed to create company');
+      toast.error(error.response?.data?.error?.message || 'Failed to create company');
     },
   });
 
