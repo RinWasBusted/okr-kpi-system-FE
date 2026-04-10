@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import ReactFlow, {
   Background,
@@ -211,13 +211,14 @@ const KeyResultsSection = ({ objectiveId }) => {
 // Custom Node Component for React Flow
 const ObjectiveNode = ({ data }) => {
   const navigate = useNavigate();
+  const { company_slug } = useParams();
   const { objective } = data;
 
   const hasChildren = objective.sub_objectives && objective.sub_objectives.length > 0;
   const isExpanded = data.isExpanded;
 
   const handleDetailClick = () => {
-    navigate(`./${objective.id}`);
+    navigate(`/${company_slug}/app/okr/${objective.id}`);
   };
 
   const handleToggleExpand = (e) => {
