@@ -4,11 +4,19 @@ import { X, Edit, Loader } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { updateCompany } from '../../../../services/company';
 
+const AI_PLAN_OPTIONS = [
+  { value: 'FREE', label: 'Free' },
+  { value: 'SUBSCRIPTION', label: 'Subscription' },
+  { value: 'PAY_AS_YOU_GO', label: 'Pay as you go' },
+];
+
 const EditCompanyModal = ({ company, onClose, onSuccess }) => {
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
     name: company.name || '',
     slug: company.slug || '',
+    ai_plan: company.ai_plan || 'FREE',
+    usage_limit: company.usage_limit || 0,
   });
 
   const updateMutation = useMutation({
@@ -16,6 +24,7 @@ const EditCompanyModal = ({ company, onClose, onSuccess }) => {
     onSuccess: (response) => {
       toast.success(response.message || 'Company updated successfully');
       queryClient.invalidateQueries({ queryKey: ['companies'] });
+      queryClient.invalidateQueries({ queryKey: ['companyStats', company.id] });
       onSuccess();
     },
     onError: (error) => {
@@ -56,6 +65,35 @@ const EditCompanyModal = ({ company, onClose, onSuccess }) => {
               value={formData.slug}
               onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
               className="w-full px-3 py-2 border border-secondary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 text-text"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-text mb-2">AI Plan</label>
+            <select
+              value={formData.ai_plan}
+              onChange={(e) => setFormData({ ...formData, ai_plan: e.target.value })}
+              className="w-full px-3 py-2 border border-secondary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 text-text bg-background"
+              required
+            >
+              {AI_PLAN_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-text mb-2">Usage Limit</label>
+            <input
+              type="number"
+              min="0"
+              value={formData.usage_limit}
+              onChange={(e) => setFormData({ ...formData, usage_limit: parseInt(e.target.value, 10) || 0 })}
+              className="w-full px-3 py-2 border border-secondary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 text-text"
+              placeholder="Enter usage limit"
               required
             />
           </div>

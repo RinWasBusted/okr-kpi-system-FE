@@ -153,6 +153,24 @@ const CompanyPage = () => {
               </button>
             </div>
           </div>
+
+          {/* AI Plan */}
+          <div>
+            <p className="text-sm text-secondary mb-1">AI Plan</p>
+            <p className="text-lg font-semibold text-text">{company?.ai_plan || 'FREE'}</p>
+          </div>
+
+          {/* Usage Limit */}
+          <div>
+            <p className="text-sm text-secondary mb-1">Usage Limit</p>
+            <p className="text-lg font-semibold text-text">{company?.usage_limit?.toLocaleString() || 0}</p>
+          </div>
+
+          {/* Token Usage */}
+          <div>
+            <p className="text-sm text-secondary mb-1">Token Usage</p>
+            <p className="text-lg font-semibold text-text">{company?.token_usage?.toLocaleString() || 0}</p>
+          </div>
         </div>
 
         {/* Stats Grid */}
