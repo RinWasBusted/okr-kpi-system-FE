@@ -1,4 +1,4 @@
-# Tên Project
+# OKR / KPI Management System (Frontend)
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/version-1.0.0-green.svg)](https://semver.org)
