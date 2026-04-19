@@ -1,7 +1,7 @@
 # Tên Project
 
-[![License](https://img.shields.io[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENbadge/license-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io[![Version](https://img.shields.io/badge/version-1.0.0-green.svg)](htbadge/version-1.0.0-green.svg)](https://semver.org)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Version](https://img.shields.io/badge/version-1.0.0-green.svg)](https://semver.org)
 
 ## Mô tả
 
