@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   getNotifications,
   markNotificationAsRead,
@@ -11,6 +11,38 @@ const PAGE_SIZE = 6;
 const TABS = {
   ALL: 'all',
   UNREAD: 'unread',
+};
+
+const prependUniqueNotification = (notifications, incomingNotification) => {
+  const filteredNotifications = notifications.filter(
+    (notification) => notification.id !== incomingNotification.id
+  );
+
+  return [incomingNotification, ...filteredNotifications];
+};
+
+const increasePaginationTotal = (pagination, pageSize = PAGE_SIZE) => {
+  if (!pagination) return pagination;
+
+  const total = (pagination.total || 0) + 1;
+
+  return {
+    ...pagination,
+    total,
+    total_pages: Math.max(1, Math.ceil(total / (pagination.page_size || pageSize))),
+  };
+};
+
+const decreasePaginationTotal = (pagination, pageSize = PAGE_SIZE) => {
+  if (!pagination) return pagination;
+
+  const total = Math.max(0, (pagination.total || 0) - 1);
+
+  return {
+    ...pagination,
+    total,
+    total_pages: total === 0 ? 0 : Math.max(1, Math.ceil(total / (pagination.page_size || pageSize))),
+  };
 };
 
 // Format thời gian
@@ -47,7 +79,7 @@ const NotificationSkeleton = () => (
 );
 
 // Notification item component
-const NotificationItem = ({ notification, onMarkAsRead, onRefresh }) => {
+const NotificationItem = ({ notification, onMarkAsRead }) => {
   const [showMenu, setShowMenu] = useState(false);
 
   const handleMarkAsRead = async (e) => {
@@ -56,7 +88,6 @@ const NotificationItem = ({ notification, onMarkAsRead, onRefresh }) => {
       try {
         await markNotificationAsRead(notification.id);
         onMarkAsRead?.(notification.id);
-        onRefresh?.();
       } catch {
         // Silent error
       }
@@ -69,7 +100,6 @@ const NotificationItem = ({ notification, onMarkAsRead, onRefresh }) => {
       try {
         await markNotificationAsRead(notification.id);
         onMarkAsRead?.(notification.id);
-        onRefresh?.();
       } catch {
         // Silent error
       }
@@ -163,113 +193,148 @@ const NotificationItem = ({ notification, onMarkAsRead, onRefresh }) => {
   );
 };
 
-const NotificationBoard = forwardRef(({ onUnreadCountChange }, ref) => {
+const NotificationBoard = ({
+  isOpen,
+  allNotifications,
+  allPagination,
+  allCurrentPage,
+  isAllLoading,
+  isAllLoadingMore,
+  unreadCount,
+  latestIncomingNotification,
+  onLoadMoreAll,
+  onNotificationRead,
+  onMarkAllAsRead,
+}) => {
   const [activeTab, setActiveTab] = useState(TABS.ALL);
-  const [notifications, setNotifications] = useState([]);
-  const [pagination, setPagination] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [unreadNotifications, setUnreadNotifications] = useState([]);
+  const [unreadPagination, setUnreadPagination] = useState(null);
+  const [isUnreadLoading, setIsUnreadLoading] = useState(false);
+  const [isUnreadLoadingMore, setIsUnreadLoadingMore] = useState(false);
+  const [unreadCurrentPage, setUnreadCurrentPage] = useState(1);
+  const [hasFetchedUnread, setHasFetchedUnread] = useState(false);
 
-  // Fetch notifications
-  const fetchNotifications = useCallback(
-    async (page = 1, isLoadMore = false) => {
-      try {
-        if (isLoadMore) {
-          setIsLoadingMore(true);
-        } else {
-          setIsLoading(true);
-        }
-
-        const params = {
-          page,
-          page_size: PAGE_SIZE,
-          ...(activeTab === TABS.UNREAD && { is_read: false }),
-        };
-
-        const response = await getNotifications(params);
-        const newItems = response.data?.items || [];
-        const newPagination = response.data?.pagination;
-
-        if (isLoadMore) {
-          setNotifications((prev) => [...prev, ...newItems]);
-        } else {
-          setNotifications(newItems);
-        }
-
-        setPagination(newPagination);
-      } catch {
-        // Silent error
-      } finally {
-        setIsLoading(false);
-        setIsLoadingMore(false);
+  const fetchUnreadNotifications = useCallback(async (page = 1, isLoadMore = false) => {
+    try {
+      if (isLoadMore) {
+        setIsUnreadLoadingMore(true);
+      } else {
+        setIsUnreadLoading(true);
       }
-    },
-    [activeTab]
-  );
 
-  // Initial fetch
+      const response = await getNotifications({
+        page,
+        page_size: PAGE_SIZE,
+        is_read: false,
+      });
+      const items = response.data?.items || [];
+      const pagination = response.data?.pagination || null;
+
+      setUnreadNotifications((prev) => {
+        if (!isLoadMore) {
+          return items;
+        }
+
+        const existingIds = new Set(prev.map((notification) => notification.id));
+        const uniqueItems = items.filter((notification) => !existingIds.has(notification.id));
+        return [...prev, ...uniqueItems];
+      });
+      setUnreadPagination(pagination);
+      setUnreadCurrentPage(page);
+      setHasFetchedUnread(true);
+    } catch {
+      // Silent error
+    } finally {
+      setIsUnreadLoading(false);
+      setIsUnreadLoadingMore(false);
+    }
+  }, []);
+
   useEffect(() => {
-    fetchNotifications(1, false);
-  }, [fetchNotifications]);
+    if (!isOpen || activeTab !== TABS.UNREAD || hasFetchedUnread) {
+      return;
+    }
 
-  // Expose preload function via ref
-  useImperativeHandle(ref, () => ({
-    preload: () => {
-      if (notifications.length === 0 && !isLoading) {
-        fetchNotifications(1, false);
-      }
-    },
-    refresh: () => {
-      fetchNotifications(1, false);
-    },
-  }));
+    fetchUnreadNotifications(1, false);
+  }, [activeTab, fetchUnreadNotifications, hasFetchedUnread, isOpen]);
 
-  // Refresh function
-  const handleRefresh = useCallback(() => {
-    fetchNotifications(currentPage, false);
-  }, [fetchNotifications, currentPage]);
+  useEffect(() => {
+    if (!hasFetchedUnread || !latestIncomingNotification) {
+      return;
+    }
+
+    setUnreadNotifications((prev) =>
+      prependUniqueNotification(prev, latestIncomingNotification)
+    );
+    setUnreadPagination((prev) => increasePaginationTotal(prev));
+  }, [hasFetchedUnread, latestIncomingNotification]);
 
   // Handle tab change
   const handleTabChange = (tab) => {
     setActiveTab(tab);
-    setCurrentPage(1);
   };
 
   // Handle load more
   const handleLoadMore = () => {
-    const nextPage = currentPage + 1;
-    setCurrentPage(nextPage);
-    fetchNotifications(nextPage, true);
+    if (activeTab === TABS.ALL) {
+      onLoadMoreAll?.();
+      return;
+    }
+
+    const nextPage = unreadCurrentPage + 1;
+    fetchUnreadNotifications(nextPage, true);
   };
 
   // Mark single as read (local update)
   const handleMarkAsRead = useCallback((id) => {
-    setNotifications((prev) =>
-      prev.map((noti) =>
-        noti.id === id ? { ...noti, is_read: true } : noti
-      )
+    onNotificationRead?.(id);
+
+    if (!hasFetchedUnread) {
+      return;
+    }
+
+    setUnreadNotifications((prev) =>
+      prev.filter((notification) => notification.id !== id)
     );
-  }, []);
+    setUnreadPagination((prev) => decreasePaginationTotal(prev));
+  }, [hasFetchedUnread, onNotificationRead]);
 
   // Mark all as read
   const handleMarkAllAsRead = async () => {
     try {
       await markAllNotificationsAsRead();
-      // Refresh lại danh sách
-      fetchNotifications(1, false);
-      // Trigger refresh count
-      onUnreadCountChange?.();
+      onMarkAllAsRead?.();
+
+      if (hasFetchedUnread) {
+        setUnreadNotifications([]);
+        setUnreadPagination((prev) =>
+          prev
+            ? {
+                ...prev,
+                page: 1,
+                total: 0,
+                total_pages: 0,
+              }
+            : prev
+        );
+        setUnreadCurrentPage(1);
+      }
     } catch {
       // Silent error
     }
   };
 
+  const notifications = activeTab === TABS.ALL ? allNotifications : unreadNotifications;
+  const pagination = activeTab === TABS.ALL ? allPagination : unreadPagination;
+  const isLoading = activeTab === TABS.ALL ? isAllLoading : isUnreadLoading;
+  const isLoadingMore = activeTab === TABS.ALL ? isAllLoadingMore : isUnreadLoadingMore;
+  const currentPage = activeTab === TABS.ALL ? allCurrentPage : unreadCurrentPage;
+
   // Check if has more pages
   const hasMore = pagination && currentPage < pagination.total_pages;
 
   // Check if has unread notifications
-  const hasUnread = notifications.some((n) => !n.is_read);
+  const hasUnread = unreadCount > 0;
 
   return (
     <div className="w-96 max-w-[90vw]">
@@ -343,10 +408,6 @@ const NotificationBoard = forwardRef(({ onUnreadCountChange }, ref) => {
                 key={notification.id}
                 notification={notification}
                 onMarkAsRead={handleMarkAsRead}
-                onRefresh={() => {
-                  handleRefresh();
-                  onUnreadCountChange?.();
-                }}
               />
             ))}
 
@@ -367,6 +428,6 @@ const NotificationBoard = forwardRef(({ onUnreadCountChange }, ref) => {
       </div>
     </div>
   );
-});
+};
 
 export default NotificationBoard;

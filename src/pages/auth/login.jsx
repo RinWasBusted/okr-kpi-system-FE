@@ -38,11 +38,11 @@ const Login = () => {
                     navigate(`/${userData.company_slug}/app`);
                 }
             } else {
-                toast.error(response?.data?.error?.message || 'Login failed');
+                toast.error(response?.error?.message || 'Login failed');
             }
         },
         onError: (error) => {
-            const errorMessage = error.response?.data?.message || error.message || 'Login failed';
+            const errorMessage = error.response?.data?.message || 'Login failed';
             toast.error(errorMessage);
         },
     });

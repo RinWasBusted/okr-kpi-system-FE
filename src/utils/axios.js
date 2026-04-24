@@ -32,8 +32,8 @@ axiosClient.interceptors.response.use(
     async (error) => {
         const originalRequest = error.config;
 
-        // Only retry on 401 and not already retried
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        // Only retry on 401 and not already retried, and not a login request
+        if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url.includes('/auth/login')) {
             if (isRefreshing) {
                 return new Promise((resolve, reject) => {
                     failedQueue.push({ resolve, reject });

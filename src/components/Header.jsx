@@ -1,19 +1,32 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Moon,
   Sun,
   Bell,
   User,
-  Settings,
   LogOut,
 } from 'lucide-react';
 import { logout } from '../services/auth';
-import { getUnreadCount } from '../services/notification';
+import {
+  getNotifications,
+  getUnreadCount,
+  streamNotifications,
+} from '../services/notification';
 import { useTheme } from '../hooks/useTheme';
 import { useAuthStore } from '../hooks/useAuth';
 import { User_avatar } from '../assets';
 import NotificationBoard from './NotificationBoard';
+
+const PAGE_SIZE = 6;
+
+const prependUniqueNotification = (notifications, incomingNotification) => {
+  const filteredNotifications = notifications.filter(
+    (notification) => notification.id !== incomingNotification.id
+  );
+
+  return [incomingNotification, ...filteredNotifications];
+};
 
 const Header = () => {
   const navigate = useNavigate();
@@ -23,39 +36,172 @@ const Header = () => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isNotiOpen, setIsNotiOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [allNotifications, setAllNotifications] = useState([]);
+  const [allPagination, setAllPagination] = useState(null);
+  const [allCurrentPage, setAllCurrentPage] = useState(1);
+  const [isAllLoading, setIsAllLoading] = useState(false);
+  const [isAllLoadingMore, setIsAllLoadingMore] = useState(false);
+  const [latestIncomingNotification, setLatestIncomingNotification] = useState(null);
   const userMenuRef = useRef(null);
   const notiMenuRef = useRef(null);
-  const notificationBoardRef = useRef(null);
+  const eventSourceRef = useRef(null);
+  const allNotificationsRef = useRef([]);
 
   // Lấy company_slug từ URL nếu có
   const getCompanySlug = () => {
     return company_slug || null;
   };
 
-  // Fetch unread count
-  const fetchUnreadCount = async () => {
+  useEffect(() => {
+    allNotificationsRef.current = allNotifications;
+  }, [allNotifications]);
+
+  // Setup SSE stream để nhận real-time notification updates
+  const setupNotificationStream = useCallback(() => {
+    if (eventSourceRef.current) return; // Nếu đã có stream rồi thì không setup lại
+
+    try {
+      const eventSource = streamNotifications();
+
+      eventSource.onmessage = (event) => {
+        try {
+          const notification = JSON.parse(event.data);
+
+          if (
+            allNotificationsRef.current.some(
+              (existingNotification) => existingNotification.id === notification.id
+            )
+          ) {
+            return;
+          }
+
+          const nextNotifications = prependUniqueNotification(
+            allNotificationsRef.current,
+            notification
+          );
+
+          allNotificationsRef.current = nextNotifications;
+          setAllNotifications(nextNotifications);
+          setLatestIncomingNotification(notification);
+          setUnreadCount((prev) => prev + 1);
+        } catch (error) {
+          console.error('Error parsing notification:', error);
+        }
+      };
+
+      eventSource.onerror = () => {
+        console.error('Notification stream error');
+        eventSource.close();
+        eventSourceRef.current = null;
+      };
+
+      eventSourceRef.current = eventSource;
+    } catch (error) {
+      console.error('Failed to setup notification stream:', error);
+    }
+  }, []);
+
+  // Cleanup SSE stream
+  const cleanupNotificationStream = useCallback(() => {
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
+      eventSourceRef.current = null;
+    }
+  }, []);
+
+  // Initial fetch unread count khi component mount
+  const fetchUnreadCount = useCallback(async () => {
     try {
       const response = await getUnreadCount();
       setUnreadCount(response.data?.unread_count || 0);
     } catch {
       // Silent error
     }
-  };
-
-  // Fetch unread count on mount và interval
-  useEffect(() => {
-    if(user.role === 'ADMIN') return; // Admin không cần notification
-    fetchUnreadCount();
-    const interval = setInterval(fetchUnreadCount, 30000); // 30s refresh
-    return () => clearInterval(interval);
   }, []);
 
-  // Refresh khi đóng/mở notification
-  useEffect(() => {
-    if (isNotiOpen) {
-      fetchUnreadCount();
+  const fetchAllNotifications = useCallback(async (page = 1, isLoadMore = false) => {
+    try {
+      if (isLoadMore) {
+        setIsAllLoadingMore(true);
+      } else {
+        setIsAllLoading(true);
+      }
+
+      const response = await getNotifications({
+        page,
+        page_size: PAGE_SIZE,
+      });
+      const items = response.data?.items || [];
+      const pagination = response.data?.pagination || null;
+
+      setAllNotifications((prev) => {
+        let nextNotifications = items;
+
+        if (isLoadMore) {
+          const existingIds = new Set(prev.map((notification) => notification.id));
+          const uniqueItems = items.filter((notification) => !existingIds.has(notification.id));
+          nextNotifications = [...prev, ...uniqueItems];
+        }
+
+        allNotificationsRef.current = nextNotifications;
+        return nextNotifications;
+      });
+      setAllPagination(pagination);
+      setAllCurrentPage(page);
+
+      return true;
+    } catch {
+      return false;
+    } finally {
+      setIsAllLoading(false);
+      setIsAllLoadingMore(false);
     }
-  }, [isNotiOpen]);
+  }, []);
+
+  const handleLoadMoreAllNotifications = useCallback(() => {
+    const nextPage = allCurrentPage + 1;
+    fetchAllNotifications(nextPage, true);
+  }, [allCurrentPage, fetchAllNotifications]);
+
+  const handleNotificationRead = useCallback((id) => {
+    const existingNotification = allNotificationsRef.current.find(
+      (notification) => notification.id === id
+    );
+
+    if (!existingNotification || existingNotification.is_read) {
+      return;
+    }
+
+    setAllNotifications((prev) => {
+      const nextNotifications = prev.map((notification) =>
+        notification.id === id
+          ? { ...notification, is_read: true }
+          : notification
+      );
+
+      allNotificationsRef.current = nextNotifications;
+      return nextNotifications;
+    });
+    setUnreadCount((prev) => Math.max(0, prev - 1));
+  }, []);
+
+  const handleMarkAllNotificationsRead = useCallback(() => {
+    if (!allNotificationsRef.current.some((notification) => !notification.is_read)) {
+      return;
+    }
+
+    setAllNotifications((prev) => {
+      const nextNotifications = prev.map((notification) =>
+        notification.is_read
+          ? notification
+          : { ...notification, is_read: true }
+      );
+
+      allNotificationsRef.current = nextNotifications;
+      return nextNotifications;
+    });
+    setUnreadCount(0);
+  }, []);
 
   // Đóng dropdown khi click ra ngoài
   useEffect(() => {
@@ -72,12 +218,60 @@ const Header = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    if (!user || user.role === 'ADMIN') {
+      cleanupNotificationStream();
+      allNotificationsRef.current = [];
+      setAllNotifications([]);
+      setAllPagination(null);
+      setAllCurrentPage(1);
+      setUnreadCount(0);
+      setLatestIncomingNotification(null);
+      return undefined;
+    }
+
+    let isActive = true;
+
+    const bootstrapNotifications = async () => {
+      cleanupNotificationStream();
+      setLatestIncomingNotification(null);
+
+      const isBootstrapSuccess = await fetchAllNotifications(1, false);
+
+      if (!isActive || !isBootstrapSuccess) {
+        return;
+      }
+
+      await fetchUnreadCount();
+
+      if (isActive) {
+        setupNotificationStream();
+      }
+    };
+
+    bootstrapNotifications();
+
+    return () => {
+      isActive = false;
+      cleanupNotificationStream();
+    };
+  }, [
+    cleanupNotificationStream,
+    fetchAllNotifications,
+    fetchUnreadCount,
+    setupNotificationStream,
+    user?.id,
+    user?.role,
+  ]);
+
   const handleThemeToggle = () => {
     setTheme(theme === 'light' ? 'dark' : 'light');
   };
 
   const handleLogout = async () => {
     try {
+      // Cleanup stream trước khi logout
+      cleanupNotificationStream();
       await logout();
       clearAuth();
       const companySlug = getCompanySlug();
@@ -117,7 +311,6 @@ const Header = () => {
           <div className="relative" ref={notiMenuRef}>
             <button
               onClick={() => setIsNotiOpen(!isNotiOpen)}
-              onMouseEnter={() => notificationBoardRef.current?.preload()}
               className="p-2 rounded-lg text-text hover:bg-secondary/10 transition-colors relative cursor-pointer"
               aria-label="Notifications"
             >
@@ -136,7 +329,19 @@ const Header = () => {
                 !isNotiOpen && 'hidden'
               }`}
             >
-              <NotificationBoard ref={notificationBoardRef} onUnreadCountChange={fetchUnreadCount} />
+              <NotificationBoard
+                isOpen={isNotiOpen}
+                allNotifications={allNotifications}
+                allPagination={allPagination}
+                allCurrentPage={allCurrentPage}
+                isAllLoading={isAllLoading}
+                isAllLoadingMore={isAllLoadingMore}
+                unreadCount={unreadCount}
+                latestIncomingNotification={latestIncomingNotification}
+                onLoadMoreAll={handleLoadMoreAllNotifications}
+                onNotificationRead={handleNotificationRead}
+                onMarkAllAsRead={handleMarkAllNotificationsRead}
+              />
             </div>
           </div>
         )}

@@ -297,7 +297,7 @@ const EmployeePage = () => {
                         <span className="font-medium text-text">{user.full_name}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-4 text-secondary">{user.job_title || '-'}</td>
+                    <td className="px-4 py-4 text-secondary">{user.role === 'EMPLOYEE' ? user.job_title || '-' : "Admin"}</td>
                     <td className="px-4 py-4 text-secondary">{user.email}</td>
                     <td className="px-4 py-4 text-secondary">{user.unit?.name || '-'}</td>
                     <td className="px-4 py-4">

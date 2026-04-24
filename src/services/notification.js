@@ -105,3 +105,83 @@ export const markNotificationAsRead = async (id) => {
   const response = await axiosClient.patch(`/notifications/${id}/read`);
   return response.data;
 };
+
+/**
+ * Stream real-time notifications using Server-Sent Events (SSE) (GET /notifications/stream)
+ * Establishes a persistent connection to receive real-time notifications for the authenticated user.
+ * This endpoint uses Server-Sent Events (SSE) to push notification data to the client as they occur.
+ * The connection remains open until the client closes it or an error occurs.
+ * 
+ * @function streamNotifications
+ * 
+ * @returns {EventSource} EventSource object for managing the SSE connection
+ * 
+ * @description
+ * Establishes an SSE connection to receive real-time notifications.
+ * Each notification is sent as a separate SSE event with JSON data payload.
+ * Authentication is handled automatically via cookies (withCredentials).
+ * 
+ * Notification event structure:
+ * @property {number} id - Unique identifier of the notification
+ * @property {string} message - Human-readable notification message (e.g., "Người dùng John Doe đã cập nhật mục tiêu")
+ * @property {string} ref_type - Type of resource referenced in the notification
+ *   - OBJECTIVE: Objective resource
+ *   - KPI: KPI resource
+ *   - KEY_RESULT: Key Result resource
+ *   - KPI_ASSIGNMENT: KPI Assignment resource
+ *   - FEEDBACK: Feedback resource
+ *   - USER: User resource
+ * @property {number} ref_id - ID of the referenced resource
+ * @property {string} event_type - Type of event that triggered the notification
+ *   - CREATED: Resource was created
+ *   - UPDATED: Resource was updated
+ *   - DELETED: Resource was deleted
+ *   - STATUS_CHANGED: Status of resource changed
+ *   - ASSIGNED: Resource was assigned
+ *   - FEEDBACK_SUBMITTED: Feedback was submitted
+ * @property {string} created_at - Timestamp when the notification was created (ISO 8601 format)
+ * 
+ * Response headers:
+ * @returns {string} Content-Type - "text/event-stream" (SSE format)
+ * @returns {string} Cache-Control - "no-cache" (disable caching for real-time events)
+ * @returns {string} Connection - "keep-alive" (keep connection open for streaming)
+ * 
+ * @throws {Error} If connection fails:
+ *   - 401: Unauthorized - Invalid or missing authentication token
+ *   - 500: Internal server error - Stream connection failed
+ * 
+ * @example
+ * // Subscribe to real-time notifications
+ * const eventSource = streamNotifications();
+ * 
+ * eventSource.onmessage = (event) => {
+ *   const notification = JSON.parse(event.data);
+ *   console.log('New notification:', notification);
+ *   // {
+ *   //   id: 123,
+ *   //   message: "Người dùng John Doe đã cập nhật mục tiêu",
+ *   //   ref_type: "OBJECTIVE",
+ *   //   ref_id: 456,
+ *   //   event_type: "UPDATED",
+ *   //   created_at: "2026-04-22T10:30:45.000Z"
+ *   // }
+ * };
+ * 
+ * eventSource.onerror = () => {
+ *   console.error('Stream connection error');
+ *   eventSource.close();
+ * };
+ * 
+ * // Later, when you want to stop listening
+ * eventSource.close();
+ */
+export const streamNotifications = () => {
+  const eventSource = new EventSource(
+    `${import.meta.env.VITE_SERVER_BASE_URL}/notifications/stream`,
+    {
+      withCredentials: true,
+    }
+  );
+  
+  return eventSource;
+};
