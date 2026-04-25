@@ -160,7 +160,7 @@ const AIGenerateKRModal = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-5xl mx-4 max-h-[90vh] flex flex-col">
+      <div className="relative bg-background rounded-2xl shadow-xl w-full max-w-5xl mx-4 max-h-[90vh] flex flex-col border border-secondary/20">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-secondary/20">
           <div className="flex items-center gap-3">
@@ -305,23 +305,23 @@ const AIGenerateKRModal = ({
             <div className="space-y-6">
               {/* Thông tin tổng quan */}
               {generatedData.overall_feedback && (
-                <div className="bg-linear-to-r from-violet-50 to-purple-50 border border-violet-200 rounded-xl p-4">
+                <div className="bg-violet-500/10 border border-violet-500/30 rounded-xl p-4">
                   <h3 className="font-medium text-violet-800 mb-2 flex items-center gap-2">
                     <Info size={16} />
                     Đánh giá tổng quan
                   </h3>
-                  <p className="text-sm text-violet-700 mb-2">
+                  <p className="text-sm text-text mb-2">
                     {generatedData.overall_feedback.summary}
                   </p>
                   {generatedData.overall_feedback.alignment_analysis && (
-                    <p className="text-sm text-violet-600">
+                    <p className="text-sm text-secondary">
                       <strong>Phân tích sự liên kết:</strong> {generatedData.overall_feedback.alignment_analysis}
                     </p>
                   )}
                   {generatedData.overall_feedback.risks?.length > 0 && (
                     <div className="mt-2">
-                      <p className="text-sm text-violet-700 font-medium">Rủi ro:</p>
-                      <ul className="text-sm text-violet-600 list-disc list-inside">
+                      <p className="text-sm text-text font-medium">Rủi ro:</p>
+                      <ul className="text-sm text-secondary list-disc list-inside">
                         {generatedData.overall_feedback.risks.map((risk, i) => (
                           <li key={i}>{risk}</li>
                         ))}
@@ -368,8 +368,8 @@ const AIGenerateKRModal = ({
                       key={index}
                       className={`border rounded-xl transition-all ${
                         isSelected
-                          ? 'border-primary bg-orange-50/30'
-                          : 'border-secondary/20 bg-white opacity-60'
+                          ? 'border-primary bg-primary/5'
+                          : 'border-secondary/20 bg-background opacity-60'
                       }`}
                     >
                       {/* Header của suggestion */}
@@ -465,8 +465,8 @@ const AIGenerateKRModal = ({
                               </select>
                             </div>
                             {evaluation.fit_score !== undefined && (
-                              <div className="flex items-center gap-2 px-3 py-2 bg-violet-100 rounded-lg">
-                                <span className="text-sm font-medium text-violet-700">
+                              <div className="flex items-center gap-2 px-3 py-2 bg-violet-500/20 rounded-lg">
+                                <span className="text-sm font-medium text-violet-400">
                                   Fit Score: {evaluation.fit_score}/100
                                 </span>
                               </div>
@@ -485,16 +485,16 @@ const AIGenerateKRModal = ({
                               </button>
 
                               {isExpanded && (
-                                <div className="mt-3 space-y-2 bg-violet-50/50 rounded-lg p-3">
+                                <div className="mt-3 space-y-2 bg-violet-500/10 rounded-lg p-3">
                                   {evaluation.fit_reason && (
-                                    <p className="text-sm text-violet-700">
+                                    <p className="text-sm text-secondary">
                                       <strong>Lý do phù hợp:</strong> {evaluation.fit_reason}
                                     </p>
                                   )}
                                   {evaluation.issues?.length > 0 && (
                                     <div>
-                                      <p className="text-sm text-violet-700 font-medium">Vấn đề tiềm ẩn:</p>
-                                      <ul className="text-sm text-violet-600 list-disc list-inside">
+                                      <p className="text-sm text-text font-medium">Vấn đề tiềm ẩn:</p>
+                                      <ul className="text-sm text-secondary list-disc list-inside">
                                         {evaluation.issues.map((issue, i) => (
                                           <li key={i}>{issue}</li>
                                         ))}

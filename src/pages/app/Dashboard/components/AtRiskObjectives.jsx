@@ -6,14 +6,14 @@ import { getObjectives } from '../../../../services/objective';
 
 const STATUS_CONFIG = {
   AT_RISK: {
-    label: 'At Risk',
+    label: 'CÓ RỦI RO',
     icon: AlertTriangle,
     colorClass: 'text-amber-500',
     bgClass: 'bg-amber-500/10',
     borderClass: 'border-amber-500/20',
   },
   CRITICAL: {
-    label: 'Critical',
+    label: 'NGUY CẤP',
     icon: AlertOctagon,
     colorClass: 'text-red-500',
     bgClass: 'bg-red-500/10',
@@ -60,7 +60,7 @@ const ObjectiveItem = ({ objective, companySlug }) => {
           <div className="flex items-center gap-2">
             <Target size={12} className="text-secondary/70" />
             <span className="text-xs text-secondary">{objective.progress_percentage}%</span>
-            <span className={`text-xs font-medium ${config.colorClass}`}>{config.label}</span>
+            <span className={`text-[10px] font-bold uppercase tracking-wider ${config.colorClass}`}>{config.label}</span>
           </div>
 
           <button

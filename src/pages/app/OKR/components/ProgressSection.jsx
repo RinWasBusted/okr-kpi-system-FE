@@ -47,14 +47,15 @@ const ProgressSection = ({ objective }) => {
     switch (status) {
       case 'COMPLETED':
       case 'ON_TRACK':
-        return { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'on-track' };
+        return { bg: 'bg-emerald-500/10', text: 'text-emerald-500', label: 'ĐÚNG HẠN' };
       case 'WARNING':
-        return { bg: 'bg-orange-100', text: 'text-orange-700', label: 'at-risk' };
+        return { bg: 'bg-orange-500/10', text: 'text-orange-500', label: 'RỦI RO' };
+      case 'CRITICAL':
       case 'DANGER':
       case 'NOT_STARTED':
-        return { bg: 'bg-red-100', text: 'text-red-700', label: 'at-risk' };
+        return { bg: 'bg-red-500/10', text: 'text-red-500', label: 'CHẬM TRỄ' };
       default:
-        return { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'on-track' };
+        return { bg: 'bg-emerald-500/10', text: 'text-emerald-500', label: 'ĐÚNG HẠN' };
     }
   };
 
@@ -64,7 +65,7 @@ const ProgressSection = ({ objective }) => {
     <div className="bg-background rounded-xl border border-secondary/20 p-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-text">Tiến độ</h3>
-        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusConfig.bg} ${statusConfig.text}`}>
+        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${statusConfig.bg} ${statusConfig.text}`}>
           {statusConfig.label}
         </span>
       </div>
@@ -75,7 +76,7 @@ const ProgressSection = ({ objective }) => {
       </div>
 
       {/* Overall progress bar - shows actual progress percentage */}
-      <div className="h-4 bg-gray-100 rounded-full overflow-hidden mb-4">
+      <div className="h-4 bg-secondary/10 rounded-full overflow-hidden mb-4">
         <div
           className="h-full bg-primary rounded-full transition-all duration-300"
           style={{ width: `${objective?.progress_percentage || 0}%` }}

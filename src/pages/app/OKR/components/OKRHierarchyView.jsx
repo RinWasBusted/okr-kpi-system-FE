@@ -100,7 +100,7 @@ const ProgressBar = ({ percentage }) => {
         <span className="text-xs text-secondary">Progress</span>
         <span className="text-sm font-semibold text-text">{percentage || 0}%</span>
       </div>
-      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+      <div className="h-2 bg-secondary/10 rounded-full overflow-hidden">
         <div
           className={`h-full ${getColor(percentage)} rounded-full transition-all duration-300`}
           style={{ width: `${Math.min(percentage || 0, 100)}%` }}
@@ -129,7 +129,7 @@ const KeyResultItem = ({ kr }) => {
             {kr.title}
           </p>
           <div className="flex items-center gap-2 mt-1">
-            <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+            <div className="flex-1 h-1.5 bg-secondary/10 rounded-full overflow-hidden">
               <div
                 className={`h-full ${getProgressColor(progress)} rounded-full`}
                 style={{ width: `${Math.min(progress, 100)}%` }}
@@ -182,7 +182,7 @@ const KeyResultsSection = ({ objectiveId }) => {
         className="flex items-center gap-1.5 text-xs font-medium text-text hover:text-primary transition-colors cursor-pointer w-full"
       >
         <TrendingUp size={14} className="text-primary" />
-        <span>Các Key Results</span>
+        <span>Các Kết quả then chốt</span>
         {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
       </button>
 
@@ -524,7 +524,7 @@ const OKRHierarchyView = ({ objectives }) => {
   }
 
   return (
-    <div className="h-200 bg-gray-50 rounded-xl border border-secondary/20 overflow-hidden">
+    <div className="h-200 bg-background rounded-xl border border-secondary/20 overflow-hidden">
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -554,9 +554,8 @@ const OKRHierarchyView = ({ objectives }) => {
         <Background color="#CBD5E1" gap={16} size={1} />
         <Controls />
         <MiniMap
-          nodeColor="#F97316"
-          maskColor="rgba(255, 255, 255, 0.8)"
-          className="bg-white/50"
+          nodeColor={n => n.data?.color || 'var(--secondary)'}
+          maskColor="rgba(0, 0, 0, 0.3)"
         />
       </ReactFlow>
     </div>

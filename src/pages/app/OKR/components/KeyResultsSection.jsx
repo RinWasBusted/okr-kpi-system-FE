@@ -22,23 +22,39 @@ const KeyResultItem = ({ keyResult, onEdit, onDelete, onCheckIn, objectiveStatus
     return 'bg-red-500';
   };
 
-  const getStatusBadge = (status) => {
-    switch (status) {
+  const getStatusBadge = (status, progress) => {
+    // If progress is 100%, always show as Completed
+    if (progress >= 100) {
+      return { bg: 'bg-blue-500/10', text: 'text-blue-500', label: 'HOÀN THÀNH' };
+    }
+
+    const s = status?.toUpperCase() || '';
+    switch (s) {
       case 'COMPLETED':
+        return { bg: 'bg-blue-500/10', text: 'text-blue-500', label: 'HOÀN THÀNH' };
       case 'ON_TRACK':
-        return { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'on-track' };
+      case 'ON-TRACK':
+        return { bg: 'bg-emerald-500/10', text: 'text-emerald-500', label: 'ĐANG ĐÚNG HẠN' };
       case 'WARNING':
-        return { bg: 'bg-orange-100', text: 'text-orange-700', label: 'at-risk' };
+      case 'AT_RISK':
+      case 'AT-RISK':
+        return { bg: 'bg-orange-500/10', text: 'text-orange-500', label: 'CÓ RỦI RO' };
       case 'DANGER':
+      case 'CRITICAL':
       case 'NOT_STARTED':
-        return { bg: 'bg-red-100', text: 'text-red-700', label: 'at-risk' };
+      case 'NOT-STARTED':
+        return { bg: 'bg-red-500/10', text: 'text-red-500', label: 'CHẬM TIẾN ĐỘ' };
       default:
-        return { bg: 'bg-orange-100', text: 'text-orange-700', label: 'at-risk' };
+        // If progress > 0 but status is missing, show as On Track
+        if (progress > 0) {
+          return { bg: 'bg-emerald-500/10', text: 'text-emerald-500', label: 'ĐANG ĐÚNG HẠN' };
+        }
+        return { bg: 'bg-secondary/10', text: 'text-secondary', label: 'CHƯA BẮT ĐẦU' };
     }
   };
 
   const progressColor = getProgressColor(progress);
-  const statusConfig = getStatusBadge(keyResult.progress_status);
+  const statusConfig = getStatusBadge(keyResult.progress_status || keyResult.status, progress);
 
   // Check permissions from API
   const canView = keyResult.permission?.view === true;
@@ -62,10 +78,10 @@ const KeyResultItem = ({ keyResult, onEdit, onDelete, onCheckIn, objectiveStatus
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-2">
             <h4 className="font-medium text-text">{keyResult.title}</h4>
-            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusConfig.bg} ${statusConfig.text}`}>
+            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${statusConfig.bg} ${statusConfig.text}`}>
               {statusConfig.label}
             </span>
-            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-primary">
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary">
               Weight: {keyResult.weight || 33.33}%
             </span>
           </div>
@@ -76,7 +92,7 @@ const KeyResultItem = ({ keyResult, onEdit, onDelete, onCheckIn, objectiveStatus
 
           {/* Progress bar with Check-in button */}
           <div className="flex items-center gap-3 mb-3">
-            <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+            <div className="flex-1 h-2 bg-secondary/10 rounded-full overflow-hidden">
               <div
                 className={`h-full ${progressColor} rounded-full transition-all duration-300`}
                 style={{ width: `${Math.min(progress, 100)}%` }}
@@ -142,7 +158,7 @@ const DeleteConfirmModal = ({ keyResult, onClose, onConfirm, isPending }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
+      <div className="relative bg-background rounded-2xl shadow-xl w-full max-w-md mx-4 p-6 border border-secondary/20">
         <h2 className="text-lg font-semibold text-text mb-4">Xác nhận xóa</h2>
         <p className="text-secondary mb-6">
           Bạn có chắc chắn muốn xóa Key Result &quot;<strong>{keyResult.title}</strong>&quot;?
@@ -309,7 +325,7 @@ const KeyResultsSection = ({ objectiveId, objectiveStatus, isEditableStatus, can
         {isLoading ? (
           <div className="space-y-4">
             {Array.from({ length: 2 }).map((_, i) => (
-              <div key={i} className="h-24 bg-gray-100 rounded-xl animate-pulse" />
+              <div key={i} className="h-24 bg-secondary/10 rounded-xl animate-pulse" />
             ))}
           </div>
         ) : keyResults.length === 0 ? (

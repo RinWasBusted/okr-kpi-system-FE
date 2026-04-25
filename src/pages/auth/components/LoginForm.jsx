@@ -90,8 +90,8 @@ export default function LoginForm({
       <div className="w-full max-w-md mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-text mb-2">Sign In</h2>
-          <p className="text-secondary text-sm">Welcome back! Please enter your details.</p>
+          <h2 className="text-2xl font-bold text-text mb-2">Đăng nhập</h2>
+          <p className="text-secondary text-sm">Chào mừng quay trở lại! Vui lòng nhập thông tin của bạn.</p>
         </div>
 
         {/* Form */}
@@ -108,9 +108,9 @@ export default function LoginForm({
               value={email}
               onChange={handleChange}
               onBlur={handleBlur}
-              placeholder="email"
+              placeholder="Nhập email"
               disabled={isPending}
-              className={`w-full px-4 py-2.5 bg-background/10 border rounded-lg text-sm text-text placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+              className={`w-full px-4 py-2.5 bg-background/10 border rounded-lg text-sm text-text placeholder:text-secondary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                 errors.email && touched.email
                   ? 'border-primary focus:border-primary focus:ring-primary/20'
                   : 'border-secondary/10 '
@@ -133,9 +133,9 @@ export default function LoginForm({
               value={password}
               onChange={handleChange}
               onBlur={handleBlur}
-              placeholder="password"
+              placeholder="Nhập mật khẩu"
               disabled={isPending}
-              className={`w-full px-4 py-2.5 bg-background/10 border rounded-lg text-sm text-text placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+              className={`w-full px-4 py-2.5 bg-background/10 border rounded-lg text-sm text-text placeholder:text-secondary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                 errors.password && touched.password
                   ? 'border-primary focus:border-primary focus:ring-primary/20'
                   : 'border-secondary/10'
@@ -155,13 +155,13 @@ export default function LoginForm({
                 onChange={(e) => setRememberMe(e.target.checked)}
                 className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
               />
-              <span className="text-sm text-text">Remember me</span>
+              <span className="text-sm text-text">Ghi nhớ đăng nhập</span>
             </label>
             <a
               href="#"
               className="text-sm text-primary hover:text-primary/80 transition-colors"
             >
-              Forgot Password?
+              Quên mật khẩu?
             </a>
           </div>
 
@@ -193,10 +193,10 @@ export default function LoginForm({
                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                   ></path>
                 </svg>
-                Signing in...
+                Đang đăng nhập...
               </>
             ) : (
-              'Sign In'
+              'Đăng nhập'
             )}
           </button>
         </form>

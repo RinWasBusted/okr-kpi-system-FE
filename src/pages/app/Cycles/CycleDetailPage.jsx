@@ -159,7 +159,7 @@ const CycleDetailPage = () => {
                   className="w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-secondary/10 transition-colors cursor-pointer"
                 >
                   <Edit size={18} className="text-primary" />
-                  <span>Chỉnh sửa</span>
+                  <span className="text-text">Chỉnh sửa</span>
                 </button>
                 <button
                   onClick={() => {
@@ -180,7 +180,7 @@ const CycleDetailPage = () => {
                   className="w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-secondary/10 transition-colors cursor-pointer"
                 >
                   <Copy size={18} className="text-primary" />
-                  <span>Sao chép OKR / KPI từ chu kỳ khác</span>
+                  <span className="text-text">Sao chép OKR / KPI từ chu kỳ khác</span>
                 </button>
               </div>
               </>

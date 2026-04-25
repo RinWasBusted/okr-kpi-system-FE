@@ -125,7 +125,7 @@ const UnitDetailPage = () => {
             {/* OKR Stats */}
             <div className="bg-background rounded-lg border border-secondary/20 p-4">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-medium text-secondary">OKR Progress</span>
+                <span className="text-sm font-medium text-secondary">Tiến độ OKR</span>
                 <Target size={20} className="text-orange-500" />
               </div>
               {unitLoading ? (
@@ -149,7 +149,7 @@ const UnitDetailPage = () => {
             {/* KPI Stats */}
             <div className="bg-background rounded-lg border border-secondary/20 p-4">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-medium text-secondary">KPI Health</span>
+                <span className="text-sm font-medium text-secondary">Sức khỏe KPI</span>
                 <TrendingUp size={20} className="text-green-500" />
               </div>
               {unitLoading ? (

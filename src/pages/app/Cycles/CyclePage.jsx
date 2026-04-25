@@ -203,8 +203,8 @@ const CyclePage = () => {
               </div>
             ) : (
               <div className="flex items-center gap-3 text-sm">
-                <span className="px-2 py-0.5 bg-green-100 rounded-full font-medium">
-                  {stats.openCyclesCount} đang mở
+                <span className="px-2 py-0.5 bg-emerald-500 text-white rounded-full font-bold uppercase text-[10px] tracking-wider">
+                  {stats.openCyclesCount} ĐANG MỞ
                 </span>
                 <span className="text-secondary">
                   {stats.totalObjectives} Objectives
