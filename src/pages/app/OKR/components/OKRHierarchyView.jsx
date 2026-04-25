@@ -13,6 +13,7 @@ import ReactFlow, {
 import { hierarchy, tree } from 'd3-hierarchy';
 import { Target, Eye, EyeOff, Globe, ChevronDown, ChevronUp, TrendingUp, Loader2 } from 'lucide-react';
 import { getKeyResults } from '../../../../services/okr';
+import { useTheme } from '../../../../hooks/useTheme';
 import 'reactflow/dist/style.css';
 
 // Status badge component matching ObjectiveItem style
@@ -458,6 +459,8 @@ const transformHierarchyToFlow = (objectives, expandedNodes, toggleExpand) => {
 
 // Main component
 const OKRHierarchyView = ({ objectives }) => {
+  const { theme } = useTheme();
+  const isDarkMode = theme === 'dark';
   const [expandedNodes, setExpandedNodes] = useState(() => {
     // Initialize with all objectives expanded by default
     const initialExpanded = new Set();
@@ -554,8 +557,15 @@ const OKRHierarchyView = ({ objectives }) => {
         <Background color="#CBD5E1" gap={16} size={1} />
         <Controls />
         <MiniMap
-          nodeColor={n => n.data?.color || 'var(--secondary)'}
-          maskColor="rgba(0, 0, 0, 0.3)"
+          nodeColor="#ea580c"
+          nodeStrokeColor="#ea580c"
+          nodeBorderRadius={12}
+          maskColor={isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.1)'}
+          style={{
+            backgroundColor: 'var(--background)',
+            borderRadius: '16px',
+            border: '2px solid #ea580c',
+          }}
         />
       </ReactFlow>
     </div>

@@ -249,7 +249,7 @@ const FeedbackItem = ({ feedback, objectiveId, onDelete, currentUserId, canEdit 
 const FeedbackSection = ({ objectiveId, canEdit }) => {
   const queryClient = useQueryClient();
   const [newComment, setNewComment] = useState('');
-  const [selectedType, setSelectedType] = useState('CONCERN');
+  const [selectedStatus, setSelectedStatus] = useState('CONCERN');
   const [isCreating, setIsCreating] = useState(false);
   const [page, setPage] = useState(1);
   const perPage = 5;
@@ -300,7 +300,7 @@ const FeedbackSection = ({ objectiveId, canEdit }) => {
 
     createMutation.mutate({
       content: newComment,
-      type: selectedType,
+      status: selectedStatus,
     });
   };
 
@@ -310,7 +310,7 @@ const FeedbackSection = ({ objectiveId, canEdit }) => {
     }
   };
 
-  const feedbackTypes = [
+  const feedbackStatusOptions = [
     { value: 'PRAISE', label: 'Khen ngợi', color: 'bg-emerald-100 text-emerald-700' },
     { value: 'CONCERN', label: 'Lo ngại', color: 'bg-amber-100 text-amber-700' },
     { value: 'SUGGESTION', label: 'Đề xuất', color: 'bg-sky-100 text-sky-700' },
@@ -340,13 +340,13 @@ const FeedbackSection = ({ objectiveId, canEdit }) => {
         ) : (
           <form onSubmit={handleSubmit} className="space-y-3">
             <div className="flex gap-2 flex-wrap">
-              {feedbackTypes.map((type) => (
+              {feedbackStatusOptions.map((type) => (
                 <button
                   key={type.value}
                   type="button"
-                  onClick={() => setSelectedType(type.value)}
+                  onClick={() => setSelectedStatus(type.value)}
                   className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                    selectedType === type.value ? type.color : 'bg-gray-100 text-gray-600'
+                    selectedStatus === type.value ? type.color : 'bg-gray-100 text-gray-600'
                   }`}
                 >
                   {type.label}

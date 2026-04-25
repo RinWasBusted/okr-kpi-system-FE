@@ -95,7 +95,7 @@ export const listFeedbacks = async (objectiveId, params = {}) => {
  * @param {number} objectiveId - The objective ID (required)
  * @param {Object} data - Feedback data
  * @param {string} data.content - Feedback content (required, 1-5000 characters)
- * @param {string} data.type - Type of feedback (required)
+ * @param {string} data.status - Status of feedback (required)
  *   - PRAISE: Positive feedback about progress
  *   - CONCERN: Issues or risks identified
  *   - SUGGESTION: Recommendations for improvement
@@ -111,9 +111,8 @@ export const listFeedbacks = async (objectiveId, params = {}) => {
  * @returns {number} response.data.feedback.objective_id - Associated objective ID
  * @returns {number} response.data.feedback.user_id - User who posted feedback (current user)
  * @returns {string} response.data.feedback.content - Feedback content
- * @returns {string} response.data.feedback.type - Feedback type
  * @returns {string} response.data.feedback.sentiment - AI-detected sentiment (POSITIVE, NEUTRAL, NEGATIVE, MIXED, UNKNOWN)
- * @returns {string} response.data.feedback.status - Status (default: ACTIVE)
+ * @returns {string} response.data.feedback.status - Feedback status (e.g., PRAISE, CONCERN, etc.)
  * @returns {number} [response.data.feedback.kr_tag_id] - Associated key result ID (nullable)
  * @returns {number} [response.data.feedback.parent_feedback_id] - Parent feedback ID (nullable, always null for top-level)
  * @returns {string} response.data.feedback.created_at - Creation timestamp (ISO 8601)
@@ -130,7 +129,7 @@ export const listFeedbacks = async (objectiveId, params = {}) => {
  * @example
  * const newFeedback = await createFeedback(1, {
  *   content: 'Great progress on user onboarding!',
- *   type: 'PRAISE',
+ *   status: 'PRAISE',
  *   kr_tag_id: 5
  * });
  */
@@ -154,9 +153,9 @@ export const createFeedback = async (objectiveId, data) => {
  * @returns {number} response.data.feedback.objective_id - Associated objective ID
  * @returns {number} response.data.feedback.user_id - User who posted feedback
  * @returns {string} response.data.feedback.content - Feedback content
- * @returns {string} response.data.feedback.type - Feedback type (PRAISE, CONCERN, SUGGESTION, QUESTION, BLOCKER)
+ * @returns {string} response.data.feedback.status - Feedback status (PRAISE, CONCERN, SUGGESTION, QUESTION, BLOCKER)
  * @returns {string} response.data.feedback.sentiment - Sentiment (POSITIVE, NEUTRAL, NEGATIVE, MIXED, UNKNOWN)
- * @returns {string} response.data.feedback.status - Status (ACTIVE, RESOLVED, FLAGGED)
+ * @returns {string} response.data.feedback.status_history - Reserved for status transitions
  * @returns {number} [response.data.feedback.kr_tag_id] - Associated key result ID (nullable)
  * @returns {number} [response.data.feedback.parent_feedback_id] - Parent feedback ID (nullable)
  * @returns {string} response.data.feedback.created_at - Creation timestamp (ISO 8601)
@@ -184,13 +183,11 @@ export const getFeedback = async (objectiveId, feedbackId) => {
  * @param {number} feedbackId - The feedback ID (required)
  * @param {Object} data - Update data (at least one field required)
  * @param {string} [data.content] - Feedback content (optional, 1-5000 characters)
- * @param {string} [data.type] - Type of feedback (optional)
+ * @param {string} [data.status] - Status of feedback (optional)
  *   - PRAISE, CONCERN, SUGGESTION, QUESTION, BLOCKER
  * @param {string} [data.sentiment] - Manual override of AI-detected sentiment (optional)
  *   - POSITIVE, NEUTRAL, NEGATIVE, MIXED, UNKNOWN
- * @param {string} [data.status] - Status (optional)
- *   - ACTIVE, RESOLVED, FLAGGED
- * @param {number} [data.kr_tag_id] - Tag a key result (optional, nullable)
+ * @param {string} [data.kr_tag_id] - Tag a key result (optional, nullable)
  * 
  * @returns {Promise<Object>} Response object
  * @returns {boolean} response.success - Whether request was successful
@@ -199,9 +196,8 @@ export const getFeedback = async (objectiveId, feedbackId) => {
  * @returns {Object} response.data.feedback - Feedback details
  * @returns {number} response.data.feedback.id - Feedback ID
  * @returns {string} response.data.feedback.content - Updated content
- * @returns {string} response.data.feedback.type - Updated type
- * @returns {string} response.data.feedback.sentiment - Updated sentiment
  * @returns {string} response.data.feedback.status - Updated status
+ * @returns {string} response.data.feedback.sentiment - Updated sentiment
  * @returns {number} [response.data.feedback.kr_tag_id] - Updated key result ID (nullable)
  * @returns {string} response.data.feedback.updated_at - Last update timestamp (ISO 8601)
  * 
@@ -269,9 +265,8 @@ export const deleteFeedback = async (objectiveId, feedbackId) => {
  * @returns {number} response.data[].objective_id - Associated objective ID
  * @returns {number} response.data[].user_id - User who posted reply
  * @returns {string} response.data[].content - Reply content
- * @returns {string} response.data[].type - Reply type (PRAISE, CONCERN, SUGGESTION, QUESTION, BLOCKER)
+ * @returns {string} response.data[].status - Reply status (RESOLVED, FLAGGED)
  * @returns {string} response.data[].sentiment - Sentiment (POSITIVE, NEUTRAL, NEGATIVE, MIXED, UNKNOWN)
- * @returns {string} response.data[].status - Status (ACTIVE, RESOLVED, FLAGGED)
  * @returns {number} [response.data[].kr_tag_id] - Associated key result ID (nullable)
  * @returns {number} response.data[].parent_feedback_id - Parent feedback ID
  * @returns {string} response.data[].created_at - Creation timestamp (ISO 8601)
@@ -300,12 +295,9 @@ export const listReplies = async (id) => {
  * @param {number} id - Parent feedback ID (required)
  * @param {Object} data - Reply data
  * @param {string} data.content - Reply content (required, 1-5000 characters)
- * @param {string} data.type - Type of reply (required)
- *   - PRAISE: Positive feedback
- *   - CONCERN: Issues or risks
- *   - SUGGESTION: Recommendations
- *   - QUESTION: Questions or clarifications
- *   - BLOCKER: Critical blockers
+ * @param {string} data.status - Status of reply (required)
+ *   - RESOLVED: Issues addressed
+ *   - FLAGGED: Needs attention
  * 
  * @returns {Promise<Object>} Response object
  * @returns {boolean} response.success - Whether request was successful
@@ -316,9 +308,8 @@ export const listReplies = async (id) => {
  * @returns {number} response.data.feedback.objective_id - Associated objective ID
  * @returns {number} response.data.feedback.user_id - User who posted reply (current user)
  * @returns {string} response.data.feedback.content - Reply content
- * @returns {string} response.data.feedback.type - Reply type
+ * @returns {string} response.data.feedback.status - Reply status
  * @returns {string} response.data.feedback.sentiment - AI-detected sentiment (asynchronous)
- * @returns {string} response.data.feedback.status - Status (default: ACTIVE)
  * @returns {number} [response.data.feedback.kr_tag_id] - Associated key result ID (nullable)
  * @returns {number} response.data.feedback.parent_feedback_id - Parent feedback ID
  * @returns {string} response.data.feedback.created_at - Creation timestamp (ISO 8601)
@@ -338,7 +329,7 @@ export const listReplies = async (id) => {
  * @example
  * const newReply = await createReply(42, {
  *   content: 'Good point! We are already addressing this.',
- *   type: 'SUGGESTION'
+ *   status: 'RESOLVED'
  * });
  */
 export const createReply = async (id, data) => {
