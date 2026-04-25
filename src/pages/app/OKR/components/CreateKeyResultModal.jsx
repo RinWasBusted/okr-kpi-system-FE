@@ -53,14 +53,14 @@ const CreateKeyResultModal = ({ objectiveId, onClose, onSuccess }) => {
   const createMutation = useMutation({
     mutationFn: (data) => createKeyResult(objectiveId, data),
     onSuccess: () => {
-      toast.success('Tạo Key Result thành công!');
+      toast.success('Tạo Kết quả then chốt thành công!');
       queryClient.invalidateQueries({ queryKey: ['keyResults', objectiveId] });
       queryClient.invalidateQueries({ queryKey: ['objective', objectiveId] });
       onSuccess();
       onClose();
     },
     onError: (error) => {
-      toast.error(error.response?.data?.error?.message || 'Có lỗi xảy ra khi tạo Key Result');
+      toast.error(error.response?.data?.error?.message || 'Có lỗi xảy ra khi tạo Kết quả then chốt');
     },
   });
 
@@ -68,7 +68,7 @@ const CreateKeyResultModal = ({ objectiveId, onClose, onSuccess }) => {
     e.preventDefault();
 
     if (!formData.title.trim()) {
-      toast.error('Vui lòng nhập tiêu đề Key Result');
+      toast.error('Vui lòng nhập tiêu đề Kết quả then chốt');
       return;
     }
 
@@ -137,7 +137,7 @@ const CreateKeyResultModal = ({ objectiveId, onClose, onSuccess }) => {
       <div className="relative bg-background rounded-2xl shadow-xl w-full max-w-lg mx-4 overflow-hidden border border-secondary/20">
         {/* Header */}
         <div className="px-6 py-4 border-b border-secondary/20 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-text">Thêm Key Result mới</h2>
+          <h2 className="text-lg font-semibold text-text">Thêm Kết quả then chốt mới</h2>
           <button
             onClick={onClose}
             className="p-2 hover:bg-secondary/20 rounded-lg transition-colors cursor-pointer"
@@ -324,7 +324,7 @@ const CreateKeyResultModal = ({ objectiveId, onClose, onSuccess }) => {
               disabled={createMutation.isPending || !!weightError || remainingWeight <= 0}
               className="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
-              {createMutation.isPending ? 'Đang tạo...' : 'Tạo Key Result'}
+              {createMutation.isPending ? 'Đang tạo...' : 'Tạo Kết quả then chốt'}
             </button>
           </div>
         </form>

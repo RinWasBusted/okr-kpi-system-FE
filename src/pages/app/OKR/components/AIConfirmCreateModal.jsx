@@ -42,7 +42,7 @@ const AIConfirmCreateModal = ({ keyResults, onClose, onConfirm, isPending, onEdi
   return (
     <div className="fixed inset-0 z-60 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/50" onClick={!isPending ? onClose : undefined} />
-      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-2xl mx-4 flex flex-col max-h-[85vh]">
+      <div className="relative bg-background rounded-2xl shadow-xl w-full max-w-2xl mx-4 flex flex-col max-h-[85vh] border border-secondary/20">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-secondary/20">
           <div className="flex items-center gap-3">
@@ -69,11 +69,11 @@ const AIConfirmCreateModal = ({ keyResults, onClose, onConfirm, isPending, onEdi
         {/* Body - Scrollable */}
         <div className="flex-1 overflow-hidden flex flex-col">
           {/* Thông báo tổng trọng số */}
-          <div className={`px-6 py-3 border-b ${isWeightValid ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'}`}>
+          <div className={`px-6 py-3 border-b ${isWeightValid ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-red-500/10 border-red-500/20'}`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Weight size={16} className={isWeightValid ? 'text-emerald-600' : 'text-red-600'} />
-                <span className={`text-sm font-medium ${isWeightValid ? 'text-emerald-700' : 'text-red-700'}`}>
+                <Weight size={16} className={isWeightValid ? 'text-emerald-500' : 'text-red-500'} />
+                <span className={`text-sm font-medium ${isWeightValid ? 'text-emerald-500' : 'text-red-500'}`}>
                   Tổng trọng số: {totalWeight.toFixed(0)}%
                 </span>
               </div>
@@ -161,11 +161,11 @@ const AIConfirmCreateModal = ({ keyResults, onClose, onConfirm, isPending, onEdi
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-secondary/20 bg-gray-50 rounded-b-2xl">
+        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-secondary/20 bg-secondary/5 rounded-b-2xl">
           <button
             onClick={onClose}
             disabled={isPending}
-            className="px-4 py-2 border border-secondary/20 rounded-lg text-text hover:bg-white transition-colors disabled:opacity-50 cursor-pointer"
+            className="px-4 py-2 border border-secondary/20 rounded-lg text-text hover:bg-secondary/10 transition-colors disabled:opacity-50 cursor-pointer"
           >
             Quay lại chỉnh sửa
           </button>

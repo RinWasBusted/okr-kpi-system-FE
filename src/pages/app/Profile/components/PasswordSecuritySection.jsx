@@ -166,10 +166,10 @@ const PasswordSecuritySection = ({ userEmail }) => {
           {/* Change Password Option */}
           <button
             onClick={() => setActiveMode('change')}
-            className="w-full flex items-center justify-between p-4 border border-gray-200 rounded-xl hover:border-primary/50 hover:bg-orange-50/50 transition-colors cursor-pointer"
+            className="w-full flex items-center justify-between p-4 border border-secondary/20 rounded-xl hover:border-primary/50 hover:bg-orange-50/10 transition-colors cursor-pointer"
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-orange-500/20 rounded-lg flex items-center justify-center">
                 <KeyRound size={20} className="text-primary" />
               </div>
               <div className="text-left">
@@ -183,10 +183,10 @@ const PasswordSecuritySection = ({ userEmail }) => {
           {/* Forgot Password Option */}
           <button
             onClick={() => setActiveMode('forgot')}
-            className="w-full flex items-center justify-between p-4 border border-gray-200 rounded-xl hover:border-primary/50 hover:bg-orange-50/50 transition-colors cursor-pointer"
+            className="w-full flex items-center justify-between p-4 border border-secondary/20 rounded-xl hover:border-primary/50 hover:bg-blue-50/10 transition-colors cursor-pointer"
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
                 <Shield size={20} className="text-blue-600" />
               </div>
               <div className="text-left">
@@ -202,8 +202,8 @@ const PasswordSecuritySection = ({ userEmail }) => {
       {/* Change Password Form */}
       {activeMode === 'change' && (
         <div className="space-y-4">
-          <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl">
-            <p className="text-sm text-amber-700">
+          <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+            <p className="text-sm text-amber-500">
               Mật khẩu mới phải có ít nhất 8 ký tự, bao gồm ít nhất 1 chữ hoa và 1 số.
             </p>
           </div>
@@ -223,7 +223,7 @@ const PasswordSecuritySection = ({ userEmail }) => {
                 className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 text-text bg-background pr-10 ${
                   errors.oldPassword
                     ? 'border-red-500 focus:ring-red-500/50'
-                    : 'border-gray-200 focus:ring-primary/50'
+                    : 'border-secondary/20 focus:ring-primary/50'
                 }`}
                 placeholder="Nhập mật khẩu cũ"
               />
@@ -309,7 +309,7 @@ const PasswordSecuritySection = ({ userEmail }) => {
             <button
               onClick={handleCancel}
               disabled={changePasswordMutation.isPending}
-              className="flex-1 px-4 py-2.5 text-sm font-medium bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 cursor-pointer"
+              className="flex-1 px-4 py-2.5 text-sm font-medium bg-secondary/10 rounded-lg hover:bg-secondary/20 text-text transition-colors disabled:opacity-50 cursor-pointer"
             >
               Hủy
             </button>
@@ -334,13 +334,13 @@ const PasswordSecuritySection = ({ userEmail }) => {
         <div className="space-y-4">
           {!showVerificationFields ? (
             <>
-              <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
-                <p className="text-sm text-blue-700">
+              <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl">
+                <p className="text-sm text-blue-400">
                   Vì lý do bảo mật, bạn cần xác thực email trước khi đặt lại mật khẩu.
                 </p>
               </div>
 
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+              <div className="flex items-center justify-between p-4 bg-secondary/5 rounded-xl border border-secondary/10">
                 <div>
                   <p className="font-medium text-text">Yêu cầu xác thực email</p>
                   <p className="text-sm text-secondary">
@@ -363,15 +363,15 @@ const PasswordSecuritySection = ({ userEmail }) => {
 
               <button
                 onClick={handleCancel}
-                className="w-full px-4 py-2.5 text-sm font-medium text-text bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer"
+                className="flex-1 px-4 py-2.5 text-sm font-medium text-text bg-secondary/10 rounded-lg hover:bg-secondary/20 transition-colors cursor-pointer"
               >
                 Hủy
               </button>
             </>
           ) : (
             <>
-              <div className="p-4 bg-green-50 border border-green-200 rounded-xl">
-                <p className="text-sm text-green-700">
+              <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
+                <p className="text-sm text-emerald-500">
                   Mã xác thực đã được gửi đến email của bạn. Vui lòng kiểm tra hộp thư.
                 </p>
               </div>

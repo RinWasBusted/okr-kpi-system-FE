@@ -7,11 +7,11 @@ const VisibilityBadge = ({ visibility }) => {
   const getConfig = () => {
     switch (visibility) {
       case 'PUBLIC':
-        return { bg: 'bg-green-100', text: 'text-green-700', label: 'Công khai', icon: Eye };
+        return { bg: 'bg-emerald-500/10', text: 'text-emerald-500', label: 'CÔNG KHAI', icon: Eye };
       case 'INTERNAL':
-        return { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Nội bộ', icon: Users };
+        return { bg: 'bg-blue-500/10', text: 'text-blue-500', label: 'NỘI BỘ', icon: Users };
       case 'PRIVATE':
-        return { bg: 'bg-gray-100', text: 'text-gray-700', label: 'Riêng tư', icon: EyeOff };
+        return { bg: 'bg-secondary/10', text: 'text-secondary', label: 'RIÊNG TƯ', icon: EyeOff };
       default:
         return { bg: 'bg-gray-100', text: 'text-gray-700', label: visibility?.toLowerCase() || 'Nội bộ', icon: Users };
     }
@@ -21,7 +21,7 @@ const VisibilityBadge = ({ visibility }) => {
   const Icon = config.icon;
 
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${config.bg} ${config.text}`}>
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${config.bg} ${config.text}`}>
       <Icon size={12} />
       {config.label}
     </span>
@@ -30,7 +30,7 @@ const VisibilityBadge = ({ visibility }) => {
 
 // Progress bar component
 const ProgressBar = ({ percentage, color = 'bg-blue-500' }) => (
-  <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+  <div className="h-2 bg-secondary/10 rounded-full overflow-hidden">
     <div
       className={`h-full ${color} rounded-full transition-all duration-300`}
       style={{ width: `${Math.min(percentage || 0, 100)}%` }}
@@ -140,8 +140,8 @@ const KPIItem = ({ kpi, level = 0, expandedKPIs, toggleExpand, isSearchMode = fa
               </div>
 
               {/* KPI Icon */}
-              <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
-                <BarChart3 size={20} className="text-blue-600" />
+              <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center shrink-0">
+                <BarChart3 size={20} className="text-blue-500" />
               </div>
 
               {/* KPI Info */}

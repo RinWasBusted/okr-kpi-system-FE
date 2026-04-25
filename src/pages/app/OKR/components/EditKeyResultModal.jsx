@@ -59,14 +59,14 @@ const EditKeyResultModal = ({ keyResult, objectiveId, onClose, onSuccess }) => {
   const updateMutation = useMutation({
     mutationFn: (data) => updateKeyResult(keyResult.id, data),
     onSuccess: () => {
-      toast.success('Cập nhật Key Result thành công!');
+      toast.success('Cập nhật Kết quả then chốt thành công!');
       queryClient.invalidateQueries({ queryKey: ['keyResults', objectiveId] });
       queryClient.invalidateQueries({ queryKey: ['objective', objectiveId] });
       onSuccess?.();
       onClose();
     },
     onError: (error) => {
-      toast.error(error.response?.data?.error?.message || 'Có lỗi xảy ra khi cập nhật Key Result');
+      toast.error(error.response?.data?.error?.message || 'Có lỗi xảy ra khi cập nhật Kết quả then chốt');
     },
   });
 
@@ -74,7 +74,7 @@ const EditKeyResultModal = ({ keyResult, objectiveId, onClose, onSuccess }) => {
     e.preventDefault();
 
     if (!formData.title.trim()) {
-      toast.error('Vui lòng nhập tiêu đề Key Result');
+      toast.error('Vui lòng nhập tiêu đề Kết quả then chốt');
       return;
     }
 
@@ -139,10 +139,10 @@ const EditKeyResultModal = ({ keyResult, objectiveId, onClose, onSuccess }) => {
       />
 
       {/* Modal */}
-      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 overflow-hidden">
+      <div className="relative bg-background rounded-2xl shadow-xl w-full max-w-lg mx-4 overflow-hidden border border-secondary/20">
         {/* Header */}
         <div className="px-6 py-4 border-b border-secondary/20 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-text">Chỉnh sửa Key Result</h2>
+          <h2 className="text-lg font-semibold text-text">Chỉnh sửa Kết quả then chốt</h2>
           <button
             onClick={onClose}
             className="p-2 hover:bg-secondary/20 rounded-lg transition-colors cursor-pointer"
@@ -239,7 +239,7 @@ const EditKeyResultModal = ({ keyResult, objectiveId, onClose, onSuccess }) => {
                 value={formData.weight}
                 onChange={(e) => handleChange('weight', e.target.value)}
                 className={`w-full px-4 py-2 rounded-lg border bg-background text-text placeholder:text-secondary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${
-                  weightError ? 'border-red-300 focus:border-red-500 focus:ring-red-200' : 'border-secondary/20'
+                  weightError ? 'border-red-400 focus:border-red-400 focus:ring-red-400/20' : 'border-secondary/20'
                 }`}
                 required
               />
@@ -280,14 +280,14 @@ const EditKeyResultModal = ({ keyResult, objectiveId, onClose, onSuccess }) => {
           )}
 
           {/* Weight Info */}
-          <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
-            <p className="text-sm text-blue-700">
+          <div className="p-3 rounded-lg bg-primary/10 border border-primary/30">
+            <p className="text-sm text-primary">
               <span className="font-medium">Thông tin: </span>
-              Trọng số các Key Result khác:{' '}
+              Trọng số các Kết quả then chốt khác:{' '}
               <span className="font-semibold">{totalOtherWeight.toFixed(2)}%</span>
               <span>
                 . Bạn có thể gán tối đa{' '}
-                <span className="font-semibold">{remainingWeight.toFixed(2)}%</span> cho Key Result này.
+                <span className="font-semibold">{remainingWeight.toFixed(2)}%</span> cho Kết quả then chốt này.
               </span>
             </p>
           </div>

@@ -34,7 +34,7 @@ const TreeSelect = ({ units, value, onChange, isLoading, disabled }) => {
   if (isLoading) {
     return (
       <div className="animate-pulse">
-        <div className="w-full h-10 bg-gray-100 rounded-lg" />
+        <div className="w-full h-10 bg-secondary/10 rounded-lg" />
       </div>
     );
   }
@@ -44,7 +44,7 @@ const TreeSelect = ({ units, value, onChange, isLoading, disabled }) => {
       value={value || ''}
       onChange={(e) => onChange(e.target.value ? parseInt(e.target.value) : null)}
       disabled={disabled}
-      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500/50 text-gray-900 bg-white disabled:opacity-50"
+      className="w-full px-3 py-2 border border-secondary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500/50 text-text bg-background disabled:opacity-50"
     >
       <option value="">Chưa phân công</option>
       {treeOptions.map((unit) => (
@@ -172,36 +172,36 @@ const EditEmployeeModal = ({ user, onClose, units, isLoadingUnits }) => {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-background rounded-lg shadow-lg max-w-md w-full max-h-[90vh] overflow-y-auto border border-secondary/20">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-900">Chỉnh sửa nhân viên</h2>
+        <div className="flex items-center justify-between p-6 border-b border-secondary/20">
+          <h2 className="text-xl font-bold text-text">Chỉnh sửa nhân viên</h2>
           <button
             onClick={onClose}
-            className="p-1 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+            className="p-1 hover:bg-secondary/10 rounded-lg transition-colors cursor-pointer"
           >
-            <X size={20} className="text-gray-500" />
+            <X size={20} className="text-secondary" />
           </button>
         </div>
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {/* User Info Display */}
-          <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+          <div className="flex items-center gap-3 p-3 bg-secondary/5 rounded-lg border border-secondary/20">
             <img
               src={user.avatar_url || User_avatar}
               alt={user.full_name}
               className={`w-12 h-12 rounded-full object-cover ${!user.avatar_url ? 'border border-secondary/30' : ''}`}
             />
             <div>
-              <p className="font-medium text-gray-900">{user.full_name}</p>
-              <p className="text-sm text-gray-500">{user.email}</p>
+              <p className="font-medium text-text">{user.full_name}</p>
+              <p className="text-sm text-secondary">{user.email}</p>
             </div>
           </div>
 
           {/* Full Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-text mb-2">
               Họ và tên <span className="text-red-500">*</span>
             </label>
             <input
@@ -209,10 +209,10 @@ const EditEmployeeModal = ({ user, onClose, units, isLoadingUnits }) => {
               value={formData.full_name}
               onChange={(e) => handleChange('full_name', e.target.value)}
               maxLength={255}
-              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 text-gray-900 bg-white ${
+              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 text-text bg-background ${
                 errors.full_name
                   ? 'border-red-500 focus:ring-red-500/50'
-                  : 'border-gray-200 focus:ring-orange-500/50'
+                  : 'border-secondary/20 focus:ring-orange-500/50'
               }`}
               placeholder="Nhập họ và tên"
               disabled={updateMutation.isPending}
@@ -220,14 +220,14 @@ const EditEmployeeModal = ({ user, onClose, units, isLoadingUnits }) => {
             {errors.full_name && (
               <p className="mt-1 text-sm text-red-500">{errors.full_name}</p>
             )}
-            <p className="mt-1 text-xs text-gray-400">
+            <p className="mt-1 text-xs text-secondary">
               {formData.full_name.length}/255 ký tự
             </p>
           </div>
 
           {/* Job Title */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-text mb-2">
               Chức vụ
             </label>
             <input
@@ -235,10 +235,10 @@ const EditEmployeeModal = ({ user, onClose, units, isLoadingUnits }) => {
               value={formData.job_title}
               onChange={(e) => handleChange('job_title', e.target.value)}
               maxLength={100}
-              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 text-gray-900 bg-white ${
+              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 text-text bg-background ${
                 errors.job_title
                   ? 'border-red-500 focus:ring-red-500/50'
-                  : 'border-gray-200 focus:ring-orange-500/50'
+                  : 'border-secondary/20 focus:ring-orange-500/50'
               }`}
               placeholder="Nhập chức vụ (không bắt buộc)"
               disabled={updateMutation.isPending}
@@ -246,24 +246,24 @@ const EditEmployeeModal = ({ user, onClose, units, isLoadingUnits }) => {
             {errors.job_title && (
               <p className="mt-1 text-sm text-red-500">{errors.job_title}</p>
             )}
-            <p className="mt-1 text-xs text-gray-400">
+            <p className="mt-1 text-xs text-secondary">
               {formData.job_title.length}/100 ký tự
             </p>
           </div>
 
           {/* Email */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-text mb-2">
               Email <span className="text-red-500">*</span>
             </label>
             <input
               type="email"
               value={formData.email}
               onChange={(e) => handleChange('email', e.target.value)}
-              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 text-gray-900 bg-white ${
+              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 text-text bg-background ${
                 errors.email
                   ? 'border-red-500 focus:ring-red-500/50'
-                  : 'border-gray-200 focus:ring-orange-500/50'
+                  : 'border-secondary/20 focus:ring-orange-500/50'
               }`}
               placeholder="Nhập email"
               disabled={updateMutation.isPending}
@@ -274,21 +274,21 @@ const EditEmployeeModal = ({ user, onClose, units, isLoadingUnits }) => {
           </div>
 
           {/* Password - Optional for edit */}
-          <div className="border-t border-gray-100 pt-4">
-            <p className="text-sm font-medium text-gray-700 mb-3">Đổi mật khẩu (tùy chọn)</p>
+          <div className="border-t border-secondary/10 pt-4">
+            <p className="text-sm font-medium text-text mb-3">Đổi mật khẩu (tùy chọn)</p>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-text mb-2">
                   Mật khẩu mới
                 </label>
                 <input
                   type="password"
                   value={formData.password}
                   onChange={(e) => handleChange('password', e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 text-gray-900 bg-white ${
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 text-text bg-background ${
                     errors.password
                       ? 'border-red-500 focus:ring-red-500/50'
-                      : 'border-gray-200 focus:ring-orange-500/50'
+                      : 'border-secondary/20 focus:ring-orange-500/50'
                   }`}
                   placeholder="Nhập mật khẩu mới (bỏ trống nếu không đổi)"
                   disabled={updateMutation.isPending}
@@ -299,17 +299,17 @@ const EditEmployeeModal = ({ user, onClose, units, isLoadingUnits }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-text mb-2">
                   Nhập lại mật khẩu mới
                 </label>
                 <input
                   type="password"
                   value={formData.confirm_password}
                   onChange={(e) => handleChange('confirm_password', e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 text-gray-900 bg-white ${
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 text-text bg-background ${
                     errors.confirm_password
                       ? 'border-red-500 focus:ring-red-500/50'
-                      : 'border-gray-200 focus:ring-orange-500/50'
+                      : 'border-secondary/20 focus:ring-orange-500/50'
                   }`}
                   placeholder="Nhập lại mật khẩu mới"
                   disabled={updateMutation.isPending}
@@ -323,7 +323,7 @@ const EditEmployeeModal = ({ user, onClose, units, isLoadingUnits }) => {
 
           {/* Unit Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-text mb-2">
               Thuộc đơn vị
             </label>
             <TreeSelect
@@ -336,10 +336,10 @@ const EditEmployeeModal = ({ user, onClose, units, isLoadingUnits }) => {
           </div>
 
           {/* Active Status */}
-          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+          <div className="flex items-center justify-between p-3 bg-secondary/5 rounded-lg">
             <div>
-              <p className="font-medium text-gray-900">Trạng thái hoạt động</p>
-              <p className="text-sm text-gray-500">
+              <p className="font-medium text-text">Trạng thái hoạt động</p>
+              <p className="text-sm text-secondary">
                 {formData.is_active ? 'Đang hoạt động' : 'Không hoạt động'}
               </p>
             </div>
@@ -351,7 +351,7 @@ const EditEmployeeModal = ({ user, onClose, units, isLoadingUnits }) => {
                 className="sr-only peer"
                 disabled={updateMutation.isPending}
               />
-              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
+              <div className="w-11 h-6 bg-secondary/20 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
             </label>
           </div>
 
@@ -361,7 +361,7 @@ const EditEmployeeModal = ({ user, onClose, units, isLoadingUnits }) => {
               type="button"
               onClick={onClose}
               disabled={updateMutation.isPending}
-              className="flex-1 px-4 py-2 border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 cursor-pointer"
+              className="flex-1 px-4 py-2 border border-secondary/20 rounded-lg text-secondary hover:bg-secondary/10 transition-colors disabled:opacity-50 cursor-pointer"
             >
               Hủy
             </button>

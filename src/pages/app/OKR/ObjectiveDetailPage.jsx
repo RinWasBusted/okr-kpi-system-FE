@@ -24,15 +24,15 @@ const StatusBadge = ({ status, progressStatus }) => {
     // First check objective status
     switch (status) {
       case 'Draft':
-        return { bg: 'bg-gray-100', text: 'text-gray-700', label: 'Bản nháp' };
+        return { bg: 'bg-secondary/10', text: 'text-secondary', label: 'BẢN NHÁP' };
       case 'Active':
-        return { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Đang hoạt động' };
+        return { bg: 'bg-emerald-500/10', text: 'text-emerald-500', label: 'ĐANG HOẠT ĐỘNG' };
       case 'Pending_Approval':
-        return { bg: 'bg-amber-100', text: 'text-amber-700', label: 'Chờ phê duyệt' };
+        return { bg: 'bg-amber-500/10', text: 'text-amber-500', label: 'CHỜ PHÊ DUYỆT' };
       case 'Rejected':
-        return { bg: 'bg-red-100', text: 'text-red-700', label: 'Từ chối' };
+        return { bg: 'bg-red-500/10', text: 'text-red-500', label: 'TỪ CHỐI' };
       case 'Completed':
-        return { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Hoàn thành' };
+        return { bg: 'bg-blue-500/10', text: 'text-blue-500', label: 'HOÀN THÀNH' };
       default:
         break;
     }
@@ -40,23 +40,24 @@ const StatusBadge = ({ status, progressStatus }) => {
     // Fallback to progress status
     switch (progressStatus) {
       case 'COMPLETED':
-        return { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'completed' };
+        return { bg: 'bg-emerald-500/10', text: 'text-emerald-500', label: 'HOÀN THÀNH' };
       case 'ON_TRACK':
-        return { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'on-track' };
+        return { bg: 'bg-emerald-500/10', text: 'text-emerald-500', label: 'ĐÚNG HẠN' };
       case 'WARNING':
-        return { bg: 'bg-orange-100', text: 'text-orange-700', label: 'at-risk' };
+        return { bg: 'bg-orange-500/10', text: 'text-orange-500', label: 'RỦI RO' };
+      case 'CRITICAL':
       case 'DANGER':
       case 'NOT_STARTED':
-        return { bg: 'bg-red-100', text: 'text-red-700', label: 'at-risk' };
+        return { bg: 'bg-red-500/10', text: 'text-red-500', label: 'CHẬM TRỄ' };
       default:
-        return { bg: 'bg-gray-100', text: 'text-gray-700', label: status?.toLowerCase() || 'draft' };
+        return { bg: 'bg-secondary/10', text: 'text-secondary', label: status?.toUpperCase() || 'BẢN NHÁP' };
     }
   };
 
   const config = getStatusConfig();
 
   return (
-    <span className={`px-3 py-1 rounded-full text-sm font-medium ${config.bg} ${config.text}`}>
+    <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${config.bg} ${config.text}`}>
       {config.label}
     </span>
   );
@@ -230,9 +231,9 @@ const ObjectiveDetailPage = () => {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <div className="h-8 w-48 bg-gray-200 rounded animate-pulse" />
-        <div className="h-32 bg-gray-200 rounded-xl animate-pulse" />
-        <div className="h-64 bg-gray-200 rounded-xl animate-pulse" />
+        <div className="h-8 w-48 bg-secondary/10 rounded animate-pulse" />
+        <div className="h-32 bg-secondary/10 rounded-xl animate-pulse" />
+        <div className="h-64 bg-secondary/10 rounded-xl animate-pulse" />
       </div>
     );
   }
@@ -345,23 +346,23 @@ const ObjectiveDetailPage = () => {
 
       {/* Status Info Banner for Pending Approval */}
       {status === 'Pending_Approval' && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center gap-3">
-          <AlertCircle size={20} className="text-amber-600 shrink-0" />
+        <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 flex items-center gap-3">
+          <AlertCircle size={20} className="text-amber-500 shrink-0" />
           <div>
-            <p className="font-medium text-amber-800">Objective đang chờ phê duyệt</p>
-            <p className="text-sm text-amber-700">Bạn không thể chỉnh sửa Objective cho đến khi được phê duyệt hoặc từ chối.</p>
+            <p className="font-medium text-amber-500">Objective đang chờ phê duyệt</p>
+            <p className="text-sm text-secondary">Bạn không thể chỉnh sửa Objective cho đến khi được phê duyệt hoặc từ chối.</p>
           </div>
         </div>
       )}
 
       {/* Status Info Banner for Rejected */}
       {status === 'Rejected' && objective.rejection_comment && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+        <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4">
           <div className="flex items-center gap-3 mb-2">
-            <AlertCircle size={20} className="text-red-600 shrink-0" />
-            <p className="font-medium text-red-800">Objective bị từ chối</p>
+            <AlertCircle size={20} className="text-red-500 shrink-0" />
+            <p className="font-medium text-red-500">Objective bị từ chối</p>
           </div>
-          <p className="text-sm text-red-700 ml-8">
+          <p className="text-sm text-secondary ml-8">
             <span className="font-medium">Lý do:</span> {objective.rejection_comment}
           </p>
         </div>
@@ -402,7 +403,7 @@ const ObjectiveDetailPage = () => {
       {isRejectModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/50" onClick={() => setIsRejectModalOpen(false)} />
-          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
+          <div className="relative bg-background rounded-2xl shadow-xl w-full max-w-md mx-4 p-6 border border-secondary/20">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-text">Từ chối Objective</h2>
               <button
@@ -446,7 +447,7 @@ const ObjectiveDetailPage = () => {
       {isDeleteModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/50" onClick={() => setIsDeleteModalOpen(false)} />
-          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
+          <div className="relative bg-background rounded-2xl shadow-xl w-full max-w-md mx-4 p-6 border border-secondary/20">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-text">Xác nhận xóa</h2>
               <button

@@ -76,7 +76,7 @@ const CheckInModal = ({ onClose, onSuccess, kpi }) => {
       <div className="absolute inset-0 bg-black/50" onClick={!checkInMutation.isPending ? onClose : undefined} />
 
       {/* Modal */}
-      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 overflow-hidden">
+      <div className="relative bg-background rounded-2xl shadow-xl w-full max-w-md mx-4 overflow-hidden border border-secondary/20">
         {/* Header */}
         <div className="px-6 py-4 border-b border-secondary/20 flex items-center justify-between">
           <div className="flex items-center gap-3">

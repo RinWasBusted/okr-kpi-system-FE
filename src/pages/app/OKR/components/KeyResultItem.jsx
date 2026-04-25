@@ -1,35 +1,35 @@
 import { ChevronRight } from "lucide-react";
 
 // Status badge for Key Result
-const KRStatusBadge = ({ status }) => {
+const KRStatusBadge = ({ status, progress }) => {
   const getStatusConfig = () => {
-    switch (status) {
+    // If progress is 100%, always show as Completed
+    if (progress >= 100) {
+      return { bg: "bg-blue-500/10", text: "text-blue-500", label: "HOÀN THÀNH" };
+    }
+
+    const s = status?.toUpperCase() || '';
+    switch (s) {
       case "COMPLETED":
-      case "On Track":
-      case "on-track":
-        return {
-          bg: "bg-emerald-100",
-          text: "text-emerald-700",
-          label: "on-track",
-        };
+        return { bg: "bg-blue-500/10", text: "text-blue-500", label: "HOÀN THÀNH" };
+      case "ON_TRACK":
+      case "ON-TRACK":
+        return { bg: "bg-emerald-500/10", text: "text-emerald-500", label: "ĐANG ĐÚNG HẠN" };
       case "WARNING":
-      case "At Risk":
-      case "at-risk":
-        return {
-          bg: "bg-orange-100",
-          text: "text-orange-700",
-          label: "at-risk",
-        };
+      case "AT_RISK":
+      case "AT-RISK":
+        return { bg: "bg-orange-500/10", text: "text-orange-500", label: "CÓ RỦI RO" };
       case "DANGER":
-      case "Not Started":
-      case "not-started":
-        return { bg: "bg-red-100", text: "text-red-700", label: "at-risk" };
+      case "CRITICAL":
+      case "NOT_STARTED":
+      case "NOT-STARTED":
+        return { bg: "bg-red-500/10", text: "text-red-500", label: "CHẬM TIẾN ĐỘ" };
       default:
-        return {
-          bg: "bg-orange-100",
-          text: "text-orange-700",
-          label: "at-risk",
-        };
+        // If progress > 0 but status is missing, show as On Track
+        if (progress > 0) {
+          return { bg: "bg-emerald-500/10", text: "text-emerald-500", label: "ĐANG ĐÚNG HẠN" };
+        }
+        return { bg: "bg-secondary/10", text: "text-secondary", label: "CHƯA BẮT ĐẦU" };
     }
   };
 
@@ -37,7 +37,7 @@ const KRStatusBadge = ({ status }) => {
 
   return (
     <span
-      className={`px-2 py-0.5 rounded-full text-xs font-medium ${config.bg} ${config.text}`}
+      className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${config.bg} ${config.text}`}
     >
       {config.label}
     </span>
@@ -76,9 +76,9 @@ const KeyResultItem = ({ keyResult, index }) => {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-2">
             <h5 className="font-medium text-text">{keyResult.title}</h5>
-            <KRStatusBadge status={keyResult.status || "At Risk"} />
-            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-primary">
-              Weight: {(keyResult.weight || 33.33).toFixed(2)}%
+            <KRStatusBadge status={keyResult.progress_status || keyResult.status} progress={progress} />
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary">
+              Weight: {(keyResult.weight || 33.33).toFixed(0)}%
             </span>
           </div>
 
@@ -87,7 +87,7 @@ const KeyResultItem = ({ keyResult, index }) => {
           </div>
 
           {/* Progress Bar */}
-          <div className="h-2 bg-gray-100 rounded-full overflow-hidden mb-2">
+          <div className="h-2 bg-secondary/10 rounded-full overflow-hidden mb-2">
             <div
               className={`h-full ${progressColor} rounded-full transition-all duration-300`}
               style={{ width: `${Math.min(progress, 100)}%` }}
@@ -115,7 +115,7 @@ const KeyResultItem = ({ keyResult, index }) => {
             <span className="text-secondary">
               Mục tiêu:{" "}
               <span className="font-medium text-emerald-600">
-                {formatValue(keyResult.target_value || 100)}%
+                {formatValue(keyResult.target_value || 100)}
               </span>
             </span>
           </div>
