@@ -76,9 +76,14 @@ const AddUnitModal = ({ onClose, onSuccess, units = [], isLoadingUnits = false }
       return;
     }
 
+    if (!formData.parent_id) {
+      toast.error('Vui lòng chọn đơn vị cha');
+      return;
+    }
+
     const submitData = {
       name: formData.name.trim(),
-      ...(formData.parent_id && { parent_id: parseInt(formData.parent_id) }),
+      parent_id: parseInt(formData.parent_id),
       ...(formData.manager_id && { manager_id: parseInt(formData.manager_id) }),
     };
 
@@ -138,7 +143,7 @@ const AddUnitModal = ({ onClose, onSuccess, units = [], isLoadingUnits = false }
           {/* Parent Unit */}
           <div>
             <label className="block text-sm font-medium text-text mb-2">
-              Đơn vị cha
+              Đơn vị cha <span className="text-red-500">*</span>
             </label>
             {isLoadingUnits ? (
               // Placeholder when loading units
@@ -151,8 +156,9 @@ const AddUnitModal = ({ onClose, onSuccess, units = [], isLoadingUnits = false }
                 onChange={(e) => handleChange('parent_id', e.target.value)}
                 className="w-full px-3 py-2 border border-secondary/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 text-text bg-background"
                 disabled={createMutation.isPending}
+                required
               >
-                <option value="">-- Không có (đơn vị cấp cao nhất) --</option>
+                <option value="" disabled>-- Chọn đơn vị cha --</option>
                 {parentOptions.map((unit) => (
                   <option key={unit.id} value={unit.id}>
                     {unit.prefix + unit.name}
