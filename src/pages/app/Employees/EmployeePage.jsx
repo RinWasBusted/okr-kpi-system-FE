@@ -1,6 +1,6 @@
-import { useState, useMemo, useCallback, useRef } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Search, Plus, Pencil, Trash2, Upload } from 'lucide-react';
+import { Search, Plus, Pencil, Trash2, Upload, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { getUsers, updateUserAvatar } from '../../../services/user';
 import { getUnits } from '../../../services/unit';
@@ -86,8 +86,20 @@ const EmployeePage = () => {
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [selectedUnit, setSelectedUnit] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
+  const [page, setPage] = useState(1);
+  const perPage = 15;
+
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setPage(1); // Reset to first page on search
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   // Modal states
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -96,8 +108,14 @@ const EmployeePage = () => {
 
   // Fetch employees
   const { data: usersResponse, isLoading: isLoadingUsers } = useQuery({
-    queryKey: ['users', 'employees'],
-    queryFn: () => getUsers({ per_page: 100 }),
+    queryKey: ['users', 'employees', debouncedSearch, selectedUnit, selectedStatus, page],
+    queryFn: () => getUsers({ 
+      search: debouncedSearch || undefined, 
+      unit_id: selectedUnit || undefined,
+      is_active: selectedStatus === '' ? undefined : selectedStatus === 'true',
+      page,
+      per_page: perPage 
+    }),
   });
 
   // Fetch units (tree mode for hierarchical display)
@@ -107,6 +125,7 @@ const EmployeePage = () => {
   });
 
   const users = usersResponse?.data || [];
+  const meta = usersResponse?.meta || { total: 0, page: 1, last_page: 1 };
   const unitsTree = unitsResponse?.data || [];
 
   // Flatten units for filter dropdown
@@ -141,27 +160,6 @@ const EmployeePage = () => {
     formData.append('avatar', file);
     uploadAvatarMutation.mutate({ userId, formData });
   }, [uploadAvatarMutation]);
-
-  // Filter users on FE
-  const filteredUsers = useMemo(() => {
-    return users.filter((user) => {
-      // Search filter (by name or job title)
-      const matchesSearch =
-        !searchQuery ||
-        user.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        user.job_title?.toLowerCase().includes(searchQuery.toLowerCase());
-
-      // Unit filter
-      const matchesUnit =
-        !selectedUnit || user.unit?.id?.toString() === selectedUnit;
-
-      // Status filter (is_active)
-      const matchesStatus =
-        !selectedStatus || user.is_active?.toString() === selectedStatus;
-
-      return matchesSearch && matchesUnit && matchesStatus;
-    });
-  }, [users, searchQuery, selectedUnit, selectedStatus]);
 
   // Loading placeholder rows
   const LoadingRows = () => (
@@ -230,7 +228,10 @@ const EmployeePage = () => {
             ) : (
               <select
                 value={selectedUnit}
-                onChange={(e) => setSelectedUnit(e.target.value)}
+                onChange={(e) => {
+                  setSelectedUnit(e.target.value);
+                  setPage(1);
+                }}
                 className="w-full px-3 py-2.5 rounded-lg border border-secondary/20 bg-background text-text focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
               >
                 <option value="">Tất cả đơn vị</option>
@@ -247,7 +248,10 @@ const EmployeePage = () => {
           <div>
             <select
               value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
+              onChange={(e) => {
+                setSelectedStatus(e.target.value);
+                setPage(1);
+              }}
               className="w-full px-3 py-2.5 rounded-lg border border-secondary/20 bg-background text-text focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
             >
               <option value="">Tất cả trạng thái</option>
@@ -275,7 +279,7 @@ const EmployeePage = () => {
             <tbody className="divide-y divide-secondary/10">
               {isLoadingUsers ? (
                 <LoadingRows />
-              ) : filteredUsers.length === 0 ? (
+              ) : users.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-4 py-12 text-center text-secondary">
                     <div className="flex flex-col items-center gap-2">
@@ -285,7 +289,7 @@ const EmployeePage = () => {
                   </td>
                 </tr>
               ) : (
-                filteredUsers.map((user) => (
+                users.map((user) => (
                   <tr key={user.id} className="hover:bg-secondary/5 transition-colors">
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-3">
@@ -331,6 +335,46 @@ const EmployeePage = () => {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination */}
+        {meta.last_page > 1 && (
+          <div className="px-4 py-3 border-t border-secondary/20 flex items-center justify-between bg-secondary/5">
+            <div className="text-sm text-secondary">
+              Hiển thị <span className="font-medium text-text">{(page - 1) * perPage + 1}</span> - <span className="font-medium text-text">{Math.min(page * perPage, meta.total)}</span> trong tổng số <span className="font-medium text-text">{meta.total}</span> nhân viên
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="p-2 rounded-lg border border-secondary/20 hover:bg-background disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                <ChevronLeft size={18} />
+              </button>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: meta.last_page }).map((_, i) => (
+                  <button
+                    key={i + 1}
+                    onClick={() => setPage(i + 1)}
+                    className={`w-8 h-8 rounded-lg text-sm font-medium transition-all ${
+                      page === i + 1
+                        ? 'bg-primary text-white'
+                        : 'hover:bg-secondary/10 text-secondary'
+                    }`}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => setPage(p => Math.min(meta.last_page, p + 1))}
+                disabled={page === meta.last_page}
+                className="p-2 rounded-lg border border-secondary/20 hover:bg-background disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                <ChevronRight size={18} />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Modals */}

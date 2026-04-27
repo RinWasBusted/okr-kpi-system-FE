@@ -45,4 +45,5 @@ export {
 export {
   createCheckIn,
   getCheckIns,
+  getObjectiveCheckIns,
 } from './checkIn.js';

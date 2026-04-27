@@ -87,3 +87,41 @@ export const getCheckIns = async (krId) => {
     throw error;
   }
 };
+
+/**
+ * Get all check-in history for an objective
+ * 
+ * @async
+ * @function getObjectiveCheckIns
+ * @param {number} objectiveId - The objective ID
+ * @returns {Promise<Object>} Response object
+ */
+export const getObjectiveCheckIns = async (objectiveId) => {
+  try {
+    const response = await axiosClient.get(
+      `/objectives/${objectiveId}/check-ins`
+    );
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+/**
+ * Get recent check-in activities performed by the current user
+ * 
+ * @async
+ * @function getMyCheckInActivities
+ * @param {Object} params - Query parameters
+ * @param {number} [params.cycle_id] - Filter by cycle
+ * @param {number} [params.limit=10] - Max records to return
+ * @returns {Promise<Object>} Response object
+ */
+export const getMyCheckInActivities = async (params) => {
+  try {
+    const response = await axiosClient.get('/my-activities', { params });
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
