@@ -20,7 +20,7 @@ RUN VITE_SERVER_BASE_URL=${VITE_SERVER_BASE_URL} npm run build
 # ========== Production Stage ==========
 FROM nginx:alpine
 
-# Install curl for health check
+# Install curl for container health check
 RUN apk add --no-cache curl
 
 # Copy nginx config
@@ -42,4 +42,3 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
 
 # Start nginx
 CMD ["nginx", "-g", "daemon off;"]
-

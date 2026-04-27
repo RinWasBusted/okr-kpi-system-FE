@@ -1,71 +1,37 @@
-# version: '3.8'
-
-# services:
-#   client:
-#     image: tylerpham2708/okr-kpi-system-client:latest
-    
-#     ports:
-#       - "8080:80" 
-    
-#     deploy:
-#       replicas: 2           
-#       update_config:
-#         parallelism: 1
-#         order: start-first  
-#         failure_action: rollback
-#         delay: 10s
-#       restart_policy:
-#         condition: on-failure
-#         delay: 5s
-#         max_attempts: 3
-#       resources:
-#         limits:
-#           cpus: '0.25'  
-#           memory: 256M      
-#         reservations:
-#           memory: 64M
-
-#     healthcheck:
-#       test: ["CMD", "curl", "-f", "http://localhost/health"]
-#       interval: 30s
-#       timeout: 5s
-#       retries: 3
-#       start_period: 20s
-
-#     networks:
-#       - okr-kpi-system-network 
-
-# networks:
-#   okr-kpi-system-network:
-#     external: true
-
 version: '3.8'
 
 services:
   okr-kpi-client:
-    image: tylerpham2708/okr-kpi-system-client:latest
-    container_name: okr-kpi-client
-    
+    image: tylerpham2708/okr-kpi-system-client:${IMAGE_TAG:-latest}
     ports:
       - "8081:80"
-    
-    # Trong Compose, dùng restart thay cho restart_policy bên trong deploy
-    restart: unless-stopped
-
-    # Giới hạn tài nguyên trong Compose (thay cho resources trong deploy)
-    mem_limit: 256m
-    cpus: 0.25
-
+    deploy:
+      replicas: 2
+      update_config:
+        parallelism: 1
+        order: start-first
+        failure_action: rollback
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 60s
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 256M
+        reservations:
+          memory: 64M
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost/health"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 20s
-
     networks:
       - okr-kpi-system-network
 
 networks:
   okr-kpi-system-network:
-    driver: bridge
+    external: true

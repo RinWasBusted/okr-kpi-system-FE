@@ -1,0 +1,107 @@
+name: Deploy Frontend to VPS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-frontend-production
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Prepare production environment
+        run: |
+          set -euo pipefail
+
+          if [ -z "${{ secrets.FE_ENV }}" ]; then
+            echo "Missing FE_ENV secret"
+            exit 1
+          fi
+
+          cat <<'EOF' > .env.production
+          ${{ secrets.FE_ENV }}
+          EOF
+
+          VITE_SERVER_BASE_URL=$(grep '^VITE_SERVER_BASE_URL=' .env.production | cut -d '=' -f2- | tr -d '\r')
+
+          if [ -z "$VITE_SERVER_BASE_URL" ]; then
+            echo "Missing VITE_SERVER_BASE_URL in FE_ENV secret"
+            exit 1
+          fi
+
+          echo "VITE_SERVER_BASE_URL=$VITE_SERVER_BASE_URL" >> "$GITHUB_ENV"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint frontend code
+        run: npm run lint
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            tylerpham2708/okr-kpi-system-client:latest
+            tylerpham2708/okr-kpi-system-client:${{ github.sha }}
+          build-args: |
+            VITE_SERVER_BASE_URL=${{ env.VITE_SERVER_BASE_URL }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Ensure deployment directory exists on VPS
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: mkdir -p ~/okr-kpi-system/okr-kpi-system-fe/
+
+      - name: Copy docker-compose.yml to VPS
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: "docker-compose.yml"
+          target: "~/okr-kpi-system/okr-kpi-system-fe/"
+
+      - name: Deploy frontend stack on VPS
+        uses: appleboy/ssh-action@master
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          envs: IMAGE_TAG
+          script: |
+            cd ~/okr-kpi-system/okr-kpi-system-fe/
+            docker pull tylerpham2708/okr-kpi-system-client:$IMAGE_TAG
+            env IMAGE_TAG=$IMAGE_TAG docker stack deploy --with-registry-auth -c docker-compose.yml okr_kpi_system_client
+            docker service ls --filter label=com.docker.stack.namespace=okr_kpi_system_client
+            docker image prune -f
