@@ -195,7 +195,7 @@ const EmployeeUnitView = () => {
                         onClick={() => handleSelectUnit(unit)}
                         className={`p-4 rounded-lg border cursor-pointer transition-all duration-200 mb-2
                           ${selectedUnit?.id === unit.id
-                            ? 'border-primary bg-orange-50 ring-1 ring-primary/20'
+                            ? 'border-primary bg-primary/5 ring-1 ring-primary/20 shadow-[0_0_15px_rgba(234,88,12,0.15)]'
                             : 'border-secondary/20 bg-background hover:border-primary/30 hover:shadow-sm'
                           }`}
                       >

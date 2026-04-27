@@ -16,6 +16,7 @@ import ProgressSection from './components/ProgressSection';
 import KeyResultsSection from './components/KeyResultsSection';
 import ChildObjectivesSection from './components/ChildObjectivesSection';
 import FeedbackSection from './components/FeedbackSection';
+import CheckInHistorySection from './components/CheckInHistorySection';
 import { EditObjectiveModal } from './components/EditObjectiveModal';
 
 // Status Badge Component
@@ -386,6 +387,9 @@ const ObjectiveDetailPage = () => {
 
       {/* Feedback Section */}
       <FeedbackSection objectiveId={objectiveId} canEdit={canEdit} />
+
+      {/* Check-in History Section */}
+      <CheckInHistorySection objectiveId={objectiveId} />
 
       {/* Edit Modal */}
       {isEditModalOpen && (

@@ -19,6 +19,7 @@ const EmployeeUnitItem = ({
   toggleExpand,
   isSelected,
   onSelect,
+  selectedUnit,
   currentUserUnitId,
 }) => {
   const navigate = useNavigate();
@@ -54,7 +55,7 @@ const EmployeeUnitItem = ({
           className={`
             rounded-lg border transition-all duration-200 cursor-pointer mb-2
             ${isSelected
-              ? 'border-primary bg-orange-50 ring-1 ring-primary/20'
+              ? 'border-primary bg-primary/5 ring-1 ring-primary/20 shadow-[0_0_15px_rgba(234,88,12,0.15)]'
               : 'border-secondary/20 bg-background hover:border-primary/30 hover:shadow-sm'
             }
           `}
@@ -135,8 +136,9 @@ const EmployeeUnitItem = ({
               level={level + 1}
               expandedUnits={expandedUnits}
               toggleExpand={toggleExpand}
-              isSelected={isSelected}
+              isSelected={selectedUnit?.id === child.id}
               onSelect={onSelect}
+              selectedUnit={selectedUnit}
               currentUserUnitId={currentUserUnitId}
             />
           ))}

@@ -19,36 +19,30 @@ import 'reactflow/dist/style.css';
 // Status badge component matching ObjectiveItem style
 const StatusBadge = ({ status, progressStatus }) => {
   const getStatusConfig = () => {
-    // First check objective status
-    switch (status) {
-      case 'Draft':
-        return { bg: 'bg-gray-100', text: 'text-gray-700', label: 'Bản nháp' };
-      case 'Active':
-        return { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Hoạt động' };
-      case 'Pending_Approval':
-        return { bg: 'bg-amber-100', text: 'text-amber-700', label: 'Chờ duyệt' };
-      case 'Rejected':
-        return { bg: 'bg-red-100', text: 'text-red-700', label: 'Từ chối' };
-      case 'Completed':
-        return { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Hoàn thành' };
-      default:
-        break;
-    }
-
-    // Fallback to progress status
-    switch (progressStatus) {
-      case 'COMPLETED':
-        return { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'completed' };
-      case 'ON_TRACK':
-        return { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'on-track' };
-      case 'WARNING':
-        return { bg: 'bg-orange-100', text: 'text-orange-700', label: 'at-risk' };
-      case 'DANGER':
-      case 'NOT_STARTED':
-        return { bg: 'bg-red-100', text: 'text-red-700', label: 'at-risk' };
-      default:
-        return { bg: 'bg-gray-100', text: 'text-gray-700', label: status?.toLowerCase() || 'draft' };
-    }
+    const s = status?.toUpperCase();
+    const ps = progressStatus?.toUpperCase();
+    
+    // Priority 1: Specific recognized statuses
+    if (s === 'PENDING_APPROVAL') return { bg: 'bg-amber-100', text: 'text-amber-700', label: 'Chờ duyệt' };
+    if (s === 'REJECTED') return { bg: 'bg-red-100', text: 'text-red-700', label: 'Từ chối' };
+    if (s === 'DRAFT') return { bg: 'bg-gray-100', text: 'text-gray-700', label: 'Bản nháp' };
+    if (s === 'COMPLETED' || ps === 'COMPLETED') return { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Hoàn thành' };
+    
+    // Priority 2: Progress statuses (could be in either field)
+    if (s === 'ON_TRACK' || ps === 'ON_TRACK') return { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Đúng hạn' };
+    if (s === 'AT_RISK' || ps === 'AT_RISK' || s === 'WARNING' || ps === 'WARNING') return { bg: 'bg-orange-100', text: 'text-orange-700', label: 'Rủi ro' };
+    if (s === 'CRITICAL' || ps === 'CRITICAL' || s === 'DANGER' || ps === 'DANGER' || s === 'NOT_STARTED' || ps === 'NOT_STARTED') return { bg: 'bg-red-100', text: 'text-red-700', label: 'Chậm trễ' };
+    
+    // Priority 3: General statuses
+    if (s === 'ACTIVE') return { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Hoạt động' };
+    
+    // Fallback
+    const label = (status || progressStatus || 'Bản nháp').replace('_', ' ');
+    return { 
+      bg: 'bg-gray-100', 
+      text: 'text-gray-700', 
+      label: label.charAt(0).toUpperCase() + label.slice(1).toLowerCase() 
+    };
   };
 
   const config = getStatusConfig();
@@ -210,10 +204,11 @@ const KeyResultsSection = ({ objectiveId }) => {
 };
 
 // Custom Node Component for React Flow
-const ObjectiveNode = ({ data }) => {
+const ObjectiveNode = ({ data, selected }) => {
   const navigate = useNavigate();
   const { company_slug } = useParams();
   const { objective } = data;
+  const isDimmed = objective?._dimmed;
 
   const hasChildren = objective.sub_objectives && objective.sub_objectives.length > 0;
   const isExpanded = data.isExpanded;
@@ -228,17 +223,25 @@ const ObjectiveNode = ({ data }) => {
   };
 
   const getBorderColor = () => {
-    if (objective.progress_status === 'DANGER' || objective.progress_status === 'NOT_STARTED') {
-      return 'border-red-300';
+    const status = objective.progress_status;
+    if (status === 'DANGER' || status === 'NOT_STARTED' || status === 'CRITICAL') {
+      return 'border-red-500/50';
     }
-    if (objective.progress_status === 'WARNING') {
-      return 'border-orange-300';
+    if (status === 'WARNING' || status === 'AT_RISK') {
+      return 'border-orange-500/50';
     }
-    return 'border-primary';
+    return 'border-primary/50';
   };
 
   return (
-    <div className={`w-72 bg-background rounded-xl border-2 ${getBorderColor()} shadow-lg hover:shadow-xl transition-shadow relative`}>
+    <div 
+      className={`w-72 bg-background rounded-xl border-2 transition-all duration-200 relative group
+        ${getBorderColor()} 
+        ${selected ? 'ring-4 ring-primary/20 shadow-[0_0_20px_rgba(234,88,12,0.3)]' : 'shadow-lg'}
+        ${isDimmed ? 'opacity-30 grayscale pointer-events-none' : 'opacity-100'}
+        hover:shadow-xl hover:-translate-y-1
+      `}
+    >
       {/* Target Handle - nhận edge từ node cha */}
       <Handle
         type="target"
@@ -498,9 +501,46 @@ const OKRHierarchyView = ({ objectives }) => {
 
   // Update nodes and edges when calculated values change
   useEffect(() => {
-    setNodes(initialNodes);
+    setNodes((nds) => {
+      const nodeMap = new Map(nds.map(n => [n.id, n]));
+      return initialNodes.map(newNode => {
+        const existingNode = nodeMap.get(newNode.id);
+        if (existingNode) {
+          return {
+            ...newNode,
+            position: existingNode.position // Preserve manual drags or previous layout
+          };
+        }
+        return newNode;
+      });
+    });
     setEdges(initialEdges);
   }, [initialNodes, initialEdges, setNodes, setEdges]);
+
+  // Auto-expand nodes that match the filter (not dimmed)
+  useEffect(() => {
+    const newExpanded = new Set(expandedNodes);
+    let changed = false;
+
+    const traverse = (objs) => {
+      objs.forEach(obj => {
+        // If node is not dimmed, it means it matches or has matching children
+        if (obj._dimmed === false && !newExpanded.has(obj.id)) {
+          newExpanded.add(obj.id);
+          changed = true;
+        }
+        if (obj.sub_objectives) {
+          traverse(obj.sub_objectives);
+        }
+      });
+    };
+
+    traverse(objectives);
+
+    if (changed) {
+      setExpandedNodes(newExpanded);
+    }
+  }, [objectives]);
 
     // Use fitView only once when React Flow initializes
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
