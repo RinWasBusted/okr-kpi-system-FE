@@ -93,7 +93,7 @@ const AddKPIDictionaryModal = ({ onClose, onSuccess, units = [], isLoadingUnits 
       onClose();
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Không thể tạo mẫu KPI');
+      toast.error(error.response?.data?.error?.message || 'Không thể tạo mẫu KPI');
     },
   });
 

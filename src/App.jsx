@@ -11,7 +11,7 @@ const App = ({ children }) => {
   }, []);
 
   return (
-    <div className={`${theme}-theme bg-background w-screen min-h-screen`}>
+    <div className={`${theme}-theme bg-background text-text w-screen min-h-screen`}>
       {children}
     </div>
   );

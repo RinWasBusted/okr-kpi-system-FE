@@ -13,12 +13,14 @@ import Dashboard from "../pages/app/Dashboard/Dashboard.jsx";
 import UnitPage from "../pages/app/Units/UnitPage.jsx";
 import UnitDetailPage from "../pages/app/Units/UnitDetailPage.jsx";
 import CyclePage from "../pages/app/Cycles/CyclePage.jsx";
+import CycleDetailPage from "../pages/app/Cycles/CycleDetailPage.jsx";
 import OKRPage from "../pages/app/OKR/OKRPage.jsx";
 import ObjectiveDetailPage from "../pages/app/OKR/ObjectiveDetailPage.jsx";
 import KPIDictionariesPage from "../pages/app/KPIDictionaries/KPIDictionariesPage.jsx";
 import KPIPage from "../pages/app/KPI/KPIPage.jsx";
 import KPIDetailPage from "../pages/app/KPI/KPIDetailPage.jsx";
 import EmployeePage from "../pages/app/Employees/EmployeePage.jsx";
+import ProfilePage from "../pages/app/Profile/ProfilePage.jsx";
 
 const router = createBrowserRouter([
     {
@@ -57,6 +59,10 @@ const router = createBrowserRouter([
                 path: "setting",
                 element: <AdminSettingPage />
             },
+            {
+                path: "profile",
+                element: <ProfilePage />
+            }
         ]
     },
     {
@@ -88,6 +94,10 @@ const router = createBrowserRouter([
                 element: <CyclePage />
             },
             {
+                path: "cycles/:cycleId",
+                element: <CycleDetailPage />
+            },
+            {
                 path: "okr",
                 element: <OKRPage />
             },
@@ -107,6 +117,10 @@ const router = createBrowserRouter([
                 path: "kpi-dictionaries",
                 element: <KPIDictionariesPage />
             },
+            {
+                path: "profile",
+                element: <ProfilePage />
+            }
         ]
     },
     {

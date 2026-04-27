@@ -99,8 +99,8 @@ const CyclePage = () => {
           <div className="flex items-center gap-3">
             <AlertCircle size={24} className="text-red-600" />
             <div>
-              <p className="text-red-800 font-semibold">Lỗi khi tải dữ liệu chu kỳ</p>
-              <p className="text-red-600 text-sm mt-1">{error.message}</p>
+              <p className="text-text font-semibold">Lỗi khi tải dữ liệu chu kỳ</p>
+              <p className="text-secondary text-sm mt-1">{error.message}</p>
             </div>
           </div>
         </div>
@@ -140,7 +140,7 @@ const CyclePage = () => {
                 placeholder="Tìm kiếm theo tên chu kỳ..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-secondary/20 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                className="w-full pl-10 pr-4 py-2 border text-text border-secondary/20 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
               />
             </div>
           </div>
@@ -150,11 +150,11 @@ const CyclePage = () => {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full px-3 py-2 border border-secondary/20 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-background cursor-pointer"
+              className="w-full px-3 py-2 border border-secondary/20 rounded-lg text-sm text-text focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-background cursor-pointer"
             >
-              <option value="all">Tất cả trạng thái</option>
-              <option value="open">Đang mở</option>
-              <option value="closed">Đã đóng</option>
+              <option value="all" className="text-text">Tất cả trạng thái</option>
+              <option value="open" className="text-text">Đang mở</option>
+              <option value="closed" className="text-text">Đã đóng</option>
             </select>
           </div>
 
@@ -165,7 +165,7 @@ const CyclePage = () => {
               placeholder="Từ ngày"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="px-3 py-2 border border-secondary/20 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+              className="px-3 py-2 border border-secondary/20 rounded-lg text-sm text-text focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
             />
             <span className="text-secondary">-</span>
             <input
@@ -173,7 +173,7 @@ const CyclePage = () => {
               placeholder="Đến ngày"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="px-3 py-2 border border-secondary/20 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+              className="px-3 py-2 border border-secondary/20 rounded-lg text-sm text-text focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
             />
           </div>
 
@@ -203,8 +203,8 @@ const CyclePage = () => {
               </div>
             ) : (
               <div className="flex items-center gap-3 text-sm">
-                <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded-full">
-                  {stats.openCyclesCount} đang mở
+                <span className="px-2 py-0.5 bg-emerald-500 text-white rounded-full font-bold uppercase text-[10px] tracking-wider">
+                  {stats.openCyclesCount} ĐANG MỞ
                 </span>
                 <span className="text-secondary">
                   {stats.totalObjectives} Objectives
@@ -256,7 +256,6 @@ const CyclePage = () => {
           onSuccess={() => {
             refetch();
           }}
-          cycles={cycles}
         />
       )}
     </div>

@@ -24,7 +24,7 @@ const DeleteUnitConfirmModal = ({ onClose, onSuccess, unit }) => {
       onClose();
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Không thể xóa đơn vị');
+      toast.error(error.response?.data?.error?.message || 'Không thể xóa đơn vị');
     },
   });
 

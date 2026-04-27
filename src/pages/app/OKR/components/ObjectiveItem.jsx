@@ -11,15 +11,15 @@ const StatusBadge = ({ status, progressStatus }) => {
     // First check objective status
     switch (status) {
       case 'Draft':
-        return { bg: 'bg-gray-100', text: 'text-gray-700', label: 'Bản nháp' };
+        return { bg: 'bg-secondary/10', text: 'text-secondary', label: 'BẢN NHÁP' };
       case 'Active':
-        return { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Hoạt động' };
+        return { bg: 'bg-emerald-500/10', text: 'text-emerald-500', label: 'HOẠT ĐỘNG' };
       case 'Pending_Approval':
-        return { bg: 'bg-amber-100', text: 'text-amber-700', label: 'Chờ duyệt' };
+        return { bg: 'bg-amber-500/10', text: 'text-amber-500', label: 'CHỜ DUYỆT' };
       case 'Rejected':
-        return { bg: 'bg-red-100', text: 'text-red-700', label: 'Từ chối' };
+        return { bg: 'bg-red-500/10', text: 'text-red-500', label: 'TỪ CHỐI' };
       case 'Completed':
-        return { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Hoàn thành' };
+        return { bg: 'bg-blue-500/10', text: 'text-blue-500', label: 'HOÀN THÀNH' };
       default:
         break;
     }
@@ -27,23 +27,25 @@ const StatusBadge = ({ status, progressStatus }) => {
     // Fallback to progress_status
     switch (progressStatus) {
       case 'COMPLETED':
-        return { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'completed' };
+        return { bg: 'bg-emerald-500/10', text: 'text-emerald-500', label: 'HOÀN THÀNH' };
       case 'ON_TRACK':
-        return { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'on-track' };
+        return { bg: 'bg-emerald-500/10', text: 'text-emerald-500', label: 'ĐÚNG HẠN' };
       case 'WARNING':
-        return { bg: 'bg-orange-100', text: 'text-orange-700', label: 'at-risk' };
+      case 'AT_RISK':
+        return { bg: 'bg-orange-500/10', text: 'text-orange-500', label: 'RỦI RO' };
       case 'DANGER':
+      case 'CRITICAL':
       case 'NOT_STARTED':
-        return { bg: 'bg-red-100', text: 'text-red-700', label: 'at-risk' };
+        return { bg: 'bg-red-500/10', text: 'text-red-500', label: 'CHẬM TRỄ' };
       default:
-        return { bg: 'bg-gray-100', text: 'text-gray-700', label: status?.toLowerCase() || 'draft' };
+        return { bg: 'bg-secondary/10', text: 'text-secondary', label: status?.toUpperCase() || 'BẢN NHÁP' };
     }
   };
 
   const config = getStatusConfig();
 
   return (
-    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${config.bg} ${config.text}`}>
+    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${config.bg} ${config.text}`}>
       {config.label}
     </span>
   );
@@ -51,7 +53,7 @@ const StatusBadge = ({ status, progressStatus }) => {
 
 // Progress bar component
 const ProgressBar = ({ percentage, color = 'bg-cyan-500' }) => (
-  <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+  <div className="h-2 bg-secondary/10 rounded-full overflow-hidden">
     <div
       className={`h-full ${color} rounded-full transition-all duration-300`}
       style={{ width: `${Math.min(percentage || 0, 100)}%` }}
@@ -112,7 +114,7 @@ const KeyResultItem = ({ kr }) => {
             {kr.title}
           </p>
           <div className="flex items-center gap-2 mt-1">
-            <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden max-w-50">
+            <div className="flex-1 h-2 bg-secondary/10 rounded-full overflow-hidden max-w-50">
               <div
                 className={`h-full ${getProgressColor(progress)} rounded-full`}
                 style={{ width: `${Math.min(progress, 100)}%` }}
@@ -160,13 +162,14 @@ const KeyResultsSection = ({ objectiveId }) => {
   const keyResults = keyResultsData?.data || [];
 
   return (
-    <div className="mt-4 pt-4 border-t border-secondary/10" onMouseEnter={handleMouseEnter}>
+    <div className="mt-4 pt-4 border-t border-secondary/10" >
       <button
         onClick={(e) => {
           e.stopPropagation();
           setIsExpanded(!isExpanded);
         }}
         className="flex items-center gap-2 text-sm font-medium text-text hover:text-primary transition-colors cursor-pointer"
+        onMouseEnter={handleMouseEnter}
       >
         <TrendingUp size={16} className="text-primary" />
         <span>Các Key Results</span>
@@ -213,6 +216,10 @@ const ObjectiveItem = ({ objective, level = 0, onUpdate }) => {
   const canSubmit = objective.permission?.submit === true;
   const canApprove = objective.permission?.approve === true;
   const canReject = objective.permission?.reject === true;
+  
+  // Check if status is editable (Draft or Rejected)
+  const isEditableStatus = objective.status === 'Draft' || objective.status === 'Rejected';
+  
   const hasActions = canEdit || canDelete || canView;
 
   const getProgressColor = (value) => {
@@ -222,11 +229,11 @@ const ObjectiveItem = ({ objective, level = 0, onUpdate }) => {
   };
 
   const getBorderColor = () => {
-    if (objective.progress_status === 'DANGER' || objective.progress_status === 'NOT_STARTED') {
-      return 'border-red-200';
+    if (objective.progress_status === 'DANGER' || objective.progress_status === 'CRITICAL' || objective.progress_status === 'NOT_STARTED') {
+      return 'border-red-500/30';
     }
-    if (objective.progress_status === 'WARNING') {
-      return 'border-orange-200';
+    if (objective.progress_status === 'WARNING' || objective.progress_status === 'AT_RISK') {
+      return 'border-orange-500/30';
     }
     return 'border-secondary/20';
   };
@@ -272,7 +279,7 @@ const ObjectiveItem = ({ objective, level = 0, onUpdate }) => {
                 </div>
 
                 {/* Objective Icon */}
-                <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center shrink-0">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                   <Target size={20} className="text-primary" />
                 </div>
 
@@ -322,7 +329,7 @@ const ObjectiveItem = ({ objective, level = 0, onUpdate }) => {
                       Chi tiết
                       <ArrowUpRight size={14} />
                     </button>
-                    {canEdit && (
+                    {canEdit && isEditableStatus && (
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -334,7 +341,7 @@ const ObjectiveItem = ({ objective, level = 0, onUpdate }) => {
                         <Edit size={18} />
                       </button>
                     )}
-                    {canDelete && (
+                    {canDelete && isEditableStatus && (
                       <button
                         onClick={(e) => {
                           e.stopPropagation();

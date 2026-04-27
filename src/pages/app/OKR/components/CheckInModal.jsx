@@ -22,7 +22,7 @@ const CheckInModal = ({ keyResult, objectiveId, onClose, onSuccess }) => {
       onClose();
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi check-in');
+      toast.error(error.response?.data?.error?.message || 'Có lỗi xảy ra khi check-in');
     },
   });
 
@@ -71,10 +71,44 @@ const CheckInModal = ({ keyResult, objectiveId, onClose, onSuccess }) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const progress = Math.round(
-    ((parseFloat(formData.achieved_value) || 0) /
-      (keyResult.target_value || 1)) *
-      100
+  const calculateProgress = (achieved, start, target, method) => {
+    const current = parseFloat(achieved) || 0;
+    const startVal = parseFloat(start) || 0;
+    const targetVal = parseFloat(target) || 0;
+
+    if (startVal === targetVal) return current >= targetVal ? 100 : 0;
+
+    // Determine if it's actually MINIMIZE (either by method or by comparing start/target)
+    const isMinimize = method === 'MINIMIZE' || (method !== 'MAXIMIZE' && startVal > targetVal);
+
+    if (isMinimize) {
+      // For MINIMIZE: e.g., start=100, target=80. 
+      // If current=110, progress=0%. If current=80, progress=100%. If current=70, progress=100%.
+      if (current >= startVal) return 0;
+      if (current <= targetVal) return 100;
+      return Math.round(((startVal - current) / (startVal - targetVal)) * 100);
+    }
+
+    if (method === 'TARGET') {
+      // For TARGET: e.g., target=100, start=0. 
+      // If current=100, progress=100%. If current=50, progress=50%. If current=150, progress=50%.
+      const range = Math.abs(targetVal - startVal);
+      if (range === 0) return current === targetVal ? 100 : 0;
+      const deviation = Math.abs(current - targetVal);
+      return Math.max(0, Math.round((1 - deviation / range) * 100));
+    }
+
+    // Default to MAXIMIZE: e.g., start=0, target=100.
+    if (current <= startVal) return 0;
+    if (current >= targetVal) return 100;
+    return Math.round(((current - startVal) / (targetVal - startVal)) * 100);
+  };
+
+  const progress = calculateProgress(
+    formData.achieved_value,
+    keyResult.start_value || 0,
+    keyResult.target_value || 1,
+    keyResult.evaluation_method
   );
 
   return (
@@ -83,7 +117,7 @@ const CheckInModal = ({ keyResult, objectiveId, onClose, onSuccess }) => {
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
       {/* Modal */}
-      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 overflow-hidden">
+      <div className="relative bg-background rounded-2xl shadow-xl w-full max-w-lg mx-4 overflow-hidden border border-secondary/20">
         {/* Header */}
         <div className="px-6 py-4 border-b border-secondary/20 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-text">Check-in Key Result</h2>
@@ -98,21 +132,19 @@ const CheckInModal = ({ keyResult, objectiveId, onClose, onSuccess }) => {
         {/* Body */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {/* Key Result Info */}
-          <div className="p-4 bg-gray-50 rounded-lg">
+          <div className="p-4 bg-secondary/5 rounded-lg border border-secondary/20">
             <h3 className="font-medium text-text mb-3">{keyResult.title}</h3>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <span className="text-secondary">Mục tiêu: </span>
                 <span className="font-medium text-emerald-600">
-                  {keyResult.target_value}
-                  {keyResult.unit}
+                  {keyResult.target_value} {keyResult.unit}
                 </span>
               </div>
               <div>
                 <span className="text-secondary">Hiện tại: </span>
                 <span className="font-medium text-cyan-600">
-                  {keyResult.current_value}
-                  {keyResult.unit}
+                  {keyResult.current_value} {keyResult.unit}
                 </span>
               </div>
             </div>
@@ -139,7 +171,7 @@ const CheckInModal = ({ keyResult, objectiveId, onClose, onSuccess }) => {
                 placeholder="Nhập giá trị đạt được"
                 autoFocus
               />
-              <span className="text-secondary font-medium px-3 py-2 bg-gray-100 rounded-lg">
+              <span className="text-secondary font-medium px-3 py-2 bg-secondary/10 rounded-lg">
                 {keyResult.unit}
               </span>
             </div>
@@ -190,9 +222,9 @@ const CheckInModal = ({ keyResult, objectiveId, onClose, onSuccess }) => {
           </div>
 
           {/* Progress Preview */}
-          <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
+          <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-sm text-blue-700">
+              <p className="text-sm text-blue-400">
                 <span className="font-medium">Tiến độ sau check-in: </span>
                 <span className="font-semibold">{progress}%</span>
               </p>
@@ -202,7 +234,7 @@ const CheckInModal = ({ keyResult, objectiveId, onClose, onSuccess }) => {
                 {keyResult.unit}
               </span>
             </div>
-            <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div className="h-2 bg-secondary/20 rounded-full overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all duration-300 ${
                   progress >= 80

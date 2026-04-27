@@ -1,14 +1,20 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Edit, Trash2, CheckCircle } from 'lucide-react';
+import { Plus, Edit, Trash2, CheckCircle, Sparkles } from 'lucide-react';
 import { toast } from 'react-toastify';
-import { getKeyResults, deleteKeyResult } from '../../../../services/okr.js';
+import {
+  getKeyResults,
+  deleteKeyResult,
+  createBatchKeyResults
+} from '../../../../services/key-result.js';
 import CreateKeyResultModal from './CreateKeyResultModal.jsx';
 import EditKeyResultModal from './EditKeyResultModal.jsx';
 import CheckInModal from './CheckInModal.jsx';
+import AIGenerateKRModal from './AIGenerateKRModal.jsx';
+import AIConfirmCreateModal from './AIConfirmCreateModal.jsx';
 
-const KeyResultItem = ({ keyResult, onEdit, onDelete, onCheckIn }) => {
-  const progress = keyResult.progress_percentage || Math.round((keyResult.current_value / keyResult.target_value) * 100) || 0;
+const KeyResultItem = ({ keyResult, onEdit, onDelete, onCheckIn, objectiveStatus, isEditableStatus, canEditObjective, canDeleteObjective }) => {
+  const progress = keyResult.progress_percentage || 0;
 
   const getProgressColor = (value) => {
     if (value >= 80) return 'bg-emerald-500';
@@ -16,29 +22,51 @@ const KeyResultItem = ({ keyResult, onEdit, onDelete, onCheckIn }) => {
     return 'bg-red-500';
   };
 
-  const getStatusBadge = (status) => {
-    switch (status) {
+  const getStatusBadge = (status, progress) => {
+    // If progress is 100%, always show as Completed
+    if (progress >= 100) {
+      return { bg: 'bg-blue-500/10', text: 'text-blue-500', label: 'HOÀN THÀNH' };
+    }
+
+    const s = status?.toUpperCase() || '';
+    switch (s) {
       case 'COMPLETED':
+        return { bg: 'bg-blue-500/10', text: 'text-blue-500', label: 'HOÀN THÀNH' };
       case 'ON_TRACK':
-        return { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'on-track' };
+      case 'ON-TRACK':
+        return { bg: 'bg-emerald-500/10', text: 'text-emerald-500', label: 'ĐANG ĐÚNG HẠN' };
       case 'WARNING':
-        return { bg: 'bg-orange-100', text: 'text-orange-700', label: 'at-risk' };
+      case 'AT_RISK':
+      case 'AT-RISK':
+        return { bg: 'bg-orange-500/10', text: 'text-orange-500', label: 'CÓ RỦI RO' };
       case 'DANGER':
+      case 'CRITICAL':
       case 'NOT_STARTED':
-        return { bg: 'bg-red-100', text: 'text-red-700', label: 'at-risk' };
+      case 'NOT-STARTED':
+        return { bg: 'bg-red-500/10', text: 'text-red-500', label: 'CHẬM TIẾN ĐỘ' };
       default:
-        return { bg: 'bg-orange-100', text: 'text-orange-700', label: 'at-risk' };
+        // If progress > 0 but status is missing, show as On Track
+        if (progress > 0) {
+          return { bg: 'bg-emerald-500/10', text: 'text-emerald-500', label: 'ĐANG ĐÚNG HẠN' };
+        }
+        return { bg: 'bg-secondary/10', text: 'text-secondary', label: 'CHƯA BẮT ĐẦU' };
     }
   };
 
   const progressColor = getProgressColor(progress);
-  const statusConfig = getStatusBadge(keyResult.progress_status);
+  const statusConfig = getStatusBadge(keyResult.progress_status || keyResult.status, progress);
 
   // Check permissions from API
   const canView = keyResult.permission?.view === true;
   const canEdit = keyResult.permission?.edit === true;
   const canDelete = keyResult.permission?.delete === true;
-  const canCheckIn = keyResult.permission?.checkin === true || keyResult.permission?.edit === true;
+
+  // Check-in is only available when objective is Active and user has edit permission
+  const canCheckIn = !["Draft", "Reject", "Pending_Approval"].includes(objectiveStatus) && canEditObjective;
+
+  // Edit/Delete buttons on KR are only available when objective is in editable status
+  const canEditKR = isEditableStatus && canEditObjective;
+  const canDeleteKR = isEditableStatus && canDeleteObjective;
 
   return (
     <div className="border border-secondary/20 rounded-xl p-4 hover:shadow-md transition-shadow">
@@ -50,10 +78,10 @@ const KeyResultItem = ({ keyResult, onEdit, onDelete, onCheckIn }) => {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-2">
             <h4 className="font-medium text-text">{keyResult.title}</h4>
-            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusConfig.bg} ${statusConfig.text}`}>
+            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${statusConfig.bg} ${statusConfig.text}`}>
               {statusConfig.label}
             </span>
-            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-primary">
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary">
               Weight: {keyResult.weight || 33.33}%
             </span>
           </div>
@@ -64,7 +92,7 @@ const KeyResultItem = ({ keyResult, onEdit, onDelete, onCheckIn }) => {
 
           {/* Progress bar with Check-in button */}
           <div className="flex items-center gap-3 mb-3">
-            <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+            <div className="flex-1 h-2 bg-secondary/10 rounded-full overflow-hidden">
               <div
                 className={`h-full ${progressColor} rounded-full transition-all duration-300`}
                 style={{ width: `${Math.min(progress, 100)}%` }}
@@ -97,8 +125,8 @@ const KeyResultItem = ({ keyResult, onEdit, onDelete, onCheckIn }) => {
         <div className="flex items-center gap-1 shrink-0">
           <span className="text-2xl font-bold text-text mr-2">{progress}%</span>
 
-          {/* Edit Button */}
-          {canEdit && (
+          {/* Edit Button - Only show when objective is editable and user has edit permission */}
+          {canEditKR && (
             <button
               onClick={() => onEdit(keyResult)}
               className="p-2 text-secondary hover:text-primary hover:bg-orange-100 rounded-lg transition-colors cursor-pointer"
@@ -108,8 +136,8 @@ const KeyResultItem = ({ keyResult, onEdit, onDelete, onCheckIn }) => {
             </button>
           )}
 
-          {/* Delete Button */}
-          {canDelete && (
+          {/* Delete Button - Only show when objective is editable and user has delete permission */}
+          {canDeleteKR && (
             <button
               onClick={() => onDelete(keyResult)}
               className="p-2 text-secondary hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
@@ -130,7 +158,7 @@ const DeleteConfirmModal = ({ keyResult, onClose, onConfirm, isPending }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
+      <div className="relative bg-background rounded-2xl shadow-xl w-full max-w-md mx-4 p-6 border border-secondary/20">
         <h2 className="text-lg font-semibold text-text mb-4">Xác nhận xóa</h2>
         <p className="text-secondary mb-6">
           Bạn có chắc chắn muốn xóa Key Result &quot;<strong>{keyResult.title}</strong>&quot;?
@@ -155,12 +183,21 @@ const DeleteConfirmModal = ({ keyResult, onClose, onConfirm, isPending }) => {
   );
 };
 
-const KeyResultsSection = ({ objectiveId }) => {
+const KeyResultsSection = ({ objectiveId, objectiveStatus, isEditableStatus, canEdit, canDelete, objectiveTitle }) => {
   const queryClient = useQueryClient();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingKeyResult, setEditingKeyResult] = useState(null);
   const [deletingKeyResult, setDeletingKeyResult] = useState(null);
   const [checkInKeyResult, setCheckInKeyResult] = useState(null);
+
+  // AI Generate states
+  const [isAIGenerateModalOpen, setIsAIGenerateModalOpen] = useState(false);
+  const [isAIConfirmModalOpen, setIsAIConfirmModalOpen] = useState(false);
+  const [selectedAIKeyResults, setSelectedAIKeyResults] = useState([]);
+
+  // State to preserve AI modal data when navigating back and forth
+  const [aiModalPreserveState, setAiModalPreserveState] = useState(null);
+  const [aiModalInitialStep, setAiModalInitialStep] = useState('input');
 
   // Fetch key results
   const { data: keyResultsResponse, isLoading } = useQuery({
@@ -183,7 +220,7 @@ const KeyResultsSection = ({ objectiveId }) => {
       setDeletingKeyResult(null);
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi xóa Key Result');
+      toast.error(error.response?.data?.error?.message || 'Có lỗi xảy ra khi xóa Key Result');
     },
   });
 
@@ -205,6 +242,51 @@ const KeyResultsSection = ({ objectiveId }) => {
     setCheckInKeyResult(keyResult);
   };
 
+  // AI Batch Create Mutation
+  const batchCreateMutation = useMutation({
+    mutationFn: (keyResults) => createBatchKeyResults(objectiveId, { key_results: keyResults }),
+    onSuccess: () => {
+      toast.success('Tạo Key Results từ AI thành công!');
+      queryClient.invalidateQueries({ queryKey: ['keyResults', objectiveId] });
+      queryClient.invalidateQueries({ queryKey: ['objective', objectiveId] });
+      setIsAIConfirmModalOpen(false);
+      setIsAIGenerateModalOpen(false);
+      setSelectedAIKeyResults([]);
+      setAiModalPreserveState(null); // Reset preserve state sau khi tạo thành công
+      setAiModalInitialStep('input');
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.error?.message || 'Có lỗi xảy ra khi tạo Key Results');
+    }
+  });
+
+  const handleAIConfirmCreate = (keyResults, preserveState) => {
+    setSelectedAIKeyResults(keyResults);
+    setAiModalPreserveState(preserveState); // Lưu state để có thể resume lại sau
+    setAiModalInitialStep('results'); // Khi quay lại sẽ mở ở step results
+    setIsAIGenerateModalOpen(false);
+    setIsAIConfirmModalOpen(true);
+  };
+
+  const handleAIFinalConfirm = () => {
+    if (selectedAIKeyResults.length > 0) {
+      batchCreateMutation.mutate(selectedAIKeyResults);
+    }
+  };
+
+  const handleAICancelConfirm = () => {
+    setIsAIConfirmModalOpen(false);
+    setIsAIGenerateModalOpen(true);
+    // Không xóa aiModalPreserveState để AIGenerateKRModal có thể resume
+  };
+
+  const handleAIGenerateModalClose = () => {
+    setIsAIGenerateModalOpen(false);
+    setAiModalPreserveState(null); // Xóa preserve state khi đóng hoàn toàn
+    setAiModalInitialStep('input');
+    setSelectedAIKeyResults([]);
+  };
+
   return (
     <div className="bg-background rounded-xl border border-secondary/20 p-6">
       <div className="flex items-center justify-between mb-6">
@@ -214,20 +296,36 @@ const KeyResultsSection = ({ objectiveId }) => {
             Tổng trọng số: <span className="font-semibold text-emerald-600">{totalWeight.toFixed(0)}%</span>
           </p>
         </div>
-        <button
-          onClick={() => setIsCreateModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors cursor-pointer"
-        >
-          <Plus size={18} />
-          Thêm Key Result
-        </button>
+        <div className="flex items-center gap-3">
+          {/* AI Generate button - Only show when objective is editable and user has edit permission */}
+          {isEditableStatus && canEdit && (
+            <button
+              onClick={() => setIsAIGenerateModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-linear-to-r from-violet-500 to-purple-600 text-white rounded-lg hover:from-violet-600 hover:to-purple-700 transition-colors cursor-pointer"
+            >
+              <Sparkles size={18} />
+              AI gợi ý KR
+            </button>
+          )}
+
+          {/* Add Key Result button - Only show when objective is editable and user has edit permission */}
+          {isEditableStatus && canEdit && (
+            <button
+              onClick={() => setIsCreateModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors cursor-pointer"
+            >
+              <Plus size={18} />
+              Thêm Key Result
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="space-y-4">
         {isLoading ? (
           <div className="space-y-4">
             {Array.from({ length: 2 }).map((_, i) => (
-              <div key={i} className="h-24 bg-gray-100 rounded-xl animate-pulse" />
+              <div key={i} className="h-24 bg-secondary/10 rounded-xl animate-pulse" />
             ))}
           </div>
         ) : keyResults.length === 0 ? (
@@ -242,6 +340,10 @@ const KeyResultsSection = ({ objectiveId }) => {
               onEdit={handleEdit}
               onDelete={handleDelete}
               onCheckIn={handleCheckIn}
+              objectiveStatus={objectiveStatus}
+              isEditableStatus={isEditableStatus}
+              canEditObjective={canEdit}
+              canDeleteObjective={canDelete}
             />
           ))
         )}
@@ -292,6 +394,29 @@ const KeyResultsSection = ({ objectiveId }) => {
             queryClient.invalidateQueries({ queryKey: ['keyResults', objectiveId] });
             queryClient.invalidateQueries({ queryKey: ['objective', objectiveId] });
           }}
+        />
+      )}
+
+      {/* AI Generate Modal */}
+      {isAIGenerateModalOpen && (
+        <AIGenerateKRModal
+          objectiveId={objectiveId}
+          objectiveTitle={objectiveTitle}
+          initialStep={aiModalInitialStep}
+          preservedState={aiModalPreserveState}
+          onClose={handleAIGenerateModalClose}
+          onConfirmCreate={handleAIConfirmCreate}
+        />
+      )}
+
+      {/* AI Confirm Create Modal */}
+      {isAIConfirmModalOpen && (
+        <AIConfirmCreateModal
+          keyResults={selectedAIKeyResults}
+          onClose={handleAICancelConfirm}
+          onConfirm={handleAIFinalConfirm}
+          isPending={batchCreateMutation.isPending}
+          onEdit={(editedKeyResults) => setSelectedAIKeyResults(editedKeyResults)}
         />
       )}
     </div>

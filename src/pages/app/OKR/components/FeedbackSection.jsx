@@ -1,8 +1,9 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Edit, Trash2, MessageCircle } from 'lucide-react';
+import { Edit, Trash2, MessageCircle, CheckCircle, AlertCircle } from 'lucide-react';
 import { toast } from 'react-toastify';
-import { listFeedbacks, createFeedback, deleteFeedback, listReplies, createReply } from '../../../../services/feedback.js';
+import { listFeedbacks, createFeedback, deleteFeedback, createReply } from '../../../../services/feedback.js';
+import { User_avatar } from '../../../../assets/index.js';
 
 // Helper to format date
 const formatDate = (dateStr) => {
@@ -11,38 +12,57 @@ const formatDate = (dateStr) => {
   return date.toLocaleDateString('vi-VN', { day: 'numeric', month: 'short', year: 'numeric' });
 };
 
-// Get badge config based on type
+// Avatar component with fallback
+const UserAvatar = ({ user, size = 10 }) => {
+  const sizeClass = size === 8 ? 'w-8 h-8' : 'w-10 h-10';
+
+  if (user?.avatar_url) {
+    return (
+      <img
+        src={user.avatar_url}
+        alt={user?.full_name || 'User'}
+        className={`${sizeClass} rounded-full object-cover border border-secondary/20 shrink-0`}
+      />
+    );
+  }
+
+  return (
+    <img
+      src={User_avatar}
+      alt={user?.full_name || 'User'}
+      className={`${sizeClass} rounded-full object-cover border border-secondary/20 shrink-0`}
+    />
+  );
+};
+
+// Get badge config based on type/status
 const getFeedbackBadge = (type) => {
   const configs = {
-    'PRAISE': { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Praise' },
-    'CONCERN': { bg: 'bg-amber-100', text: 'text-amber-700', label: 'Concern' },
-    'SUGGESTION': { bg: 'bg-sky-100', text: 'text-sky-700', label: 'Suggestion' },
-    'QUESTION': { bg: 'bg-purple-100', text: 'text-purple-700', label: 'Question' },
-    'BLOCKER': { bg: 'bg-red-100', text: 'text-red-700', label: 'Blocker' },
-    'RESOLVED': { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Resolved' },
-    'APPROVED': { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Approved' },
-    'UNAPPROVED': { bg: 'bg-red-100', text: 'text-red-700', label: 'Unapproved' },
+    'PRAISE': { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Khen ngợi' },
+    'CONCERN': { bg: 'bg-amber-100', text: 'text-amber-700', label: 'Lo ngại' },
+    'SUGGESTION': { bg: 'bg-sky-100', text: 'text-sky-700', label: 'Đề xuất' },
+    'QUESTION': { bg: 'bg-purple-100', text: 'text-purple-700', label: 'Câu hỏi' },
+    'BLOCKER': { bg: 'bg-red-100', text: 'text-red-700', label: 'Chặn' },
+    'RESOLVED': { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Đã giải quyết' },
+    'FLAGGED': { bg: 'bg-red-100', text: 'text-red-700', label: 'Chưa thực hiện' },
+    'ACTIVE': { bg: 'bg-gray-100', text: 'text-gray-700', label: 'Đang thảo luận' },
   };
   return configs[type] || configs['CONCERN'];
 };
 
-// Reply Item Component
+// Reply Item Component (for displaying replies from tree data)
 const ReplyItem = ({ reply, onDelete, currentUserId }) => {
-  const badgeConfig = getFeedbackBadge(reply.type);
-  const isAuthor = reply.user_id === currentUserId;
+  const badgeConfig = getFeedbackBadge(reply.status);
+  const isAuthor = reply.user?.id === currentUserId || reply.user_id === currentUserId;
 
   return (
     <div className="flex gap-3 ml-12">
-      <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center shrink-0">
-        <span className="text-primary font-semibold text-sm">
-          {reply.user?.full_name?.charAt(0)?.toUpperCase() || 'U'}
-        </span>
-      </div>
+      <UserAvatar user={reply.user} size={8} />
       <div className="flex-1">
         <div className="flex items-center gap-2 mb-1">
           <span className="font-medium text-text">{reply.user?.full_name || 'Unknown'}</span>
           <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-sky-100 text-sky-700">
-            {reply.user?.role || 'Employee'}
+            {reply.user?.job_title || "Nhân viên"}
           </span>
           <span className="text-xs text-secondary">• {formatDate(reply.created_at)}</span>
           <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${badgeConfig.bg} ${badgeConfig.text}`}>
@@ -66,59 +86,62 @@ const ReplyItem = ({ reply, onDelete, currentUserId }) => {
 };
 
 // Feedback Item Component
-const FeedbackItem = ({ feedback, objectiveId, onDelete, currentUserId }) => {
-  const [showReply, setShowReply] = useState(false);
+const FeedbackItem = ({ feedback, objectiveId, onDelete, currentUserId, canEdit }) => {
   const [replyContent, setReplyContent] = useState('');
-  const [replies, setReplies] = useState([]);
-  const [showReplies, setShowReplies] = useState(false);
+  const [selectedStatusType, setSelectedStatusType] = useState(null);
   const queryClient = useQueryClient();
 
-  const badgeConfig = getFeedbackBadge(feedback.type);
-  const isAuthor = feedback.user_id === currentUserId;
+  const badgeConfig = getFeedbackBadge(feedback.status);
+  const isAuthor = feedback.user?.id === currentUserId || feedback.user_id === currentUserId;
+  const isParentFeedback = feedback.parent_id === null || feedback.parent_id === undefined;
 
-  // Fetch replies
-  const { data: repliesResponse } = useQuery({
-    queryKey: ['feedbackReplies', feedback.id],
-    queryFn: () => listReplies(feedback.id),
-    enabled: showReplies,
-  });
-
-  const repliesList = repliesResponse?.data || [];
+  // Get replies from tree data (already included in feedback.replies)
+  const repliesList = feedback.replies || [];
 
   // Create reply mutation
   const replyMutation = useMutation({
-    mutationFn: () => createReply(feedback.id, { content: replyContent, type: 'SUGGESTION' }),
+    mutationFn: (data) => createReply(feedback.id, data),
     onSuccess: () => {
       toast.success('Đã gửi phản hồi!');
       setReplyContent('');
-      setShowReply(false);
-      queryClient.invalidateQueries({ queryKey: ['feedbackReplies', feedback.id] });
+      setSelectedStatusType(null);
+      queryClient.invalidateQueries({ queryKey: ['feedbacks', objectiveId] });
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Có lỗi xảy ra');
+      toast.error(error.response?.data?.error?.message || 'Có lỗi xảy ra');
     },
   });
 
-  const handleSubmitReply = (e) => {
+  // Create status reply (RESOLVED or FLAGGED)
+  const handleCreateStatusReply = (type) => {
+    setSelectedStatusType(type);
+  };
+
+  const handleSubmitStatusReply = (e) => {
     e.preventDefault();
     if (!replyContent.trim()) return;
-    replyMutation.mutate();
+    replyMutation.mutate({
+      content: replyContent,
+      status: selectedStatusType,
+    });
+  };
+
+  const handleCancelStatusReply = () => {
+    setSelectedStatusType(null);
+    setReplyContent('');
   };
 
   return (
     <div className="space-y-4">
       {/* Main feedback */}
       <div className="flex gap-3">
-        <div className="w-10 h-10 rounded-full bg-sky-100 flex items-center justify-center shrink-0">
-          <span className="text-sky-600 font-semibold">
-            {feedback.user?.full_name?.charAt(0)?.toUpperCase() || 'U'}
-          </span>
-        </div>
+        <UserAvatar user={feedback.user} size={10} />
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
-            <span className="font-medium text-text">{feedback.user?.full_name || 'Unknown'}</span>
-            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-sky-100 text-sky-700">
-              {feedback.user?.role || 'Employee'}
+            <span className="font-medium text-text">{feedback.user?.full_name || 'Unknown'}
+              <span className="ml-2 px-2 py-0.5 rounded-full text-xs font-medium bg-sky-100 text-sky-700">
+                {feedback.user.job_title || "Nhân viên"}
+              </span>
             </span>
             <span className="text-xs text-secondary">• {formatDate(feedback.created_at)}</span>
             <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${badgeConfig.bg} ${badgeConfig.text}`}>
@@ -128,88 +151,120 @@ const FeedbackItem = ({ feedback, objectiveId, onDelete, currentUserId }) => {
           <p className="text-text">{feedback.content}</p>
 
           <div className="flex items-center gap-2 mt-2">
-            <button
-              onClick={() => setShowReply(!showReply)}
-              className="text-xs text-secondary hover:text-primary flex items-center gap-1 cursor-pointer"
-            >
-              <MessageCircle size={14} />
-              Reply
-            </button>
-            {isAuthor && (
+            {/* Only parent feedback can have status buttons */}
+            {isParentFeedback && canEdit && !selectedStatusType && (
               <>
                 <button
-                  onClick={() => onDelete(feedback.id)}
-                  className="p-1.5 text-secondary hover:text-red-600 hover:bg-red-50 rounded transition-colors cursor-pointer"
+                  onClick={() => handleCreateStatusReply('RESOLVED')}
+                  disabled={replyMutation.isPending}
+                  className="text-xs flex items-center gap-1 px-2 py-1 rounded bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition-colors cursor-pointer disabled:opacity-50"
                 >
-                  <Trash2 size={14} />
+                  <CheckCircle size={12} />
+                  Đã giải quyết
+                </button>
+                <button
+                  onClick={() => handleCreateStatusReply('FLAGGED')}
+                  disabled={replyMutation.isPending}
+                  className="text-xs flex items-center gap-1 px-2 py-1 rounded bg-red-100 text-red-700 hover:bg-red-200 transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  <AlertCircle size={12} />
+                  Chưa thực hiện
                 </button>
               </>
             )}
+            {isAuthor && (
+              <button
+                onClick={() => onDelete(feedback.id)}
+                className="p-1.5 text-secondary hover:text-red-600 hover:bg-red-50 rounded transition-colors cursor-pointer"
+              >
+                <Trash2 size={14} />
+              </button>
+            )}
           </div>
 
-          {/* Reply form */}
-          {showReply && (
-            <form onSubmit={handleSubmitReply} className="mt-3 flex gap-2">
-              <input
-                type="text"
-                value={replyContent}
-                onChange={(e) => setReplyContent(e.target.value)}
-                placeholder="Viết phản hồi..."
-                className="flex-1 px-3 py-2 rounded-lg border border-secondary/20 bg-background text-text text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-              />
-              <button
-                type="submit"
-                disabled={replyMutation.isPending || !replyContent.trim()}
-                className="px-4 py-2 bg-primary text-white rounded-lg text-sm hover:bg-primary/90 transition-colors disabled:opacity-50 cursor-pointer"
-              >
-                {replyMutation.isPending ? 'Đang gửi...' : 'Gửi'}
-              </button>
+          {/* Status reply form (RESOLVED/FLAGGED) */}
+          {selectedStatusType && isParentFeedback && (
+            <form onSubmit={handleSubmitStatusReply} className="mt-3 space-y-2">
+              <div className="flex items-center gap-2 text-xs text-secondary">
+                <span>Đang trả lời với trạng thái:</span>
+                <span className={`px-2 py-0.5 rounded-full font-medium ${
+                  selectedStatusType === 'RESOLVED'
+                    ? 'bg-emerald-100 text-emerald-700'
+                    : 'bg-red-100 text-red-700'
+                }`}>
+                  {selectedStatusType === 'RESOLVED' ? 'Đã giải quyết' : 'Chưa thực hiện'}
+                </span>
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={replyContent}
+                  onChange={(e) => setReplyContent(e.target.value)}
+                  placeholder="Nhập nội dung..."
+                  className="flex-1 px-3 py-2 rounded-lg border border-secondary/20 bg-background text-text text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  onClick={handleCancelStatusReply}
+                  disabled={replyMutation.isPending}
+                  className="px-4 py-2 border border-secondary/20 rounded-lg text-text hover:bg-secondary/10 transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  disabled={replyMutation.isPending || !replyContent.trim()}
+                  className="px-4 py-2 bg-primary text-white rounded-lg text-sm hover:bg-primary/90 transition-colors disabled:opacity-50 cursor-pointer"
+                >
+                  {replyMutation.isPending ? 'Đang gửi...' : 'Gửi'}
+                </button>
+              </div>
             </form>
-          )}
-
-          {/* View replies button */}
-          {repliesList.length > 0 && !showReplies && (
-            <button
-              onClick={() => setShowReplies(true)}
-              className="text-xs text-primary mt-2 cursor-pointer hover:underline"
-            >
-              Xem {repliesList.length} phản hồi
-            </button>
           )}
         </div>
       </div>
 
-      {/* Replies */}
-      {showReplies && repliesList.map((reply) => (
-        <ReplyItem
-          key={reply.id}
-          reply={reply}
-          onDelete={(replyId) => {
-            // Handle reply deletion
-            queryClient.invalidateQueries({ queryKey: ['feedbackReplies', feedback.id] });
-          }}
-          currentUserId={currentUserId}
-        />
-      ))}
+      {/* Replies - from tree data */}
+      {repliesList.length > 0 && (
+        <div className="space-y-4">
+          {repliesList.map((reply) => (
+            <ReplyItem
+              key={reply.id}
+              reply={reply}
+              onDelete={() => {
+                // Invalidate to refresh tree data
+                queryClient.invalidateQueries({ queryKey: ['feedbacks', objectiveId] });
+              }}
+              currentUserId={currentUserId}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 };
 
 // Main Feedback Section
-const FeedbackSection = ({ objectiveId }) => {
+const FeedbackSection = ({ objectiveId, canEdit }) => {
   const queryClient = useQueryClient();
   const [newComment, setNewComment] = useState('');
-  const [selectedType, setSelectedType] = useState('CONCERN');
+  const [selectedStatus, setSelectedStatus] = useState('CONCERN');
   const [isCreating, setIsCreating] = useState(false);
+  const [page, setPage] = useState(1);
+  const perPage = 5;
 
-  // Fetch feedbacks
+  // Fetch feedbacks with tree structure
   const { data: feedbacksResponse, isLoading } = useQuery({
-    queryKey: ['feedbacks', objectiveId],
-    queryFn: () => listFeedbacks(objectiveId, { per_page: 100 }),
+    queryKey: ['feedbacks', objectiveId, page, perPage],
+    queryFn: () => listFeedbacks(objectiveId, { page, per_page: perPage }),
     enabled: !!objectiveId,
   });
 
   const feedbacks = feedbacksResponse?.data || [];
+  const total = feedbacksResponse?.total || 0;
+  const lastPage = feedbacksResponse?.last_page || 1;
+  const hasMore = page < lastPage;
 
   // Create feedback mutation
   const createMutation = useMutation({
@@ -218,10 +273,12 @@ const FeedbackSection = ({ objectiveId }) => {
       toast.success('Đã thêm feedback!');
       setNewComment('');
       setIsCreating(false);
+      // Reset to first page to show new feedback
+      setPage(1);
       queryClient.invalidateQueries({ queryKey: ['feedbacks', objectiveId] });
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Có lỗi xảy ra');
+      toast.error(error.response?.data?.error?.message || 'Có lỗi xảy ra');
     },
   });
 
@@ -233,7 +290,7 @@ const FeedbackSection = ({ objectiveId }) => {
       queryClient.invalidateQueries({ queryKey: ['feedbacks', objectiveId] });
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Có lỗi xảy ra');
+      toast.error(error.response?.data?.error?.message || 'Có lỗi xảy ra');
     },
   });
 
@@ -243,11 +300,17 @@ const FeedbackSection = ({ objectiveId }) => {
 
     createMutation.mutate({
       content: newComment,
-      type: selectedType,
+      status: selectedStatus,
     });
   };
 
-  const feedbackTypes = [
+  const handleLoadMore = () => {
+    if (hasMore) {
+      setPage((prev) => prev + 1);
+    }
+  };
+
+  const feedbackStatusOptions = [
     { value: 'PRAISE', label: 'Khen ngợi', color: 'bg-emerald-100 text-emerald-700' },
     { value: 'CONCERN', label: 'Lo ngại', color: 'bg-amber-100 text-amber-700' },
     { value: 'SUGGESTION', label: 'Đề xuất', color: 'bg-sky-100 text-sky-700' },
@@ -277,13 +340,13 @@ const FeedbackSection = ({ objectiveId }) => {
         ) : (
           <form onSubmit={handleSubmit} className="space-y-3">
             <div className="flex gap-2 flex-wrap">
-              {feedbackTypes.map((type) => (
+              {feedbackStatusOptions.map((type) => (
                 <button
                   key={type.value}
                   type="button"
-                  onClick={() => setSelectedType(type.value)}
+                  onClick={() => setSelectedStatus(type.value)}
                   className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                    selectedType === type.value ? type.color : 'bg-gray-100 text-gray-600'
+                    selectedStatus === type.value ? type.color : 'bg-gray-100 text-gray-600'
                   }`}
                 >
                   {type.label}
@@ -320,7 +383,7 @@ const FeedbackSection = ({ objectiveId }) => {
 
       {/* Feedback list */}
       <div className="space-y-6">
-        {isLoading ? (
+        {isLoading && page === 1 ? (
           <div className="space-y-4">
             {Array.from({ length: 2 }).map((_, i) => (
               <div key={i} className="h-20 bg-gray-100 rounded-xl animate-pulse" />
@@ -331,15 +394,30 @@ const FeedbackSection = ({ objectiveId }) => {
             <p>Chưa có feedback nào</p>
           </div>
         ) : (
-          feedbacks.map((feedback) => (
-            <FeedbackItem
-              key={feedback.id}
-              feedback={feedback}
-              objectiveId={objectiveId}
-              onDelete={(id) => deleteMutation.mutate(id)}
-              currentUserId={currentUserId}
-            />
-          ))
+          <>
+            {feedbacks.map((feedback) => (
+              <FeedbackItem
+                key={feedback.id}
+                feedback={feedback}
+                objectiveId={objectiveId}
+                onDelete={(id) => deleteMutation.mutate(id)}
+                currentUserId={currentUserId}
+                canEdit={canEdit}
+              />
+            ))}
+            {/* Load more button */}
+            {hasMore && (
+              <div className="text-center pt-4">
+                <button
+                  onClick={handleLoadMore}
+                  disabled={isLoading}
+                  className="px-4 py-2 text-primary hover:bg-primary/10 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  {isLoading ? 'Đang tải...' : 'Xem thêm'}
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

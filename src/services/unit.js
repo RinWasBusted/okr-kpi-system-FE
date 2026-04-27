@@ -59,16 +59,3 @@ export const getUnitDetail = async (id) => {
   const response = await axiosClient.get(`/units/${id}/detail`);
   return response.data;
 };
-
-/**
- * Get members/users of a unit
- * @param {number} unitId - Unit ID
- * @param {Object} params - Query parameters
- * @param {number} params.page - Current page number (default: 1)
- * @param {number} params.per_page - Records per page (default: 100)
- * @returns {Promise} API response with unit members list
- */
-export const getUnitMembers = async (unitId, params = {}) => {
-  const response = await axiosClient.get(`/units/${unitId}/members`, { params });
-  return response.data;
-};

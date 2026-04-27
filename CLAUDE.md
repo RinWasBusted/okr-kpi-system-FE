@@ -105,7 +105,7 @@
 - Do not swallow errors silently unless intentional.
 - Display user-friendly **toast messages**:
     - Success: `toast.success(...)`
-    - Failure: `toast.error(error.response?.data?.message || 'Fallback message')`
+    - Failure: `toast.error(error.response?.data?.error?.message || 'Fallback message')`
 - **For Forms:**
     - Perform basic validation before submission.
     - Disable inputs/buttons during pending states.

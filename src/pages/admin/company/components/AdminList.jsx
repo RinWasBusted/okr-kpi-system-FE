@@ -19,7 +19,7 @@ const AdminList = ({ companyId }) => {
         const response = await getCompanyAdmins(companyId);
         return response;
       } catch (error) {
-        toast.error(error.response?.data?.message || 'Failed to load admins');
+        toast.error(error.response?.data?.error?.message || 'Failed to load admins');
         throw error;
       }
     },
@@ -36,7 +36,7 @@ const AdminList = ({ companyId }) => {
       queryClient.invalidateQueries({ queryKey: ['companyAdmins', companyId] });
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Failed to update admin status');
+      toast.error(error.response?.data?.error?.message || 'Failed to update admin status');
     },
   });
 

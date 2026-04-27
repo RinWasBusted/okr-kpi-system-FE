@@ -1,66 +1,207 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Moon,
   Sun,
   Bell,
   User,
-  Settings,
   LogOut,
 } from 'lucide-react';
-import { getCurrentUser, refreshToken, logout } from '../services/auth';
+import { logout } from '../services/auth';
+import {
+  getNotifications,
+  getUnreadCount,
+  streamNotifications,
+} from '../services/notification';
 import { useTheme } from '../hooks/useTheme';
 import { useAuthStore } from '../hooks/useAuth';
-import { useQuery } from '@tanstack/react-query';
+import { User_avatar } from '../assets';
+import NotificationBoard from './NotificationBoard';
 
-// Mock data cho notifications
-const MOCK_NOTIFICATIONS = [
-  {
-    id: 1,
-    title: 'Reminder: Weekly Check-in due (Overdue 2 days)',
-    time: '2 hours ago',
-    read: false,
-    type: 'reminder',
-  },
-  {
-    id: 2,
-    title: 'Your OKR "Q1 Revenue" has been approved',
-    time: '5 hours ago',
-    read: true,
-    type: 'success',
-  },
-  {
-    id: 3,
-    title: 'New KPI metric assigned to you',
-    time: '1 day ago',
-    read: true,
-    type: 'info',
-  },
-];
+const PAGE_SIZE = 6;
+
+const prependUniqueNotification = (notifications, incomingNotification) => {
+  const filteredNotifications = notifications.filter(
+    (notification) => notification.id !== incomingNotification.id
+  );
+
+  return [incomingNotification, ...filteredNotifications];
+};
 
 const Header = () => {
   const navigate = useNavigate();
   const { company_slug } = useParams();
   const { theme, setTheme } = useTheme();
-  const { setUser, clearAuth } = useAuthStore();
+  const { user, clearAuth } = useAuthStore();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isNotiOpen, setIsNotiOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [allNotifications, setAllNotifications] = useState([]);
+  const [allPagination, setAllPagination] = useState(null);
+  const [allCurrentPage, setAllCurrentPage] = useState(1);
+  const [isAllLoading, setIsAllLoading] = useState(false);
+  const [isAllLoadingMore, setIsAllLoadingMore] = useState(false);
+  const [latestIncomingNotification, setLatestIncomingNotification] = useState(null);
   const userMenuRef = useRef(null);
   const notiMenuRef = useRef(null);
-
+  const eventSourceRef = useRef(null);
+  const allNotificationsRef = useRef([]);
 
   // Lấy company_slug từ URL nếu có
   const getCompanySlug = () => {
     return company_slug || null;
   };
 
-  // Fetch current user với React Query - chỉ gọi 1 lần khi mount
-  const { data: userData, isLoading: isUserLoading } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: getCurrentUser,
-    retry: false,
-    staleTime: 5 * 60 * 1000, // Cache 5 phút
-  });
+  useEffect(() => {
+    allNotificationsRef.current = allNotifications;
+  }, [allNotifications]);
+
+  // Setup SSE stream để nhận real-time notification updates
+  const setupNotificationStream = useCallback(() => {
+    if (eventSourceRef.current) return; // Nếu đã có stream rồi thì không setup lại
+
+    try {
+      const eventSource = streamNotifications();
+
+      eventSource.onmessage = (event) => {
+        try {
+          const notification = JSON.parse(event.data);
+
+          if (
+            allNotificationsRef.current.some(
+              (existingNotification) => existingNotification.id === notification.id
+            )
+          ) {
+            return;
+          }
+
+          const nextNotifications = prependUniqueNotification(
+            allNotificationsRef.current,
+            notification
+          );
+
+          allNotificationsRef.current = nextNotifications;
+          setAllNotifications(nextNotifications);
+          setLatestIncomingNotification(notification);
+          setUnreadCount((prev) => prev + 1);
+        } catch (error) {
+          console.error('Error parsing notification:', error);
+        }
+      };
+
+      eventSource.onerror = () => {
+        console.error('Notification stream error');
+        eventSource.close();
+        eventSourceRef.current = null;
+      };
+
+      eventSourceRef.current = eventSource;
+    } catch (error) {
+      console.error('Failed to setup notification stream:', error);
+    }
+  }, []);
+
+  // Cleanup SSE stream
+  const cleanupNotificationStream = useCallback(() => {
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
+      eventSourceRef.current = null;
+    }
+  }, []);
+
+  // Initial fetch unread count khi component mount
+  const fetchUnreadCount = useCallback(async () => {
+    try {
+      const response = await getUnreadCount();
+      setUnreadCount(response.data?.unread_count || 0);
+    } catch {
+      // Silent error
+    }
+  }, []);
+
+  const fetchAllNotifications = useCallback(async (page = 1, isLoadMore = false) => {
+    try {
+      if (isLoadMore) {
+        setIsAllLoadingMore(true);
+      } else {
+        setIsAllLoading(true);
+      }
+
+      const response = await getNotifications({
+        page,
+        page_size: PAGE_SIZE,
+      });
+      const items = response.data?.items || [];
+      const pagination = response.data?.pagination || null;
+
+      setAllNotifications((prev) => {
+        let nextNotifications = items;
+
+        if (isLoadMore) {
+          const existingIds = new Set(prev.map((notification) => notification.id));
+          const uniqueItems = items.filter((notification) => !existingIds.has(notification.id));
+          nextNotifications = [...prev, ...uniqueItems];
+        }
+
+        allNotificationsRef.current = nextNotifications;
+        return nextNotifications;
+      });
+      setAllPagination(pagination);
+      setAllCurrentPage(page);
+
+      return true;
+    } catch {
+      return false;
+    } finally {
+      setIsAllLoading(false);
+      setIsAllLoadingMore(false);
+    }
+  }, []);
+
+  const handleLoadMoreAllNotifications = useCallback(() => {
+    const nextPage = allCurrentPage + 1;
+    fetchAllNotifications(nextPage, true);
+  }, [allCurrentPage, fetchAllNotifications]);
+
+  const handleNotificationRead = useCallback((id) => {
+    const existingNotification = allNotificationsRef.current.find(
+      (notification) => notification.id === id
+    );
+
+    if (!existingNotification || existingNotification.is_read) {
+      return;
+    }
+
+    setAllNotifications((prev) => {
+      const nextNotifications = prev.map((notification) =>
+        notification.id === id
+          ? { ...notification, is_read: true }
+          : notification
+      );
+
+      allNotificationsRef.current = nextNotifications;
+      return nextNotifications;
+    });
+    setUnreadCount((prev) => Math.max(0, prev - 1));
+  }, []);
+
+  const handleMarkAllNotificationsRead = useCallback(() => {
+    if (!allNotificationsRef.current.some((notification) => !notification.is_read)) {
+      return;
+    }
+
+    setAllNotifications((prev) => {
+      const nextNotifications = prev.map((notification) =>
+        notification.is_read
+          ? notification
+          : { ...notification, is_read: true }
+      );
+
+      allNotificationsRef.current = nextNotifications;
+      return nextNotifications;
+    });
+    setUnreadCount(0);
+  }, []);
 
   // Đóng dropdown khi click ra ngoài
   useEffect(() => {
@@ -77,12 +218,60 @@ const Header = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    if (!user || user.role === 'ADMIN') {
+      cleanupNotificationStream();
+      allNotificationsRef.current = [];
+      setAllNotifications([]);
+      setAllPagination(null);
+      setAllCurrentPage(1);
+      setUnreadCount(0);
+      setLatestIncomingNotification(null);
+      return undefined;
+    }
+
+    let isActive = true;
+
+    const bootstrapNotifications = async () => {
+      cleanupNotificationStream();
+      setLatestIncomingNotification(null);
+
+      const isBootstrapSuccess = await fetchAllNotifications(1, false);
+
+      if (!isActive || !isBootstrapSuccess) {
+        return;
+      }
+
+      await fetchUnreadCount();
+
+      if (isActive) {
+        setupNotificationStream();
+      }
+    };
+
+    bootstrapNotifications();
+
+    return () => {
+      isActive = false;
+      cleanupNotificationStream();
+    };
+  }, [
+    cleanupNotificationStream,
+    fetchAllNotifications,
+    fetchUnreadCount,
+    setupNotificationStream,
+    user?.id,
+    user?.role,
+  ]);
+
   const handleThemeToggle = () => {
     setTheme(theme === 'light' ? 'dark' : 'light');
   };
 
   const handleLogout = async () => {
     try {
+      // Cleanup stream trước khi logout
+      cleanupNotificationStream();
       await logout();
       clearAuth();
       const companySlug = getCompanySlug();
@@ -96,36 +285,11 @@ const Header = () => {
     }
   };
 
-  // Lấy initials từ full_name
-  const getInitials = (name) => {
-    if (!name) return 'U';
-    const parts = name.split(' ');
-    if (parts.length >= 2) {
-      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-    }
-    return name.charAt(0).toUpperCase();
-  };
-
-  // Skeleton/Placeholder component cho user info
-  const UserInfoPlaceholder = () => (
-    <div className="px-4 py-3 border-b border-secondary/20">
-      <div className="h-4 bg-secondary/20 rounded w-3/4 mb-2 animate-pulse" />
-      <div className="h-3 bg-secondary/20 rounded w-1/2 animate-pulse" />
-    </div>
-  );
-
   return (
     <header className="h-16 bg-background border-b border-secondary/20 flex items-center justify-between px-4 md:px-6 sticky top-0 z-50">
-      {/* Logo - chỉ hiển thị trên mobile, hoặc khi cần */}
-      <div className="flex items-center gap-2 md:hidden">
-        <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-          <span className="text-white font-bold text-sm">O</span>
-        </div>
-        <span className="font-bold text-text text-sm">OKR Platform</span>
-      </div>
 
       {/* Spacer cho desktop - để căn phải các icon */}
-      <div className="hidden md:flex flex-1" />
+      <div className="flex flex-1" />
 
       {/* Right side icons */}
       <div className="flex items-center gap-2 md:gap-4">
@@ -142,47 +306,45 @@ const Header = () => {
           )}
         </button>
 
-        {/* Notifications */}
-        <div className="relative" ref={notiMenuRef}>
-          <button
-            onClick={() => setIsNotiOpen(!isNotiOpen)}
-            className="p-2 rounded-lg text-text hover:bg-secondary/10 transition-colors relative cursor-pointer"
-            aria-label="Notifications"
-          >
-            <Bell className="w-5 h-5" />
-            {/* Red dot indicator */}
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
-          </button>
+        {/* Notifications - Only show if user is not ADMIN */}
+        {user?.role !== 'ADMIN' && (
+          <div className="relative" ref={notiMenuRef}>
+            <button
+              onClick={() => setIsNotiOpen(!isNotiOpen)}
+              className="p-2 rounded-lg text-text hover:bg-secondary/10 transition-colors relative cursor-pointer"
+              aria-label="Notifications"
+            >
+              <Bell className="w-5 h-5" />
+              {/* Badge số lượng chưa đọc */}
+              {unreadCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-4.5 h-4.5 px-1.5 bg-red-500 text-white text-xs font-medium rounded-full flex items-center justify-center">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
+            </button>
 
-          {/* Notification Dropdown */}
-          {isNotiOpen && (
-            <div className="absolute right-0 mt-2 w-80 bg-background border border-secondary/20 rounded-lg shadow-lg overflow-hidden">
-              <div className="px-4 py-3 border-b border-secondary/20">
-                <h3 className="font-semibold text-text">Notifications</h3>
-              </div>
-              <div className="max-h-96 overflow-y-auto">
-                {MOCK_NOTIFICATIONS.map((noti) => (
-                  <div
-                    key={noti.id}
-                    className="px-4 py-3 hover:bg-secondary/5 border-b border-secondary/10 last:border-0 cursor-pointer"
-                  >
-                    <div className="flex items-start gap-3">
-                      <div
-                        className={`w-2 h-2 rounded-full mt-2 shrink-0 ${
-                          noti.read ? 'bg-secondary/30' : 'bg-primary'
-                        }`}
-                      />
-                      <div className="flex-1">
-                        <p className="text-sm text-text">{noti.title}</p>
-                        <p className="text-xs text-secondary mt-1">{noti.time}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+            {/* Notification Dropdown */}
+            <div
+              className={`absolute right-0 mt-2 bg-background border border-secondary/20 rounded-lg shadow-lg overflow-hidden z-50 ${
+                !isNotiOpen && 'hidden'
+              }`}
+            >
+              <NotificationBoard
+                isOpen={isNotiOpen}
+                allNotifications={allNotifications}
+                allPagination={allPagination}
+                allCurrentPage={allCurrentPage}
+                isAllLoading={isAllLoading}
+                isAllLoadingMore={isAllLoadingMore}
+                unreadCount={unreadCount}
+                latestIncomingNotification={latestIncomingNotification}
+                onLoadMoreAll={handleLoadMoreAllNotifications}
+                onNotificationRead={handleNotificationRead}
+                onMarkAllAsRead={handleMarkAllNotificationsRead}
+              />
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* User Avatar */}
         <div className="relative" ref={userMenuRef}>
@@ -190,33 +352,21 @@ const Header = () => {
             onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
             className="flex items-center gap-2 p-1 rounded-lg hover:bg-secondary/10 transition-colors cursor-pointer"
           >
-            {userData?.data?.user?.avatar_url || userData?.avatar_url ? (
-              <img
-                src={userData?.data?.user?.avatar_url || userData?.avatar_url}
-                alt="User Avatar"
-                className="w-9 h-9 md:w-10 md:h-10 rounded-full"
-              />
-            ) : (
-              <div className="w-9 h-9 md:w-10 md:h-10 bg-primary rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                {isUserLoading ? (
-                  <div className="w-5 h-5 bg-white/30 rounded-full animate-pulse" />
-                ) : (
-                  getInitials(userData?.data?.user?.full_name || userData?.full_name)
-                )}
-              </div>
-            )}
+            <img
+              src={user?.avatar_url || User_avatar}
+              alt="User Avatar"
+              className="w-9 h-9 md:w-10 md:h-10 rounded-full"
+            />
           </button>
 
           {/* User Dropdown */}
           {isUserMenuOpen && (
             <div className="absolute right-0 mt-2 w-64 bg-background border border-secondary/20 rounded-lg shadow-lg overflow-hidden">
               {/* User Info Header */}
-              {isUserLoading ? (
-                <UserInfoPlaceholder />
-              ) : userData ? (
+              {user ? (
                 <div className="px-4 py-3 border-b border-secondary/20">
-                  <p className="font-semibold text-text">{userData?.data?.user?.full_name || userData?.full_name}</p>
-                  <p className="text-sm text-secondary">{userData?.data?.user?.email || userData?.email}</p>
+                  <p className="font-semibold text-text">{user.full_name}</p>
+                  <p className="text-sm text-secondary">{user.email}</p>
                 </div>
               ) : (
                 <div className="px-4 py-3 border-b border-secondary/20">
@@ -230,14 +380,14 @@ const Header = () => {
                 <button
                   onClick={() => {
                     setIsUserMenuOpen(false);
-                    // Navigate to profile
+                    navigate(user.role === 'ADMIN' ? `/admin/profile` : `/${getCompanySlug()}/app/profile`);
                   }}
                   className="w-full flex items-center gap-3 px-4 py-2.5 text-text hover:bg-secondary/10 transition-colors text-left cursor-pointer"
                 >
                   <User className="w-4 h-4" />
                   <span className="text-sm">Profile</span>
                 </button>
-                <button
+                {/* <button
                   onClick={() => {
                     setIsUserMenuOpen(false);
                     // Navigate to settings
@@ -246,7 +396,7 @@ const Header = () => {
                 >
                   <Settings className="w-4 h-4" />
                   <span className="text-sm">Settings</span>
-                </button>
+                </button> */}
                 <div className="border-t border-secondary/20 my-1" />
                 <button
                   onClick={handleLogout}

@@ -22,7 +22,7 @@ const DeleteConfirmModal = ({ onClose, user }) => {
       onClose();
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Không thể xóa nhân viên');
+      toast.error(error.response?.data?.error?.message || 'Không thể xóa nhân viên');
     },
   });
 
@@ -32,16 +32,16 @@ const DeleteConfirmModal = ({ onClose, user }) => {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-lg max-w-md w-full">
+      <div className="bg-background rounded-lg shadow-lg max-w-md w-full border border-secondary/20">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-900">Xác nhận xóa</h2>
+        <div className="flex items-center justify-between p-6 border-b border-secondary/20">
+          <h2 className="text-xl font-bold text-text">Xác nhận xóa</h2>
           <button
             onClick={onClose}
             disabled={deleteMutation.isPending}
-            className="p-1 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
+            className="p-1 hover:bg-secondary/10 rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
           >
-            <X size={20} className="text-gray-500" />
+            <X size={20} className="text-secondary" />
           </button>
         </div>
 
@@ -52,11 +52,11 @@ const DeleteConfirmModal = ({ onClose, user }) => {
               <AlertTriangle size={24} className="text-red-600" />
             </div>
             <div>
-              <p className="text-gray-900 font-medium mb-2">
+              <p className="text-text font-medium mb-2">
                 Bạn có chắc chắn muốn xóa nhân viên này?
               </p>
-              <p className="text-gray-500 text-sm">
-                Nhân viên <span className="font-semibold text-gray-900">{user?.full_name}</span> ({user?.email}) sẽ bị xóa vĩnh viễn.
+              <p className="text-secondary text-sm">
+                Nhân viên <span className="font-semibold text-text">{user?.full_name}</span> ({user?.email}) sẽ bị xóa vĩnh viễn.
                 Hành động này không thể hoàn tác.
               </p>
               {user?.role === 'ADMIN_COMPANY' && (
@@ -73,7 +73,7 @@ const DeleteConfirmModal = ({ onClose, user }) => {
               type="button"
               onClick={onClose}
               disabled={deleteMutation.isPending}
-              className="flex-1 px-4 py-2 border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 cursor-pointer"
+              className="flex-1 px-4 py-2 border border-secondary/20 rounded-lg text-secondary hover:bg-secondary/10 transition-colors disabled:opacity-50 cursor-pointer"
             >
               Hủy
             </button>

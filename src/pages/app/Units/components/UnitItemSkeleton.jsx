@@ -14,22 +14,22 @@ const UnitItemSkeleton = ({ level = 0 }) => {
         <div className="flex items-center justify-between">
           {/* Left: Icon + Info */}
           <div className="flex items-center gap-3 flex-1">
-            <div className="w-8 h-8 bg-secondary/20 rounded" />
+            <div className="w-8 h-8 animate-pulse bg-secondary/20 rounded" />
             <div className="space-y-2">
-              <div className="w-40 h-5 bg-secondary/20 rounded" />
-              <div className="w-28 h-3 bg-secondary/20 rounded" />
+              <div className="w-40 h-5 animate-pulse bg-secondary/20 rounded" />
+              <div className="w-28 h-3 animate-pulse bg-secondary/20 rounded" />
             </div>
           </div>
 
           {/* Right: Progress bars */}
           <div className="flex items-center gap-8">
             <div className="w-32 space-y-1">
-              <div className="w-20 h-3 bg-secondary/20 rounded" />
-              <div className="w-full h-2 bg-secondary/20 rounded-full" />
+              <div className="w-20 h-3 animate-pulse bg-secondary/20 rounded" />
+              <div className="w-full h-2 animate-pulse bg-secondary/20 rounded-full" />
             </div>
             <div className="w-32 space-y-1">
-              <div className="w-20 h-3 bg-secondary/20 rounded" />
-              <div className="w-full h-2 bg-secondary/20 rounded-full" />
+              <div className="w-20 h-3 animate-pulse bg-secondary/20 rounded" />
+              <div className="w-full h-2 animate-pulse bg-secondary/20 rounded-full" />
             </div>
           </div>
         </div>

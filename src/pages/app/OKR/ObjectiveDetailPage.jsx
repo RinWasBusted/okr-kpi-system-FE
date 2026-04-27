@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Edit, Trash2, Send, RotateCcw, X, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, Send, X, AlertCircle } from 'lucide-react';
 import { toast } from 'react-toastify';
 import {
   getObjectiveById,
@@ -9,6 +9,7 @@ import {
   updateObjective,
   submitObjective,
   approveObjective,
+  rejectObjective,
   revertObjectiveToDraft,
 } from '../../../services/okr.js';
 import ProgressSection from './components/ProgressSection';
@@ -23,15 +24,15 @@ const StatusBadge = ({ status, progressStatus }) => {
     // First check objective status
     switch (status) {
       case 'Draft':
-        return { bg: 'bg-gray-100', text: 'text-gray-700', label: 'Bản nháp' };
+        return { bg: 'bg-secondary/10', text: 'text-secondary', label: 'BẢN NHÁP' };
       case 'Active':
-        return { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Đang hoạt động' };
+        return { bg: 'bg-emerald-500/10', text: 'text-emerald-500', label: 'ĐANG HOẠT ĐỘNG' };
       case 'Pending_Approval':
-        return { bg: 'bg-amber-100', text: 'text-amber-700', label: 'Chờ phê duyệt' };
+        return { bg: 'bg-amber-500/10', text: 'text-amber-500', label: 'CHỜ PHÊ DUYỆT' };
       case 'Rejected':
-        return { bg: 'bg-red-100', text: 'text-red-700', label: 'Từ chối' };
+        return { bg: 'bg-red-500/10', text: 'text-red-500', label: 'TỪ CHỐI' };
       case 'Completed':
-        return { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Hoàn thành' };
+        return { bg: 'bg-blue-500/10', text: 'text-blue-500', label: 'HOÀN THÀNH' };
       default:
         break;
     }
@@ -39,68 +40,29 @@ const StatusBadge = ({ status, progressStatus }) => {
     // Fallback to progress status
     switch (progressStatus) {
       case 'COMPLETED':
-        return { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'completed' };
+        return { bg: 'bg-emerald-500/10', text: 'text-emerald-500', label: 'HOÀN THÀNH' };
       case 'ON_TRACK':
-        return { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'on-track' };
+        return { bg: 'bg-emerald-500/10', text: 'text-emerald-500', label: 'ĐÚNG HẠN' };
       case 'WARNING':
-        return { bg: 'bg-orange-100', text: 'text-orange-700', label: 'at-risk' };
+        return { bg: 'bg-orange-500/10', text: 'text-orange-500', label: 'RỦI RO' };
+      case 'CRITICAL':
       case 'DANGER':
       case 'NOT_STARTED':
-        return { bg: 'bg-red-100', text: 'text-red-700', label: 'at-risk' };
+        return { bg: 'bg-red-500/10', text: 'text-red-500', label: 'CHẬM TRỄ' };
       default:
-        return { bg: 'bg-gray-100', text: 'text-gray-700', label: status?.toLowerCase() || 'draft' };
+        return { bg: 'bg-secondary/10', text: 'text-secondary', label: status?.toUpperCase() || 'BẢN NHÁP' };
     }
   };
 
   const config = getStatusConfig();
 
   return (
-    <span className={`px-3 py-1 rounded-full text-sm font-medium ${config.bg} ${config.text}`}>
+    <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${config.bg} ${config.text}`}>
       {config.label}
     </span>
   );
 };
 
-// Revert to Draft Confirmation Modal
-const RevertToDraftModal = ({ objective, onClose, onConfirm, isPending }) => {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
-            <AlertCircle size={20} className="text-amber-600" />
-          </div>
-          <div>
-            <h2 className="text-lg font-semibold text-text">Chuyển về bản nháp?</h2>
-          </div>
-        </div>
-        <p className="text-secondary mb-4">
-          Objective <strong>"{objective.title}"</strong> đang ở trạng thái hoạt động. Để chỉnh sửa, bạn cần chuyển nó về trạng thái <strong>Bản nháp</strong>.
-        </p>
-        <p className="text-sm text-secondary mb-6">
-          Sau khi chuyển về bản nháp, bạn có thể chỉnh sửa và submit lại để phê duyệt.
-        </p>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={onClose}
-            className="flex-1 px-4 py-2 border border-secondary/20 rounded-lg text-text hover:bg-secondary/10 transition-colors cursor-pointer"
-          >
-            Hủy
-          </button>
-          <button
-            onClick={onConfirm}
-            disabled={isPending}
-            className="flex-1 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
-          >
-            <RotateCcw size={16} />
-            {isPending ? 'Đang chuyển...' : 'Chuyển về bản nháp'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 const ObjectiveDetailPage = () => {
   const { company_slug, objectiveId } = useParams();
@@ -109,7 +71,8 @@ const ObjectiveDetailPage = () => {
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [isRevertModalOpen, setIsRevertModalOpen] = useState(false);
+  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+  const [rejectionComment, setRejectionComment] = useState('');
 
   // Helper: Find objective in cache (from OKRPage tree data)
   const findObjectiveInCache = () => {
@@ -162,6 +125,17 @@ const ObjectiveDetailPage = () => {
   const canApprove = objective.permission?.approve === true;
   const canReject = objective.permission?.reject === true;
 
+  // Redirect if no view permission
+  useEffect(() => {
+    if (!isLoading && objective.id && !canView) {
+      toast.error('Bạn không có quyền xem Objective này');
+      navigate(`/${company_slug}/app/okr`);
+    }
+  }, [isLoading, objective.id, canView, company_slug, navigate]);
+
+  // Determine if objective is in editable state (Draft or Rejected)
+  const isEditableStatus = status === 'Draft' || status === 'Rejected';
+
   // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: deleteObjective,
@@ -205,36 +179,41 @@ const ObjectiveDetailPage = () => {
     },
   });
 
-  // Revert to Draft mutation (using revertObjectiveToDraft service)
-  const revertToDraftMutation = useMutation({
-    mutationFn: () => revertObjectiveToDraft(objectiveId),
+  // Reject mutation
+  const rejectMutation = useMutation({
+    mutationFn: () => rejectObjective(objectiveId, { comment: rejectionComment }),
     onSuccess: async () => {
-      toast.success('Đã chuyển Objective về trạng thái bản nháp!');
+      toast.success('Từ chối Objective thành công!');
+      setRejectionComment('');
+      setIsRejectModalOpen(false);
       // Refresh objective data to update status and permissions
       const updatedData = await getObjectiveById(objectiveId);
       queryClient.setQueryData(['objective', objectiveId], updatedData);
       queryClient.invalidateQueries({ queryKey: ['objectives'] });
-      setIsRevertModalOpen(false);
-      // Open edit modal after reverting
-      setIsEditModalOpen(true);
     },
     onError: (err) => {
-      toast.error(err.response?.data?.message || 'Có lỗi xảy ra khi chuyển về bản nháp');
+      toast.error(err.response?.data?.message || 'Có lỗi xảy ra khi từ chối Objective');
+    },
+  });
+
+  // Revert to draft mutation
+  const revertMutation = useMutation({
+    mutationFn: () => revertObjectiveToDraft(objectiveId),
+    onSuccess: async () => {
+      toast.success('Trở lại bản nháp thành công!');
+      // Refresh objective data to update status and permissions
+      const updatedData = await getObjectiveById(objectiveId);
+      queryClient.setQueryData(['objective', objectiveId], updatedData);
+      queryClient.invalidateQueries({ queryKey: ['objectives'] });
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.message || 'Có lỗi xảy ra khi trở lại bản nháp');
     },
   });
 
   const handleEditClick = () => {
-    if (status === 'Active') {
-      // For Active objectives, show revert to draft confirmation first
-      setIsRevertModalOpen(true);
-    } else {
-      // For Draft, Rejected, or other statuses, open edit directly
-      setIsEditModalOpen(true);
-    }
-  };
-
-  const handleRevertConfirm = () => {
-    revertToDraftMutation.mutate();
+    // Edit button is only shown for Draft and Rejected statuses
+    setIsEditModalOpen(true);
   };
 
   const handleSubmit = () => {
@@ -252,9 +231,9 @@ const ObjectiveDetailPage = () => {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <div className="h-8 w-48 bg-gray-200 rounded animate-pulse" />
-        <div className="h-32 bg-gray-200 rounded-xl animate-pulse" />
-        <div className="h-64 bg-gray-200 rounded-xl animate-pulse" />
+        <div className="h-8 w-48 bg-secondary/10 rounded animate-pulse" />
+        <div className="h-32 bg-secondary/10 rounded-xl animate-pulse" />
+        <div className="h-64 bg-secondary/10 rounded-xl animate-pulse" />
       </div>
     );
   }
@@ -287,7 +266,7 @@ const ObjectiveDetailPage = () => {
             <StatusBadge status={status} progressStatus={objective.progress_status} />
           </div>
           <p className="text-secondary">
-            {objective.unit?.name} • {objective.owner?.full_name} • {objective.cycle?.name}
+            {objective.unit?.name}  {objective.owner?.full_name ? `• ${objective.owner.full_name}` : ''} • {objective.cycle?.name}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -303,6 +282,32 @@ const ObjectiveDetailPage = () => {
             </button>
           )}
 
+          {/* Reject Button - Only for Pending_Approval status with reject permission */}
+          {status === 'Pending_Approval' && canReject && (
+            <button
+              onClick={() => setIsRejectModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors cursor-pointer"
+            >
+              <X size={18} />
+              Từ chối
+            </button>
+          )}
+
+          {/* Revert to Draft Button - Only for non-Draft/Rejected status with edit permission */}
+          {status !== 'Draft' && status !== 'Rejected' && canEdit && (
+            <button
+              onClick={() => {
+                if (window.confirm(`Bạn có chắc chắn muốn trở lại bản nháp cho Objective "${objective.title}"?`)) {
+                  revertMutation.mutate();
+                }
+              }}
+              disabled={revertMutation.isPending}
+              className="flex items-center gap-2 px-4 py-2 border border-secondary/20 rounded-lg text-text hover:bg-secondary/10 transition-colors disabled:opacity-50 cursor-pointer"
+            >
+              {revertMutation.isPending ? 'Đang trở lại...' : 'Trở lại bản nháp'}
+            </button>
+          )}
+
           {/* Submit Button - Only for Draft or Rejected status with submit permission */}
           {(status === 'Draft' || status === 'Rejected') && canSubmit && (
             <button
@@ -315,8 +320,8 @@ const ObjectiveDetailPage = () => {
             </button>
           )}
 
-          {/* Edit Button - For Draft, Rejected, Active (with revert) */}
-          {canEdit && (
+          {/* Edit Button - Only for Draft or Rejected status with edit permission */}
+          {isEditableStatus && canEdit && (
             <button
               onClick={handleEditClick}
               className="flex items-center gap-2 px-4 py-2 border border-secondary/20 rounded-lg text-text hover:bg-secondary/10 transition-colors cursor-pointer"
@@ -326,8 +331,8 @@ const ObjectiveDetailPage = () => {
             </button>
           )}
 
-          {/* Delete Button */}
-          {canDelete && (
+          {/* Delete Button - Only for Draft or Rejected status with delete permission */}
+          {isEditableStatus && canDelete && (
             <button
               onClick={() => setIsDeleteModalOpen(true)}
               className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors cursor-pointer"
@@ -341,23 +346,23 @@ const ObjectiveDetailPage = () => {
 
       {/* Status Info Banner for Pending Approval */}
       {status === 'Pending_Approval' && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center gap-3">
-          <AlertCircle size={20} className="text-amber-600 shrink-0" />
+        <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 flex items-center gap-3">
+          <AlertCircle size={20} className="text-amber-500 shrink-0" />
           <div>
-            <p className="font-medium text-amber-800">Objective đang chờ phê duyệt</p>
-            <p className="text-sm text-amber-700">Bạn không thể chỉnh sửa Objective cho đến khi được phê duyệt hoặc từ chối.</p>
+            <p className="font-medium text-amber-500">Objective đang chờ phê duyệt</p>
+            <p className="text-sm text-secondary">Bạn không thể chỉnh sửa Objective cho đến khi được phê duyệt hoặc từ chối.</p>
           </div>
         </div>
       )}
 
       {/* Status Info Banner for Rejected */}
       {status === 'Rejected' && objective.rejection_comment && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+        <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4">
           <div className="flex items-center gap-3 mb-2">
-            <AlertCircle size={20} className="text-red-600 shrink-0" />
-            <p className="font-medium text-red-800">Objective bị từ chối</p>
+            <AlertCircle size={20} className="text-red-500 shrink-0" />
+            <p className="font-medium text-red-500">Objective bị từ chối</p>
           </div>
-          <p className="text-sm text-red-700 ml-8">
+          <p className="text-sm text-secondary ml-8">
             <span className="font-medium">Lý do:</span> {objective.rejection_comment}
           </p>
         </div>
@@ -367,13 +372,20 @@ const ObjectiveDetailPage = () => {
       <ProgressSection objective={objective} />
 
       {/* Key Results Section */}
-      <KeyResultsSection objectiveId={objectiveId} />
+      <KeyResultsSection
+        objectiveId={objectiveId}
+        objectiveStatus={status}
+        isEditableStatus={isEditableStatus}
+        canEdit={canEdit}
+        canDelete={canDelete}
+        objectiveTitle={objective.title}
+      />
 
       {/* Child Objectives Section */}
       <ChildObjectivesSection childObjectives={objective.sub_objectives} />
 
       {/* Feedback Section */}
-      <FeedbackSection objectiveId={objectiveId} />
+      <FeedbackSection objectiveId={objectiveId} canEdit={canEdit} />
 
       {/* Edit Modal */}
       {isEditModalOpen && (
@@ -387,11 +399,55 @@ const ObjectiveDetailPage = () => {
         />
       )}
 
+      {/* Reject Confirmation Modal */}
+      {isRejectModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setIsRejectModalOpen(false)} />
+          <div className="relative bg-background rounded-2xl shadow-xl w-full max-w-md mx-4 p-6 border border-secondary/20">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-text">Từ chối Objective</h2>
+              <button
+                onClick={() => setIsRejectModalOpen(false)}
+                className="p-2 hover:bg-secondary/20 rounded-lg transition-colors cursor-pointer"
+              >
+                <X size={20} className="text-secondary" />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <p className="text-secondary">
+                Vui lòng nhập lý do từ chối cho Objective &quot;<strong>{objective.title}</strong>&quot;
+              </p>
+              <textarea
+                value={rejectionComment}
+                onChange={(e) => setRejectionComment(e.target.value)}
+                placeholder="Nhập lý do từ chối..."
+                className="w-full px-4 py-2 rounded-lg border border-secondary/20 bg-background text-text placeholder:text-secondary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none h-32"
+              />
+            </div>
+            <div className="flex items-center gap-3 mt-6">
+              <button
+                onClick={() => setIsRejectModalOpen(false)}
+                className="flex-1 px-4 py-2 border border-secondary/20 rounded-lg text-text hover:bg-secondary/10 transition-colors"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={() => rejectMutation.mutate()}
+                disabled={rejectMutation.isPending || !rejectionComment.trim()}
+                className="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50 cursor-pointer"
+              >
+                {rejectMutation.isPending ? 'Đang từ chối...' : 'Từ chối'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Delete Confirmation Modal */}
       {isDeleteModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/50" onClick={() => setIsDeleteModalOpen(false)} />
-          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
+          <div className="relative bg-background rounded-2xl shadow-xl w-full max-w-md mx-4 p-6 border border-secondary/20">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-text">Xác nhận xóa</h2>
               <button
@@ -423,15 +479,6 @@ const ObjectiveDetailPage = () => {
         </div>
       )}
 
-      {/* Revert to Draft Modal */}
-      {isRevertModalOpen && (
-        <RevertToDraftModal
-          objective={objective}
-          onClose={() => setIsRevertModalOpen(false)}
-          onConfirm={handleRevertConfirm}
-          isPending={revertToDraftMutation.isPending}
-        />
-      )}
     </div>
   );
 };

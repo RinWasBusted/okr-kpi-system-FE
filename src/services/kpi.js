@@ -1,8 +1,6 @@
 // ==================== AGGREGATED EXPORTS ====================
-// This file re-exports all KPI-related functions from modularized services
-// to maintain backward compatibility with existing imports
 
-// KPI Assignments (Objectives) exports
+// KPI Assignments
 export {
   getKPIAssignments,
   getKPIAssignmentById,
@@ -12,15 +10,16 @@ export {
   deleteKPIAssignment
 } from './kpi-assignment.js';
 
-// KPI Dictionaries (Key Results) exports
+// KPI Dictionaries
 export {
   getKPIDictionaries,
+  getKPIDictionariesForAssignment,
   createKPIDictionary,
   updateKPIDictionary,
   deleteKPIDictionary
 } from './kpi-dictionaries.js';
 
-// KPI Records (Check-ins) exports
+// KPI Records 
 export {
   createKPIRecord,
   getKPIRecords,

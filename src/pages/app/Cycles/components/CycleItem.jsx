@@ -2,11 +2,15 @@ import { useState } from 'react';
 import { Target, TrendingUp, Calendar, Lock, LockOpen, Edit, Trash2 } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
-import { lockCycle } from '../../../../services/cycle';
+import { useNavigate } from 'react-router-dom';
+import { lockCycle, unlockCycle } from '../../../../services/cycle';
+import { useAuthStore } from '../../../../hooks/useAuth';
 import EditCycleModal from './EditCycleModal';
 import DeleteCycleConfirmModal from './DeleteCycleConfirmModal';
 
 const CycleItem = ({ cycle, onRefetch }) => {
+  const navigate = useNavigate();
+  const { user } = useAuthStore();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
@@ -53,8 +57,8 @@ const CycleItem = ({ cycle, onRefetch }) => {
       };
     }
     return {
-      text: 'Đang mở',
-      className: 'bg-green-100 text-green-600',
+      text: `Đang mở - Vượt quá ${Math.abs(daysRemaining)} ngày`,
+      className: 'bg-yellow-100 text-yellow-600',
     };
   };
 
@@ -72,13 +76,15 @@ const CycleItem = ({ cycle, onRefetch }) => {
 
   // Lock/Unlock mutation
   const lockMutation = useMutation({
-    mutationFn: () => lockCycle(cycle.id),
+    mutationFn: () => {
+      return cycle.is_locked ? unlockCycle(cycle.id) : lockCycle(cycle.id);
+    },
     onSuccess: () => {
       toast.success(cycle.is_locked ? 'Đã mở khóa chu kỳ' : 'Đã khóa chu kỳ');
       onRefetch();
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Có lỗi xảy ra');
+      toast.error(error.response?.data?.error?.message || 'Có lỗi xảy ra');
     },
   });
 
@@ -93,9 +99,31 @@ const CycleItem = ({ cycle, onRefetch }) => {
   const avgObjectiveProgress = statistics.avg_objective_progress || 0;
   const avgKpiProgress = statistics.avg_kpi_progress || 0;
 
+  const handleClick = () => {
+    navigate(`${cycle.id}`);
+  };
+
+  const handleEditClick = (e) => {
+    e.stopPropagation();
+    setIsEditModalOpen(true);
+  };
+
+  const handleDeleteClick = (e) => {
+    e.stopPropagation();
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleLockClick = (e) => {
+    e.stopPropagation();
+    lockMutation.mutate();
+  };
+
   return (
     <>
-      <div className="bg-background rounded-xl border border-secondary/20 p-6 hover:shadow-md transition-shadow">
+      <div
+        onClick={handleClick}
+        className="bg-background rounded-xl border border-secondary/20 p-6 hover:shadow-md transition-shadow cursor-pointer"
+      >
         <div className="flex items-start justify-between">
           <div className="flex-1">
             {/* Header: Name and Status */}
@@ -158,36 +186,38 @@ const CycleItem = ({ cycle, onRefetch }) => {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center gap-2 ml-4">
-            {/* Edit Button */}
-            <button
-              onClick={() => setIsEditModalOpen(true)}
-              className="p-2 text-secondary hover:text-primary hover:bg-orange-100 rounded-lg transition-colors cursor-pointer"
-              title="Chỉnh sửa"
-            >
-              <Edit size={18} />
-            </button>
+          {user?.role === 'ADMIN_COMPANY' && (
+            <div className="flex items-center gap-2 ml-4">
+              {/* Edit Button */}
+              <button
+                onClick={handleEditClick}
+                className="p-2 text-secondary hover:text-primary hover:bg-orange-100 rounded-lg transition-colors cursor-pointer"
+                title="Chỉnh sửa"
+              >
+                <Edit size={18} />
+              </button>
 
-            {/* Lock/Unlock or Delete Button */}
-            {canDelete() ? (
-              <button
-                onClick={() => setIsDeleteModalOpen(true)}
-                className="p-2 text-secondary hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                title="Xóa"
-              >
-                <Trash2 size={18} />
-              </button>
-            ) : (
-              <button
-                onClick={() => lockMutation.mutate()}
-                disabled={lockMutation.isPending}
-                className="p-2 text-secondary hover:text-primary hover:bg-orange-100 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
-                title={cycle.is_locked ? 'Mở khóa' : 'Khóa'}
-              >
-                {cycle.is_locked ? <LockOpen size={18} /> : <Lock size={18} />}
-              </button>
-            )}
-          </div>
+              {/* Lock/Unlock or Delete Button */}
+              {canDelete() ? (
+                <button
+                  onClick={handleDeleteClick}
+                  className="p-2 text-secondary hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                  title="Xóa"
+                >
+                  <Trash2 size={18} />
+                </button>
+              ) : (
+                <button
+                  onClick={handleLockClick}
+                  disabled={lockMutation.isPending}
+                  className="p-2 text-secondary hover:text-primary hover:bg-orange-100 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+                  title={cycle.is_locked ? 'Mở khóa' : 'Khóa'}
+                >
+                  {cycle.is_locked ? <LockOpen size={18} /> : <Lock size={18} />}
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

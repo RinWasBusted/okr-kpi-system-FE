@@ -94,7 +94,7 @@ const KPIList = ({ unitId }) => {
   // Fetch KPIs for this unit independently
   const { data: kpiData, isLoading: isLoadingKPIs } = useQuery({
     queryKey: ['kpi-assignments', { unit_id: unitId }],
-    queryFn: () => getKPIAssignments({ unit_id: unitId, per_page: 100 }),
+    queryFn: () => getKPIAssignments({ unit_id: unitId, per_page: 100, mode:'list' }),
     enabled: !!unitId,
   });
 

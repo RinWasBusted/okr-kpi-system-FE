@@ -31,7 +31,7 @@ const AddAdminModal = ({ companyId, onClose, onSuccess }) => {
       onSuccess();
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Failed to create admin');
+      toast.error(error.response?.data?.error?.message || 'Failed to create admin');
     },
   });
 

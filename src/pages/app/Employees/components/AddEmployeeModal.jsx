@@ -140,7 +140,7 @@ const AddEmployeeModal = ({ onClose, units, isLoadingUnits }) => {
       onClose();
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Không thể tạo nhân viên');
+      toast.error(error.response?.data?.error?.message || 'Không thể tạo nhân viên');
     },
   });
 

@@ -1,0 +1,22 @@
+import StatCard from './StatCard';
+
+const StatsSection = ({ stats }) => {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+      {stats.map((stat, index) => (
+        <StatCard
+          key={index}
+          title={stat.title}
+          value={stat.value}
+          icon={stat.icon}
+          color={stat.color}
+          trend={stat.trend}
+          breakdown={stat.breakdown}
+          details={stat.details}
+        />
+      ))}
+    </div>
+  );
+};
+
+export default StatsSection;

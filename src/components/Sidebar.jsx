@@ -3,76 +3,54 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
   Building2,
-  Shield,
-  Moon,
-  Settings,
-  ChevronDown,
-  LogOut,
   Users,
   Calendar,
   Target,
   BarChart3,
-  FileText,
   BookOpen,
+  Menu,
+  X,
 } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
-import { logout, getCurrentUser } from '../services/auth';
 import { useAuthStore } from '../hooks/useAuth';
+import WebLogo from '../assets/Weblogo.webp';
 
 const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { theme, setTheme } = useTheme();
   const { user, setUser } = useAuthStore();
-  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
-  // Fetch current user info on component mount
+  // Check if mobile and handle resize
   useEffect(() => {
-    const fetchCurrentUser = async () => {
-      try {
-        const response = await getCurrentUser();
-        if (response.data?.user) {
-          setUser(response.data.user);
-        }
-      } catch (error) {
-        console.error('Failed to fetch current user:', error);
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 1024;
+      setIsMobile(mobile);
+      // Close menu when width changes to >= 1024px
+      if (!mobile) {
+        setIsMobileMenuOpen(false);
       }
     };
 
-    if (!user) {
-      fetchCurrentUser();
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Initialize mobile state on mount
+  useEffect(() => {
+    const isMobileInitial = window.innerWidth < 1024;
+    if (isMobileInitial) {
+      setIsMobileMenuOpen(false);
     }
-  }, [user, setUser]);
-
-  const handleLogout = async () => {
-    try {
-      setIsLoggingOut(true);
-
-      // Lưu thông tin trước khi xóa
-      const companySlug = user?.company_slug;
-      const role = user?.role;
-
-      await logout();
-      useAuthStore.setState({ user: null, isAuthenticated: false });
-
-      // Redirect dựa trên role
-      if (role === 'ADMIN_COMPANY' && companySlug) {
-        navigate(`/${companySlug}/login`);
-      } else {
-        navigate('/admin/login');
-      }
-    } catch (error) {
-      console.error('Logout failed:', error);
-    } finally {
-      setIsLoggingOut(false);
-    }
-  };
+  }, []);
 
   // Navigation items configuration based on role
   const getNavItems = () => {
     // ADMIN_COMPANY: sử dụng path /:company_slug/app/
-    if (user?.role === 'ADMIN_COMPANY') {
+    if (user?.role === 'ADMIN_COMPANY' || user?.role === 'EMPLOYEE') {
       const companySlug = user?.company_slug || 'company';
       return [
         {
@@ -116,13 +94,7 @@ const Sidebar = () => {
           title: 'Mẫu KPI',
           icon: BookOpen,
           path: `/${companySlug}/app/kpi-dictionaries`,
-        },
-        {
-          id: 8,
-          title: 'Báo cáo',
-          icon: FileText,
-          path: `/${companySlug}/app/reports`,
-        },
+        }
       ];
     }
 
@@ -155,20 +127,65 @@ const Sidebar = () => {
 
   const handleThemeToggle = () => {
     setTheme(theme === 'light' ? 'dark' : 'light');
-  }
+  };
+
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false);
+  };
 
   return (
-    <aside className="w-60 h-screen bg-background flex flex-col border-r border-secondary/20">
+    <>
+      {/* Mobile Menu Button - appears on header when sidebar is closed */}
+      {isMobile && (
+        <button
+          onClick={toggleMobileMenu}
+          className="fixed top-3 left-5 z-100 p-2 hover:bg-secondary/10 rounded-lg transition-colors duration-200 lg:hidden"
+          aria-label="Toggle menu"
+        >
+          <Menu size={24} className="text-text" />
+        </button>
+      )}
+
+      {/* Overlay for mobile */}
+        <div
+          className={`fixed duration-100 inset-0 bg-black/50 ${isMobileMenuOpen ? 'z-30 opacity-100' : 'hidden z-0 opacity-0'} lg:hidden`}
+          onClick={closeMobileMenu}
+        />
+
+      {/* Sidebar */}
+      <aside
+        className={`fixed lg:static inset-y-0 left-0 w-60 h-screen bg-background z-50 flex flex-col border-r border-secondary/20  transition-transform duration-300 ease-in-out lg:translate-x-0 ${
+          isMobile && !isMobileMenuOpen ? '-translate-x-full' : 'translate-x-0'
+        }`}
+        style={{
+          transform:
+            isMobile && !isMobileMenuOpen ? 'translateX(-100%)' : 'translateX(0)',
+        }}
+      >
       {/* Header */}
-      <div className="px-6 flex flex-col justify-center border-b border-secondary/20 h-16">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-lg">O</span>
+      <div className="px-6 flex flex-col justify-center border-b border-secondary/20 h-16 relative">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <img src={WebLogo} alt="OKR KPI Logo" className="w-10 h-10 rounded-lg object-cover" />
+            <div>
+              <h1 className="text-sm font-bold text-text">OKR KPI</h1>
+              <p className="text-xs text-text">Management</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-sm font-bold text-text">OKR KPI</h1>
-            <p className="text-xs text-text">Management</p>
-          </div>
+          {/* Close button for mobile */}
+          {isMobile && (
+            <button
+              onClick={closeMobileMenu}
+              className="lg:hidden p-2 hover:bg-secondary/10 rounded-lg transition-colors"
+              aria-label="Close menu"
+            >
+              <X size={20} className="text-text" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -180,7 +197,10 @@ const Sidebar = () => {
           return (
             <button
               key={item.id}
-              onClick={() => handleNavClick(item.path)}
+              onClick={() => {
+                handleNavClick(item.path);
+                closeMobileMenu();
+              }}
               className={`w-full cursor-pointer flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-all duration-200 border border-transparent ${
                 active
                   ? 'bg-primary/10 text-primary border-primary/20'
@@ -193,7 +213,8 @@ const Sidebar = () => {
           );
         })}
       </nav>
-    </aside>
+      </aside>
+    </>
   );
 };
 

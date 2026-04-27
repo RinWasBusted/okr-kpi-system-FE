@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -37,13 +37,13 @@ const VisibilityBadge = ({ visibility }) => {
   const getConfig = () => {
     switch (visibility) {
       case 'PUBLIC':
-        return { bg: 'bg-green-100', text: 'text-green-700', label: 'Công khai', icon: Eye };
+        return { bg: 'bg-emerald-500/10', text: 'text-emerald-500', label: 'CÔNG KHAI', icon: Eye };
       case 'INTERNAL':
-        return { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Nội bộ', icon: EyeOff };
+        return { bg: 'bg-blue-500/10', text: 'text-blue-500', label: 'NỘI BỘ', icon: EyeOff };
       case 'PRIVATE':
-        return { bg: 'bg-gray-100', text: 'text-gray-700', label: 'Riêng tư', icon: Lock };
+        return { bg: 'bg-secondary/10', text: 'text-secondary', label: 'RIÊNG TƯ', icon: Lock };
       default:
-        return { bg: 'bg-gray-100', text: 'text-gray-700', label: visibility?.toLowerCase() || 'Nội bộ', icon: EyeOff };
+        return { bg: 'bg-secondary/10', text: 'text-secondary', label: visibility?.toUpperCase() || 'NỘI BỘ', icon: EyeOff };
     }
   };
 
@@ -51,7 +51,7 @@ const VisibilityBadge = ({ visibility }) => {
   const Icon = config.icon;
 
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${config.bg} ${config.text}`}>
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${config.bg} ${config.text}`}>
       <Icon size={12} />
       {config.label}
     </span>
@@ -63,24 +63,24 @@ const StatusBadge = ({ status }) => {
   const getConfig = () => {
     switch (status) {
       case 'ON_TRACK':
-        return { bg: 'bg-green-100', text: 'text-green-700', label: 'Đúng tiến độ' };
+        return { bg: 'bg-emerald-500/10', text: 'text-emerald-500', label: 'ĐÚNG TIẾN ĐỘ' };
       case 'AT_RISK':
-        return { bg: 'bg-yellow-100', text: 'text-yellow-700', label: 'Cảnh báo' };
+        return { bg: 'bg-orange-500/10', text: 'text-orange-500', label: 'CẢNH BÁO' };
       case 'CRITICAL':
-        return { bg: 'bg-red-100', text: 'text-red-700', label: 'Nguy hiểm' };
+        return { bg: 'bg-red-500/10', text: 'text-red-500', label: 'NGUY HIỂM' };
       case 'COMPLETED':
-        return { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Hoàn thành' };
+        return { bg: 'bg-blue-500/10', text: 'text-blue-500', label: 'HOÀN THÀNH' };
       case 'NOT_STARTED':
-        return { bg: 'bg-gray-100', text: 'text-gray-700', label: 'Chưa bắt đầu' };
+        return { bg: 'bg-secondary/10', text: 'text-secondary', label: 'CHƯA BẮT ĐẦU' };
       default:
-        return { bg: 'bg-gray-100', text: 'text-gray-700', label: status?.toLowerCase() || 'Không xác định' };
+        return { bg: 'bg-secondary/10', text: 'text-secondary', label: status?.toUpperCase() || 'KHÔNG XÁC ĐỊNH' };
     }
   };
 
   const config = getConfig();
 
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${config.bg} ${config.text}`}>
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${config.bg} ${config.text}`}>
       {config.label}
     </span>
   );
@@ -114,30 +114,13 @@ const TrendBadge = ({ trend }) => {
 
 // Progress bar component
 const ProgressBar = ({ percentage, color = 'bg-blue-500' }) => (
-  <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
+  <div className="h-3 bg-secondary/10 rounded-full overflow-hidden">
     <div
       className={`h-full ${color} rounded-full transition-all duration-300`}
       style={{ width: `${Math.min(percentage || 0, 100)}%` }}
     />
   </div>
 );
-
-// Calculate progress percentage based on target and current value
-const calculateProgress = (current, target, evaluationMethod = 'Positive') => {
-  if (!target || target === 0) return 0;
-  const progress = (current / target) * 100;
-
-  switch (evaluationMethod) {
-    case 'Positive':
-      return Math.min(progress, 100);
-    case 'Negative':
-      return Math.max(0, 100 - progress);
-    case 'Stabilizing':
-      return 100 - Math.abs(progress - 100);
-    default:
-      return Math.min(progress, 100);
-  }
-};
 
 const KPIDetailPage = () => {
   const { company_slug, kpiId } = useParams();
@@ -193,6 +176,14 @@ const KPIDetailPage = () => {
     enabled: !!kpiId,
   });
 
+  // Handle KPI fetch error
+  useEffect(() => {
+    if (kpiError) {
+      toast.error(kpiError.response?.data?.error?.message || 'Không thể tải dữ liệu KPI');
+      navigate(`/${company_slug}/app/kpi`);
+    }
+  }, [kpiError, company_slug, navigate]);
+
   const kpi = kpiResponse?.data?.kpi_assignment || {};
   const records = recordsResponse?.data || [];
 
@@ -200,11 +191,19 @@ const KPIDetailPage = () => {
   const canDelete = kpi.permission?.deletable === true;
 
   const evaluationMethod = kpi.kpi_dictionary?.evaluation_method || 'Positive';
-  const progressPercentage = calculateProgress(
-    kpi.current_value || 0,
-    kpi.target_value || 0,
-    evaluationMethod
-  );
+
+  // Calculate progress: if KPI has sub-assignments, use average of children's progress
+  // Otherwise use the backend-provided progress_percentage
+  const progressPercentage = (() => {
+    const subAssignments = kpi.sub_assignments || kpi.children || [];
+    if (subAssignments.length > 0) {
+      const totalProgress = subAssignments.reduce((sum, child) => {
+        return sum + (child.progress_percentage || 0);
+      }, 0);
+      return totalProgress / subAssignments.length;
+    }
+    return kpi.progress_percentage || 0;
+  })();
 
   const getProgressColor = (value) => {
     if (value >= 80) return 'bg-blue-500';
@@ -231,9 +230,9 @@ const KPIDetailPage = () => {
   if (isLoadingKPI) {
     return (
       <div className="space-y-6">
-        <div className="h-8 w-48 bg-gray-200 rounded animate-pulse" />
-        <div className="h-48 bg-gray-200 rounded-xl animate-pulse" />
-        <div className="h-64 bg-gray-200 rounded-xl animate-pulse" />
+        <div className="h-8 w-48 bg-secondary/10 rounded animate-pulse" />
+        <div className="h-48 bg-secondary/10 rounded-xl animate-pulse" />
+        <div className="h-64 bg-secondary/10 rounded-xl animate-pulse" />
       </div>
     );
   }
@@ -262,8 +261,8 @@ const KPIDetailPage = () => {
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-              <BarChart3 size={24} className="text-blue-600" />
+            <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center">
+              <BarChart3 size={24} className="text-blue-500" />
             </div>
             <div>
               <h1 className="text-2xl font-bold text-text">{kpi.kpi_dictionary?.name || 'KPI không tên'}</h1>
@@ -298,7 +297,7 @@ const KPIDetailPage = () => {
       </div>
 
       {/* KPI Info Card */}
-      <div className="bg-white rounded-xl border border-secondary/20 shadow-sm overflow-hidden">
+      <div className="bg-background rounded-xl border border-secondary/20 shadow-sm overflow-hidden">
         {/* Progress Section */}
         <div className="p-6 border-b border-secondary/20">
           <div className="flex items-center justify-between mb-4">
@@ -380,7 +379,7 @@ const KPIDetailPage = () => {
       </div>
 
       {/* Records History Section */}
-      <div className="bg-white rounded-xl border border-secondary/20 shadow-sm overflow-hidden">
+      <div className="bg-background rounded-xl border border-secondary/20 shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-secondary/20 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-text">Lịch sử cập nhật</h2>
           <span className="text-sm text-secondary">{records.length} bản ghi</span>
@@ -422,16 +421,16 @@ const KPIDetailPage = () => {
                 <div className="flex items-start justify-between">
                   <div className="flex items-start gap-4">
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                      record.status === 'ON_TRACK' ? 'bg-green-100' :
-                      record.status === 'AT_RISK' ? 'bg-yellow-100' :
-                      record.status === 'CRITICAL' ? 'bg-red-100' :
-                      'bg-gray-100'
+                      record.status === 'ON_TRACK' ? 'bg-emerald-500/10' :
+                      record.status === 'AT_RISK' ? 'bg-orange-500/10' :
+                      record.status === 'CRITICAL' ? 'bg-red-500/10' :
+                      'bg-secondary/10'
                     }`}>
                       <TrendingUp size={20} className={`${
-                        record.status === 'ON_TRACK' ? 'text-green-600' :
-                        record.status === 'AT_RISK' ? 'text-yellow-600' :
-                        record.status === 'CRITICAL' ? 'text-red-600' :
-                        'text-gray-600'
+                        record.status === 'ON_TRACK' ? 'text-emerald-500' :
+                        record.status === 'AT_RISK' ? 'text-orange-500' :
+                        record.status === 'CRITICAL' ? 'text-red-500' :
+                        'text-secondary'
                       }`} />
                     </div>
                     <div>

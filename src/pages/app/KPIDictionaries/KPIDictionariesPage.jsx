@@ -286,7 +286,7 @@ const KPIDictionariesPage = () => {
         <AddKPIDictionaryModal
           onClose={() => setIsAddModalOpen(false)}
           onSuccess={() => {
-            toast.success('Thêm mẫu KPI thành công');
+            // Modal đã hiển thị toast.success, không cần lặp lại
           }}
           units={unitsTree}
           isLoadingUnits={isLoadingUnits}

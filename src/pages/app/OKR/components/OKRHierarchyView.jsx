@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import ReactFlow, {
   Background,
@@ -7,10 +7,13 @@ import ReactFlow, {
   MiniMap,
   useNodesState,
   useEdgesState,
+  Handle,
+  Position,
 } from 'reactflow';
 import { hierarchy, tree } from 'd3-hierarchy';
 import { Target, Eye, EyeOff, Globe, ChevronDown, ChevronUp, TrendingUp, Loader2 } from 'lucide-react';
 import { getKeyResults } from '../../../../services/okr';
+import { useTheme } from '../../../../hooks/useTheme';
 import 'reactflow/dist/style.css';
 
 // Status badge component matching ObjectiveItem style
@@ -98,7 +101,7 @@ const ProgressBar = ({ percentage }) => {
         <span className="text-xs text-secondary">Progress</span>
         <span className="text-sm font-semibold text-text">{percentage || 0}%</span>
       </div>
-      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+      <div className="h-2 bg-secondary/10 rounded-full overflow-hidden">
         <div
           className={`h-full ${getColor(percentage)} rounded-full transition-all duration-300`}
           style={{ width: `${Math.min(percentage || 0, 100)}%` }}
@@ -127,7 +130,7 @@ const KeyResultItem = ({ kr }) => {
             {kr.title}
           </p>
           <div className="flex items-center gap-2 mt-1">
-            <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+            <div className="flex-1 h-1.5 bg-secondary/10 rounded-full overflow-hidden">
               <div
                 className={`h-full ${getProgressColor(progress)} rounded-full`}
                 style={{ width: `${Math.min(progress, 100)}%` }}
@@ -180,7 +183,7 @@ const KeyResultsSection = ({ objectiveId }) => {
         className="flex items-center gap-1.5 text-xs font-medium text-text hover:text-primary transition-colors cursor-pointer w-full"
       >
         <TrendingUp size={14} className="text-primary" />
-        <span>Các Key Results</span>
+        <span>Các Kết quả then chốt</span>
         {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
       </button>
 
@@ -209,13 +212,14 @@ const KeyResultsSection = ({ objectiveId }) => {
 // Custom Node Component for React Flow
 const ObjectiveNode = ({ data }) => {
   const navigate = useNavigate();
+  const { company_slug } = useParams();
   const { objective } = data;
 
   const hasChildren = objective.sub_objectives && objective.sub_objectives.length > 0;
   const isExpanded = data.isExpanded;
 
   const handleDetailClick = () => {
-    navigate(`./${objective.id}`);
+    navigate(`/${company_slug}/app/okr/${objective.id}`);
   };
 
   const handleToggleExpand = (e) => {
@@ -234,7 +238,14 @@ const ObjectiveNode = ({ data }) => {
   };
 
   return (
-    <div className={`w-72 bg-background rounded-xl border-2 ${getBorderColor()} shadow-lg hover:shadow-xl transition-shadow`}>
+    <div className={`w-72 bg-background rounded-xl border-2 ${getBorderColor()} shadow-lg hover:shadow-xl transition-shadow relative`}>
+      {/* Target Handle - nhận edge từ node cha */}
+      <Handle
+        type="target"
+        position={Position.Top}
+        className="opacity-0 w-full h-2 top-0"
+      />
+
       {/* Header with icon, status and visibility */}
       <div className="p-3 pb-2">
         <div className="flex items-start gap-2">
@@ -294,6 +305,13 @@ const ObjectiveNode = ({ data }) => {
           )}
         </div>
       </div>
+
+      {/* Source Handle - xuất edge xuống node con */}
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        className="opacity-0 w-full h-2 bottom-0"
+      />
     </div>
   );
 };
@@ -359,7 +377,7 @@ const transformHierarchyToFlow = (objectives, expandedNodes, toggleExpand) => {
 
   // Use D3 hierarchy to calculate positions
   if (visibleObjectives.length === 0) {
-    return { nodes: [], edges: [] };
+    return { initialNodes: [], initialEdges: [] };
   }
 
   // Create a hierarchy structure for D3
@@ -441,6 +459,8 @@ const transformHierarchyToFlow = (objectives, expandedNodes, toggleExpand) => {
 
 // Main component
 const OKRHierarchyView = ({ objectives }) => {
+  const { theme } = useTheme();
+  const isDarkMode = theme === 'dark';
   const [expandedNodes, setExpandedNodes] = useState(() => {
     // Initialize with all objectives expanded by default
     const initialExpanded = new Set();
@@ -482,18 +502,7 @@ const OKRHierarchyView = ({ objectives }) => {
     setEdges(initialEdges);
   }, [initialNodes, initialEdges, setNodes, setEdges]);
 
-  if (objectives.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-96 bg-background rounded-xl border border-secondary/20">
-        <div className="text-center">
-          <Target size={48} className="mx-auto mb-4 opacity-50 text-secondary" />
-          <p className="text-secondary">Chưa có Objective nào</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Use fitView only once when React Flow initializes
+    // Use fitView only once when React Flow initializes
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
   const [hasFitted, setHasFitted] = useState(false);
 
@@ -506,8 +515,19 @@ const OKRHierarchyView = ({ objectives }) => {
     }
   }, [reactFlowInstance, nodes, hasFitted]);
 
+  if (objectives.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-96 bg-background rounded-xl border border-secondary/20">
+        <div className="text-center">
+          <Target size={48} className="mx-auto mb-4 opacity-50 text-secondary" />
+          <p className="text-secondary">Chưa có Objective nào</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="h-200 bg-gray-50 rounded-xl border border-secondary/20 overflow-hidden">
+    <div className="h-200 bg-background rounded-xl border border-secondary/20 overflow-hidden">
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -537,9 +557,15 @@ const OKRHierarchyView = ({ objectives }) => {
         <Background color="#CBD5E1" gap={16} size={1} />
         <Controls />
         <MiniMap
-          nodeColor="#F97316"
-          maskColor="rgba(255, 255, 255, 0.8)"
-          className="bg-white/50"
+          nodeColor="#ea580c"
+          nodeStrokeColor="#ea580c"
+          nodeBorderRadius={12}
+          maskColor={isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.1)'}
+          style={{
+            backgroundColor: 'var(--background)',
+            borderRadius: '16px',
+            border: '2px solid #ea580c',
+          }}
         />
       </ReactFlow>
     </div>

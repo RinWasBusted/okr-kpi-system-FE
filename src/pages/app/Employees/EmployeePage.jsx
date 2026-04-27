@@ -4,6 +4,8 @@ import { Search, Plus, Pencil, Trash2, Upload } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { getUsers, updateUserAvatar } from '../../../services/user';
 import { getUnits } from '../../../services/unit';
+import { User_avatar } from '../../../assets';
+import { useAuthStore } from '../../../hooks/useAuth';
 import AddEmployeeModal from './components/AddEmployeeModal';
 import EditEmployeeModal from './components/EditEmployeeModal';
 import DeleteConfirmModal from './components/DeleteConfirmModal';
@@ -29,7 +31,7 @@ const StatusBadge = ({ isActive }) => {
 /**
  * AvatarUploadOverlay Component - Show upload button on hover
  */
-const AvatarUploadOverlay = ({ user, onUpload }) => {
+const AvatarUploadOverlay = ({ user, onUpload, isAdminCompany }) => {
   const [isHovered, setIsHovered] = useState(false);
   const fileInputRef = useRef(null);
 
@@ -46,16 +48,16 @@ const AvatarUploadOverlay = ({ user, onUpload }) => {
 
   return (
     <div
-      className="relative"
+      className="relative shrink-0"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       <img
-        src={user.avatar_url || '/default-avatar.png'}
+        src={user.avatar_url || User_avatar}
         alt={user.full_name}
-        className="w-10 h-10 rounded-full object-cover"
+        className={`w-10 h-10 rounded-full object-cover ${!user.avatar_url ? 'border border-secondary/30' : ''}`}
       />
-      {(user.editable === true || user.editable === undefined) && isHovered && (
+      {isAdminCompany && isHovered && (
         <button
           onClick={handleClick}
           className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full cursor-pointer"
@@ -80,6 +82,7 @@ const AvatarUploadOverlay = ({ user, onUpload }) => {
  */
 const EmployeePage = () => {
   const queryClient = useQueryClient();
+  const { user: currentUser } = useAuthStore();
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');
@@ -129,7 +132,7 @@ const EmployeePage = () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Không thể cập nhật avatar');
+      toast.error(error.response?.data?.error?.message || 'Không thể cập nhật avatar');
     },
   });
 
@@ -194,18 +197,20 @@ const EmployeePage = () => {
           <h1 className="text-2xl font-bold text-text">Quản lý Nhân sự</h1>
           <p className="text-secondary text-sm mt-1">Manage employees and their information</p>
         </div>
-        <button
-          onClick={() => setIsAddModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors cursor-pointer"
-        >
-          <Plus size={18} />
-          Thêm nhân viên
-        </button>
+        {currentUser?.role === 'ADMIN_COMPANY' && (
+          <button
+            onClick={() => setIsAddModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors cursor-pointer"
+          >
+            <Plus size={18} />
+            Thêm nhân viên
+          </button>
+        )}
       </div>
 
       {/* Filters */}
       <div className="bg-background rounded-xl border border-secondary/20 p-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Search */}
           <div className="relative">
             <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary/50" />
@@ -216,16 +221,6 @@ const EmployeePage = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-secondary/20 bg-background text-text placeholder:text-secondary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
             />
-          </div>
-
-          {/* Job Title Filter - Placeholder (Chức vụ not available in API) */}
-          <div>
-            <select
-              disabled
-              className="w-full px-3 py-2.5 rounded-lg border border-secondary/20 bg-secondary/5 text-secondary/50 cursor-not-allowed"
-            >
-              <option>Tất cả chức vụ</option>
-            </select>
           </div>
 
           {/* Unit Filter */}
@@ -274,7 +269,7 @@ const EmployeePage = () => {
                 <th className="px-4 py-3 text-left text-sm font-semibold text-text">Email</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-text">Đơn vị</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-text">Trạng thái</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-text">Hành động</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-text"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-secondary/10">
@@ -297,11 +292,12 @@ const EmployeePage = () => {
                         <AvatarUploadOverlay
                           user={user}
                           onUpload={handleAvatarUpload}
+                          isAdminCompany={currentUser?.role === 'ADMIN_COMPANY'}
                         />
                         <span className="font-medium text-text">{user.full_name}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-4 text-secondary">{user.job_title || '-'}</td>
+                    <td className="px-4 py-4 text-secondary">{user.role === 'EMPLOYEE' ? user.job_title || '-' : "Admin"}</td>
                     <td className="px-4 py-4 text-secondary">{user.email}</td>
                     <td className="px-4 py-4 text-secondary">{user.unit?.name || '-'}</td>
                     <td className="px-4 py-4">
@@ -309,7 +305,7 @@ const EmployeePage = () => {
                     </td>
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-2">
-                        {(user.editable === true || user.editable === undefined) && (
+                        {currentUser?.role === 'ADMIN_COMPANY' && (
                           <button
                             onClick={() => setEditingUser(user)}
                             className="p-1.5 text-primary hover:bg-primary/10 rounded-lg transition-colors cursor-pointer"
@@ -318,7 +314,7 @@ const EmployeePage = () => {
                             <Pencil size={16} />
                           </button>
                         )}
-                        {(user.deletable === true || user.deletable === undefined) && (
+                        {currentUser?.role === 'ADMIN_COMPANY' && (
                           <button
                             onClick={() => setDeletingUser(user)}
                             className="p-1.5 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer"
