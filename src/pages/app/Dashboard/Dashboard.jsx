@@ -99,11 +99,13 @@ const NoCyclesBanner = () => {
 // ─── Main Dashboard ────────────────────────────────────────────────────────────
 const Dashboard = () => {
   const user = useAuthStore((s) => s.user);
+  const normalizedRole = String(user?.role || '').toUpperCase();
   const isManager = user?.is_manager || false;
-  const isAdmin = user?.role === 'ADMIN_COMPANY';
+  const isAdmin = normalizedRole === 'ADMIN_COMPANY';
   const showManagerTabs = isManager || isAdmin;
+  const preferredManagerTab = isAdmin && !user?.unit_id ? 'people' : 'unit-overview';
 
-  const defaultTab = showManagerTabs ? 'unit-overview' : 'personal';
+  const defaultTab = showManagerTabs ? preferredManagerTab : 'personal';
   const [activeTab, setActiveTab] = useState(defaultTab);
   const [cycleId, setCycleId] = useState(null);
   const [loadedTabs, setLoadedTabs] = useState(new Set());
@@ -156,6 +158,18 @@ const Dashboard = () => {
       setActiveTab(validIds[0]);
     }
   }, [tabs, activeTab]);
+
+  useEffect(() => {
+    if (showManagerTabs && !activeTab) {
+      setActiveTab(preferredManagerTab);
+    }
+  }, [showManagerTabs, activeTab, preferredManagerTab]);
+
+  useEffect(() => {
+    if (isAdmin && !user?.unit_id && activeTab === 'unit-overview') {
+      setActiveTab('people');
+    }
+  }, [isAdmin, user?.unit_id, activeTab]);
 
   return (
     <div className="space-y-5">
