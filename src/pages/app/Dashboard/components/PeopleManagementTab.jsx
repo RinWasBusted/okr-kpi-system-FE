@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Users, ChevronDown, ChevronUp, Check, X, ClipboardList, ArrowUpDown,
-  AlertCircle, Clock,
+  AlertCircle, Clock, Trophy, Medal, Award
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { getUnitEvaluations } from '../../../../services/statistic';
@@ -32,7 +32,7 @@ const SortHeader = ({ label, sortKey, currentSort, onSort }) => {
 // ─── People Management Tab ─────────────────────────────────────────────────────
 const PeopleManagementTab = ({ unitId, cycleId }) => {
   const queryClient = useQueryClient();
-  const [sort, setSort] = useState({ key: 'composite_score', dir: 'desc' });
+  const [sort, setSort] = useState({ key: 'avg_kpi_progress', dir: 'desc' });
 
   // Show notice if user has no unit
   if (!unitId) {
@@ -89,10 +89,34 @@ const PeopleManagementTab = ({ unitId, cycleId }) => {
     onError: (err) => toast.error(err.response?.data?.error?.message || 'Lỗi khi từ chối'),
   });
 
-  // Sorted evaluations
-  const sortedEvaluations = useMemo(() => {
+  // Add ranking based on KPI progress
+  const rankedEvaluations = useMemo(() => {
     if (!evaluations) return [];
-    return [...evaluations].sort((a, b) => {
+    
+    // Sort descending by avg_kpi_progress to determine ranks
+    const sorted = [...evaluations].sort((a, b) => (b.avg_kpi_progress || 0) - (a.avg_kpi_progress || 0));
+    
+    const rankMap = new Map();
+    let currentRank = 1;
+    
+    sorted.forEach((ev, index) => {
+      // Handle competition ranking (ties get the same rank)
+      if (index > 0 && sorted[index - 1].avg_kpi_progress !== ev.avg_kpi_progress) {
+        currentRank = index + 1;
+      }
+      rankMap.set(ev.evaluation_id, currentRank);
+    });
+    
+    return evaluations.map(ev => ({
+      ...ev,
+      kpi_rank: ev.evaluation_id && ev.avg_kpi_progress != null ? rankMap.get(ev.evaluation_id) : null
+    }));
+  }, [evaluations]);
+
+  // Sorted evaluations based on user's column sort choice
+  const sortedEvaluations = useMemo(() => {
+    if (!rankedEvaluations) return [];
+    return [...rankedEvaluations].sort((a, b) => {
       const aVal = a[sort.key] ?? -Infinity;
       const bVal = b[sort.key] ?? -Infinity;
       if (typeof aVal === 'string') {
@@ -100,7 +124,7 @@ const PeopleManagementTab = ({ unitId, cycleId }) => {
       }
       return sort.dir === 'asc' ? aVal - bVal : bVal - aVal;
     });
-  }, [evaluations, sort]);
+  }, [rankedEvaluations, sort]);
 
   const handleSort = (key) => {
     setSort((prev) => ({
@@ -141,7 +165,7 @@ const PeopleManagementTab = ({ unitId, cycleId }) => {
               <div className="flex items-center gap-2 mt-3 px-3 py-2 rounded-lg bg-blue-500/5 border border-blue-500/20">
                 <AlertCircle size={14} className="text-blue-500 shrink-0" />
                 <span className="text-xs text-blue-600 dark:text-blue-400">
-                  Bảng bên dưới sẽ hiển thị danh sách thành viên với điểm số khi evaluations được tự động khởi tạo.
+                  Mục này hiển thị danh sách thành viên với điểm số khi evaluations được tự động khởi tạo.
                 </span>
               </div>
             </div>
@@ -151,18 +175,29 @@ const PeopleManagementTab = ({ unitId, cycleId }) => {
             <table className="w-full">
               <thead>
                 <tr className="bg-secondary/5">
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-secondary uppercase tracking-wider w-24">
+                    <SortHeader label="Xếp hạng" sortKey="kpi_rank" currentSort={sort} onSort={handleSort} />
+                  </th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-secondary uppercase tracking-wider">Tên</th>
-                  <th className="text-right px-3 py-3"><SortHeader label="OKR %" sortKey="avg_okr_progress" currentSort={sort} onSort={handleSort} /></th>
-                  <th className="text-right px-3 py-3"><SortHeader label="KPI %" sortKey="avg_kpi_progress" currentSort={sort} onSort={handleSort} /></th>
-                  <th className="text-right px-3 py-3"><SortHeader label="OKR" sortKey="okr_count" currentSort={sort} onSort={handleSort} /></th>
-                  <th className="text-right px-3 py-3"><SortHeader label="KPI" sortKey="kpi_count" currentSort={sort} onSort={handleSort} /></th>
-                  <th className="text-right px-3 py-3"><SortHeader label="Điểm" sortKey="composite_score" currentSort={sort} onSort={handleSort} /></th>
-                  <th className="text-center px-3 py-3 text-xs font-semibold text-secondary uppercase tracking-wider">Xếp hạng</th>
+                  <th className="text-right px-4 py-3">
+                    <div className="flex justify-end">
+                      <SortHeader label="Điểm KPI" sortKey="avg_kpi_progress" currentSort={sort} onSort={handleSort} />
+                    </div>
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-secondary/10">
                 {sortedEvaluations.map((ev) => (
                   <tr key={ev.user_id || ev.evaluation_id || Math.random()} className="hover:bg-secondary/5 transition-colors">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center">
+                        {ev.kpi_rank === 1 ? <Award size={20} className="text-amber-500" /> :
+                         ev.kpi_rank === 2 ? <Medal size={18} className="text-gray-400" /> :
+                         ev.kpi_rank === 3 ? <Medal size={18} className="text-amber-700" /> :
+                         ev.kpi_rank ? <span className="text-sm font-medium text-secondary pl-2">{ev.kpi_rank}</span> :
+                         <span className="text-sm text-secondary/50 pl-2">—</span>}
+                      </div>
+                    </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2.5">
                         {ev.avatar_url ? (
@@ -178,23 +213,8 @@ const PeopleManagementTab = ({ unitId, cycleId }) => {
                         </div>
                       </div>
                     </td>
-                    <td className="px-3 py-3 text-right text-sm text-text">
-                      {ev.evaluation_id ? `${ev.avg_okr_progress}%` : <span className="text-secondary/50">—</span>}
-                    </td>
-                    <td className="px-3 py-3 text-right text-sm text-text">
-                      {ev.evaluation_id ? `${ev.avg_kpi_progress}%` : <span className="text-secondary/50">—</span>}
-                    </td>
-                    <td className="px-3 py-3 text-right text-sm text-text">
-                      {ev.evaluation_id ? ev.okr_count : <span className="text-secondary/50">—</span>}
-                    </td>
-                    <td className="px-3 py-3 text-right text-sm text-text">
-                      {ev.evaluation_id ? ev.kpi_count : <span className="text-secondary/50">—</span>}
-                    </td>
-                    <td className="px-3 py-3 text-right text-sm font-semibold text-text">
-                      {ev.evaluation_id ? ev.composite_score : <span className="text-secondary/50">—</span>}
-                    </td>
-                    <td className="px-3 py-3 text-center">
-                      {ev.rating ? <RatingBadge rating={ev.rating} /> : <span className="text-xs text-secondary/50">No data</span>}
+                    <td className="px-4 py-3 text-right text-sm font-semibold text-primary">
+                      {ev.evaluation_id ? ev.avg_kpi_progress : <span className="text-secondary/50">—</span>}
                     </td>
                   </tr>
                 ))}
@@ -261,3 +281,4 @@ const PeopleManagementTab = ({ unitId, cycleId }) => {
 };
 
 export default PeopleManagementTab;
+
