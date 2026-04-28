@@ -1,19 +1,79 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  Users, ChevronDown, ChevronUp, Check, X, ClipboardList, ArrowUpDown,
-  AlertCircle, Clock, Trophy, Medal, Award
+  Users, Check, X, ClipboardList, ArrowUpDown,
+  AlertCircle, Clock, Medal, Award
 } from 'lucide-react';
 import { toast } from 'react-toastify';
-import { getUnitEvaluations } from '../../../../services/statistic';
+import useAuthStore from '../../../../hooks/useAuth';
+import { getUnitEvaluations, getCompanyEmployeesEvaluations } from '../../../../services/statistic';
 import { getObjectives, approveObjective, rejectObjective } from '../../../../services/objective';
-import RatingBadge from './RatingBadge';
 import NoUnitBanner from './NoUnitBanner';
 
 // ─── Skeleton ──────────────────────────────────────────────────────────────────
 const Skeleton = ({ className = '' }) => (
   <div className={`animate-pulse bg-secondary/15 rounded ${className}`} />
 );
+
+const VERDICT_CONFIG = {
+  EXCELLENT: {
+    label: 'Xuất sắc',
+    className: 'bg-emerald-500/15 text-emerald-600 border-emerald-500/30',
+  },
+  GOOD: {
+    label: 'Tốt',
+    className: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
+  },
+  ABOVE_AVERAGE: {
+    label: 'Khá',
+    className: 'bg-teal-500/10 text-teal-600 border-teal-500/20',
+  },
+  SATISFACTORY: {
+    label: 'Đạt',
+    className: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
+  },
+  AVERAGE: {
+    label: 'Trung bình',
+    className: 'bg-secondary/10 text-secondary border-secondary/20',
+  },
+  NEEDS_IMPROVEMENT: {
+    label: 'Cần cải thiện',
+    className: 'bg-red-500/10 text-red-500 border-red-500/20',
+  },
+};
+
+const formatVerdictLabel = (verdict) => {
+  if (!verdict) return null;
+  if (VERDICT_CONFIG[verdict]?.label) return VERDICT_CONFIG[verdict].label;
+  return verdict
+    .toLowerCase()
+    .split('_')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+};
+
+const VerdictBadge = ({ verdict }) => {
+  if (!verdict) {
+    return <span className="text-secondary/50">-</span>;
+  }
+
+  const config = VERDICT_CONFIG[verdict];
+
+  return (
+    <span
+      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${
+        config?.className || 'bg-secondary/10 text-secondary border-secondary/20'
+      }`}
+    >
+      {formatVerdictLabel(verdict)}
+    </span>
+  );
+};
+
+const normalizeEvaluation = (evaluation = {}) => ({
+  ...evaluation,
+  evaluation_id: evaluation.evaluation_id ?? evaluation.id ?? null,
+});
 
 // ─── Sortable Table Header ─────────────────────────────────────────────────────
 const SortHeader = ({ label, sortKey, currentSort, onSort }) => {
@@ -32,20 +92,21 @@ const SortHeader = ({ label, sortKey, currentSort, onSort }) => {
 // ─── People Management Tab ─────────────────────────────────────────────────────
 const PeopleManagementTab = ({ unitId, cycleId }) => {
   const queryClient = useQueryClient();
+  const user = useAuthStore((state) => state.user);
+  const isAdminCompany = String(user?.role || '').toUpperCase() === 'ADMIN_COMPANY';
   const [sort, setSort] = useState({ key: 'avg_kpi_progress', dir: 'desc' });
-
-  // Show notice if user has no unit
-  if (!unitId) {
-    return (
-      <NoUnitBanner message="Bạn chưa được phân công vào đơn vị nào. Quản lý nhân sự yêu cầu bạn thuộc một đơn vị. Vui lòng liên hệ quản trị viên để được xếp vào đơn vị." />
-    );
-  }
 
   // 1. Evaluations — with error handling
   const { data: evaluations, isLoading: evalLoading, isError: evalError } = useQuery({
-    queryKey: ['unit-evaluations', unitId, cycleId],
-    queryFn: () => getUnitEvaluations(unitId, cycleId).then((r) => r.data || []),
-    enabled: !!unitId && !!cycleId,
+    queryKey: [isAdminCompany ? 'company-employees-evaluations' : 'unit-evaluations', unitId, cycleId],
+    queryFn: async () => {
+      const response = isAdminCompany
+        ? await getCompanyEmployeesEvaluations({ cycle_id: cycleId })
+        : await getUnitEvaluations(unitId, cycleId);
+
+      return (response?.data || []).map(normalizeEvaluation);
+    },
+    enabled: !!cycleId && (isAdminCompany || !!unitId),
     retry: false, // Don't retry on P2010 or similar data-not-ready errors
   });
 
@@ -104,7 +165,9 @@ const PeopleManagementTab = ({ unitId, cycleId }) => {
       if (index > 0 && sorted[index - 1].avg_kpi_progress !== ev.avg_kpi_progress) {
         currentRank = index + 1;
       }
-      rankMap.set(ev.evaluation_id, currentRank);
+      if (ev.evaluation_id) {
+        rankMap.set(ev.evaluation_id, currentRank);
+      }
     });
     
     return evaluations.map(ev => ({
@@ -137,6 +200,12 @@ const PeopleManagementTab = ({ unitId, cycleId }) => {
 
   // Check if evaluations are empty (either no data or error)
   const showEvaluationEmptyState = evalError || (!evalLoading && (!evaluations || evaluations.length === 0));
+
+  if (!unitId && !isAdminCompany) {
+    return (
+      <NoUnitBanner message="Bạn chưa được phân công vào đơn vị nào. Quản lý nhân sự yêu cầu bạn thuộc một đơn vị. Vui lòng liên hệ quản trị viên để được xếp vào đơn vị." />
+    );
+  }
 
   return (
     <div className="space-y-5">
@@ -184,11 +253,16 @@ const PeopleManagementTab = ({ unitId, cycleId }) => {
                       <SortHeader label="Điểm KPI" sortKey="avg_kpi_progress" currentSort={sort} onSort={handleSort} />
                     </div>
                   </th>
+                  {isAdminCompany && (
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-secondary uppercase tracking-wider">
+                      Verdict
+                    </th>
+                  )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-secondary/10">
                 {sortedEvaluations.map((ev) => (
-                  <tr key={ev.user_id || ev.evaluation_id || Math.random()} className="hover:bg-secondary/5 transition-colors">
+                  <tr key={ev.user_id || ev.evaluation_id || ev.full_name} className="hover:bg-secondary/5 transition-colors">
                     <td className="px-4 py-3">
                       <div className="flex items-center">
                         {ev.kpi_rank === 1 ? <Award size={20} className="text-amber-500" /> :
@@ -216,6 +290,11 @@ const PeopleManagementTab = ({ unitId, cycleId }) => {
                     <td className="px-4 py-3 text-right text-sm font-semibold text-primary">
                       {ev.evaluation_id ? ev.avg_kpi_progress : <span className="text-secondary/50">—</span>}
                     </td>
+                    {isAdminCompany && (
+                      <td className="px-4 py-3 text-sm">
+                        {ev.evaluation_id ? <VerdictBadge verdict={ev.verdict} /> : <span className="text-secondary/50">—</span>}
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -281,4 +360,3 @@ const PeopleManagementTab = ({ unitId, cycleId }) => {
 };
 
 export default PeopleManagementTab;
-
